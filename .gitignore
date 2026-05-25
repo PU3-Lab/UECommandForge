@@ -19,6 +19,7 @@ Thumbs.db
 
 # UE 에디터 자동 생성 Config (프로젝트 범위 외)
 sample/Config/DefaultInput.ini
+sample/Config/DefaultEngine.ini
 
 # Antigravity CLI 내부 상태
 .antigravitycli/*.json
