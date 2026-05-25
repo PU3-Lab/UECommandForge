@@ -1,0 +1,26 @@
+{
+  "Version": "1",
+  "Character": {
+    "AssetPath": "/Game/AI/Characters/BP_Guard",
+    "ParentClass": "Character",
+    "DisplayName": "GuardCharacter"
+  },
+  "AIController": {
+    "AssetPath": "/Game/AI/Controllers/BP_GuardController",
+    "ParentClass": "AIController",
+    "DisplayName": "GuardController"
+  },
+  "StateTree": {
+    "AssetPath": "/Game/AI/StateTrees/ST_Guard",
+    "Tasks": [
+      { "TaskType": "Wait",   "StateName": "Idle" },
+      { "TaskType": "MoveTo", "StateName": "Patrol" }
+    ]
+  },
+  "Placement": {
+    "MapPath":       "/Game/Maps/TestMap",
+    "BlueprintPath": "/Game/AI/Characters/BP_Guard",
+    "Location":  { "X": 0.0, "Y": 0.0, "Z": 0.0 },
+    "Rotation":  { "Pitch": 0.0, "Yaw": 0.0, "Roll": 0.0 }
+  }
+}
