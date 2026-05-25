@@ -1,0 +1,12 @@
+{
+  "FileVersion": 3,
+  "EngineAssociation": "5.7",
+  "Category": "",
+  "Description": "Sample project for UECommandForge LLM automation bridge.",
+  "Modules": [],
+  "Plugins": [
+    { "Name": "UECommandForge", "Enabled": true },
+    { "Name": "StateTree", "Enabled": true },
+    { "Name": "GameplayStateTree", "Enabled": true }
+  ]
+}

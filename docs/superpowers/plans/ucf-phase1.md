@@ -23,7 +23,7 @@
 ./tools/ue/hello.sh
 
 # 4. Result JSON 계약 확인
-jq -e '.ok and .commandlet == "Hello"' "$(ls -t Saved/CodexReports/Hello_*.json | head -1)"
+jq -e '.ok and .commandlet == "Hello"' "$(ls -t sample/Saved/CodexReports/Hello_*.json | head -1)"
 ```
 
 ---
@@ -65,9 +65,9 @@ jq -e '.ok and .commandlet == "Hello"' "$(ls -t Saved/CodexReports/Hello_*.json 
 ## 태스크 1: 저장소 스캐폴딩 (uproject, gitignore, README 스켈레톤)
 
 **파일:**
-- 생성: `UECommandForgeSample.uproject`
-- 생성: `Config/DefaultEngine.ini`
-- 생성: `Config/DefaultGame.ini`
+- 생성: `sample/UECommandForgeSample.uproject`
+- 생성: `sample/Config/DefaultEngine.ini`
+- 생성: `sample/Config/DefaultGame.ini`
 - 생성: `.gitignore`
 - 생성: `README.md`
 
@@ -195,7 +195,7 @@ git commit -m "feat: scaffold UECommandForgeSample uproject and Codex contract R
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-PROJECT_FILE="${REPO_ROOT}/UECommandForgeSample.uproject"
+PROJECT_FILE="${REPO_ROOT}/sample/UECommandForgeSample.uproject"
 
 resolve_ue_cmd() {
   if [ -n "${UNREAL_EDITOR_CMD:-}" ]; then
@@ -259,7 +259,7 @@ fi
 COMMANDLET="$1"
 shift
 
-REPORT_DIR="${REPO_ROOT}/Saved/CodexReports"
+REPORT_DIR="${REPO_ROOT}/sample/Saved/CodexReports"
 mkdir -p "${REPORT_DIR}"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 OUTPUT_JSON="${REPORT_DIR}/${COMMANDLET}_${STAMP}.json"
@@ -688,7 +688,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "${SCRIPT_DIR}/ue_env.sh"
 
-REPORT_DIR="${REPO_ROOT}/Saved/AutomationReports"
+REPORT_DIR="${REPO_ROOT}/sample/Saved/AutomationReports"
 mkdir -p "${REPORT_DIR}"
 
 "${UNREAL_EDITOR_CMD}" "${PROJECT_FILE}" \
@@ -811,7 +811,7 @@ int32 UHelloCommandlet::Main(const FString& Params)
 
 ```bash
 jq -e '.ok == true and .commandlet == "Hello" and .validation.engine_boot == "ok"' \
-  "$(ls -t Saved/CodexReports/Hello_*.json | head -1)"
+  "$(ls -t sample/Saved/CodexReports/Hello_*.json | head -1)"
 ```
 
 예상 결과: `true` 출력 후 종료 코드 0.
@@ -847,7 +847,7 @@ git commit -m "feat: HelloCommandlet — end-to-end Result JSON smoke"
 ./tools/ue/hello.sh
 
 # 4. Result JSON 계약 확인
-jq -e '.ok and .commandlet == "Hello"' "$(ls -t Saved/CodexReports/Hello_*.json | head -1)"
+jq -e '.ok and .commandlet == "Hello"' "$(ls -t sample/Saved/CodexReports/Hello_*.json | head -1)"
 ```
 
 **Phase 1 인도물:** 이후 모든 Phase는 "동작하는 Commandlet이 있어서 계약 준수 Result JSON을 기록할 수 있다; 내가 할 일은 그것을 확장하는 것뿐이다"라는 전제 아래 시작할 수 있다.

@@ -1,0 +1,18 @@
+# Unreal generated
+Binaries/
+Build/
+DerivedDataCache/
+Intermediate/
+Saved/
+*.VC.db
+*.opensdf
+*.sln
+*.xcodeproj/
+*.xcworkspace/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# But keep CodexReports examples
+!sample/Saved/.gitkeep
