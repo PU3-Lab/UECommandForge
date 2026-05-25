@@ -20,7 +20,17 @@
   - `git commit` 전에 커밋 메시지와 대상 파일 목록을 사용자에게 먼저 보여주고, 명시적 승인을 받은 뒤에만 실행한다.
   - `git push`, `git reset`, `git rebase` 등 되돌리기 어려운 작업도 동일하게 승인 후 실행한다.
 
+## 문서 저장 위치 규칙
+
+- **모든 문서는 워킹 디렉토리(`docs/`) 안에 저장한다.**
+  - 작업 계획서: `docs/superpowers/plans/`
+  - 메모리·기록 문서: `docs/memory/`
+  - 기획서·설계서: `docs/`
+- `~/.claude/` 등 전역 경로에 프로젝트 관련 문서를 저장하지 않는다.
+- 새 문서 유형이 필요하면 `docs/` 하위에 적절한 서브디렉토리를 만든다.
+
 ## 참고
 
 - 기획서: `ue_commandlet_based_llm_automation_plan.md`
 - 작업 계획서: `docs/superpowers/plans/`
+- 메모리·기록: `docs/memory/`
