@@ -1,0 +1,55 @@
+# UECommandForge 마스터 계획
+
+> **에이전트 작업자:** 각 Phase 파일을 순서대로 실행한다. Phase 1부터 시작하고, 이전 Phase 인수 조건을 통과한 뒤 다음 Phase로 진행한다.
+
+**목표:** `ue_commandlet_based_llm_automation_plan.md`에 기술된 Commandlet 기반 Unreal Engine LLM 자동화 브리지 구축. LLM이 JSON Spec을 생성하면, Shell 래퍼가 `UnrealEditor-Cmd`를 호출하고, C++ 플러그인이 Commandlet을 실행하여 Builders/Validators가 UE 에디터 API를 호출한 뒤 Result JSON을 출력한다.
+
+**아키텍처:** 새 샘플 `UECommandForgeSample.uproject` (UE 5.7)에 `Plugins/UECommandForge` 플러그인을 두 모듈로 분리한다 — `UECommandForgeRuntime` (POD 타입) + `UECommandForgeEditor` (Commandlet, Spec 파서, Builder, Validator, Report 작성기). Cross-platform Shell 래퍼는 `tools/ue/` 아래에 위치 (macOS + Windows via Git Bash/WSL). Result JSON은 항상 `Saved/CodexReports/`에 저장된다.
+
+**기술 스택:** Unreal Engine 5.7 (C++20), `UnrealEd`, `Json`/`JsonUtilities`, `BlueprintGraph`, `KismetCompiler`, `AssetTools`, `StateTreeModule`, `StateTreeEditorModule`, `AIModule`. macOS에서는 POSIX shell (bash), Windows에서는 Git Bash.
+
+---
+
+## 전체 마스터 인수 조건
+
+```bash
+./tools/ue/create_ai_flow.sh specs/examples/guard_ai.json
+jq -e '.ok and .validation.actor_placed and .validation.blueprint_compile == "passed"' \
+   Saved/CodexReports/CreateAIFlow_*.json
+```
+
+---
+
+## Phase 파일 목록
+
+| Phase | 파일 | 목표 | 의존성 |
+|---|---|---|---|
+| 1 | [ucf-phase1.md](ucf-phase1.md) | Commandlet 실행 하네스 — `hello.sh` → Result JSON | 없음 |
+| 2 | [ucf-phase2.md](ucf-phase2.md) | Spec JSON 파서·검증기 | Phase 1 |
+| 3 | [ucf-phase3.md](ucf-phase3.md) | 블루프린트 생성 | Phase 2 |
+| 4 | [ucf-phase4.md](ucf-phase4.md) | StateTree 생성 | Phase 3 |
+| 5 | [ucf-phase5.md](ucf-phase5.md) | AI 플로우 바인딩·검증 | Phase 4 |
+| 6 | [ucf-phase6.md](ucf-phase6.md) | 맵 배치 | Phase 5 |
+| 7 | [ucf-phase7.md](ucf-phase7.md) | 워크플로우 Commandlet (원스톱) | Phase 6 |
+
+---
+
+## 리스크 및 가정
+
+| 리스크 | 완화 방안 |
+|---|---|
+| UE 5.7이 프리릴리스; StateTree Editor API가 변경될 수 있음 | Phase 4는 스파이크 + 어댑터 레이어로 시작. 검증 후 README에 UE 바이너리 빌드 해시 고정. |
+| Apple Silicon UE 배포 경로가 Intel과 다름 | 래퍼가 `UE_ROOT` 환경변수로 폴백; 실패 시 읽기 쉬운 오류 한 줄 출력. |
+| 워크플로우 Commandlet 부분 성공 시 고아 에셋 발생 | Result JSON `rollback_available: true` + 수동 롤백 Commandlet (Phase 7 이후 추가). |
+| 블루프린트 컴파일 경고 정책 | 경고는 리포트에 포함되지만 실행 실패 아님; CRITICAL 전용 실패 시맨틱. |
+| Windows에서 PowerShell로 `tools/ue/*.sh` 호출 | 문서화된 요구사항: Git Bash 또는 WSL. Phase 1에서는 PowerShell 미지원. |
+
+---
+
+## 범위 외
+
+- Behavior Tree / EQS (StateTree로 대체됨).
+- `RunUAT BuildCookRun` 패키징.
+- Animation BP / Niagara 자동화.
+- LLM 자체 호출 — 이 계획은 LLM이 사용할 커맨드 표면만 제공.
+- CI 통합 (GitHub Actions / Jenkins).
