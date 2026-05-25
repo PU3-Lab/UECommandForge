@@ -23,7 +23,7 @@
     {
       "Name": "UECommandForgeEditor",
       "Type": "Editor",
-      "LoadingPhase": "PostEngineInit"
+      "LoadingPhase": "Default"
     }
   ]
 }
