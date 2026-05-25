@@ -16,3 +16,6 @@ Thumbs.db
 
 # But keep CodexReports examples
 !sample/Saved/.gitkeep
+
+# UE 에디터 자동 생성 Config (프로젝트 범위 외)
+sample/Config/DefaultInput.ini
