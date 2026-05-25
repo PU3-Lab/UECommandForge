@@ -37,18 +37,18 @@ jq -e '.ok and .commandlet == "Hello"' "$(ls -t sample/Saved/CodexReports/Hello_
 | `Config/DefaultGame.ini` | 최소 게임 설정 (플레이스홀더) | 1 |
 | `.gitignore` | UE 빌드 아티팩트 제외 | 1 |
 | `README.md` | LLM 대상 명령 표면 + Spec/Result JSON 계약 (스켈레톤) | 1 |
-| `Plugins/UECommandForge/UECommandForge.uplugin` | 플러그인 디스크립터 (두 모듈) | 3 |
-| `Plugins/UECommandForge/Source/UECommandForgeRuntime/UECommandForgeRuntime.Build.cs` | 런타임 모듈 빌드 규칙 | 3 |
-| `Plugins/UECommandForge/Source/UECommandForgeRuntime/Public/CommandForgeTypes.h` | 공유 POD 타입 (`FCommandForgeError`, `ECommandForgeExitCode`) | 3 |
-| `Plugins/UECommandForge/Source/UECommandForgeRuntime/Private/CommandForgeTypes.cpp` | 모듈 구현 + IMPLEMENT_MODULE | 3 |
-| `Plugins/UECommandForge/Source/UECommandForgeEditor/UECommandForgeEditor.Build.cs` | 에디터 모듈 빌드 규칙 | 4 |
-| `Plugins/UECommandForge/Source/UECommandForgeEditor/Public/UECommandForgeEditorModule.h` | 에디터 모듈 헤더 | 4 |
-| `Plugins/UECommandForge/Source/UECommandForgeEditor/Private/UECommandForgeEditorModule.cpp` | 에디터 모듈 IMPLEMENT_MODULE | 4 |
-| `Plugins/UECommandForge/Source/UECommandForgeEditor/Public/Reports/JsonReportWriter.h` | Result JSON 작성기 인터페이스 | 5 |
-| `Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Reports/JsonReportWriter.cpp` | Result JSON 원자 쓰기 구현 | 5 |
-| `Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/JsonReportWriterTest.cpp` | 리포트 작성기 자동화 테스트 | 5 |
-| `Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Commandlets/HelloCommandlet.h` | Hello commandlet 헤더 | 6 |
-| `Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Commandlets/HelloCommandlet.cpp` | Hello commandlet 구현 | 6 |
+| `sample/Plugins/UECommandForge/UECommandForge.uplugin` | 플러그인 디스크립터 (두 모듈) | 3 |
+| `sample/Plugins/UECommandForge/Source/UECommandForgeRuntime/UECommandForgeRuntime.Build.cs` | 런타임 모듈 빌드 규칙 | 3 |
+| `sample/Plugins/UECommandForge/Source/UECommandForgeRuntime/Public/CommandForgeTypes.h` | 공유 POD 타입 (`FCommandForgeError`, `ECommandForgeExitCode`) | 3 |
+| `sample/Plugins/UECommandForge/Source/UECommandForgeRuntime/Private/CommandForgeTypes.cpp` | 모듈 구현 + IMPLEMENT_MODULE | 3 |
+| `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/UECommandForgeEditor.Build.cs` | 에디터 모듈 빌드 규칙 | 4 |
+| `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Public/UECommandForgeEditorModule.h` | 에디터 모듈 헤더 | 4 |
+| `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/UECommandForgeEditorModule.cpp` | 에디터 모듈 IMPLEMENT_MODULE | 4 |
+| `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Public/Reports/JsonReportWriter.h` | Result JSON 작성기 인터페이스 | 5 |
+| `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Reports/JsonReportWriter.cpp` | Result JSON 원자 쓰기 구현 | 5 |
+| `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/JsonReportWriterTest.cpp` | 리포트 작성기 자동화 테스트 | 5 |
+| `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Commandlets/HelloCommandlet.h` | Hello commandlet 헤더 | 6 |
+| `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Commandlets/HelloCommandlet.cpp` | Hello commandlet 구현 | 6 |
 | `tools/ue/ue_env.sh` | OS 감지 + `UNREAL_EDITOR_CMD` 경로 결정 | 2 |
 | `tools/ue/run_commandlet.sh` | 공통 래퍼: 프로젝트 경로·플래그·출력 경로 | 2 |
 | `tools/ue/hello.sh` | `Hello` commandlet 호출 | 2 |
@@ -71,7 +71,7 @@ jq -e '.ok and .commandlet == "Hello"' "$(ls -t sample/Saved/CodexReports/Hello_
 - 생성: `.gitignore`
 - 생성: `README.md`
 
-- [ ] **스텝 1: `.gitignore` 작성**
+- [x] **스텝 1: `.gitignore` 작성**
 
 ```gitignore
 # Unreal generated
@@ -94,7 +94,7 @@ Thumbs.db
 !Saved/.gitkeep
 ```
 
-- [ ] **스텝 2: `UECommandForgeSample.uproject` 작성**
+- [x] **스텝 2: `UECommandForgeSample.uproject` 작성**
 
 ```json
 {
@@ -111,14 +111,14 @@ Thumbs.db
 }
 ```
 
-- [ ] **스텝 3: `Config/DefaultEngine.ini` 작성 (최소)**
+- [x] **스텝 3: `Config/DefaultEngine.ini` 작성 (최소)**
 
 ```ini
 [/Script/Engine.Engine]
 +ActiveGameNameRedirects=(OldGameName="TP_Blank",NewGameName="/Script/UECommandForgeSample")
 ```
 
-- [ ] **스텝 4: `Config/DefaultGame.ini` 작성 (빈 플레이스홀더)**
+- [x] **스텝 4: `Config/DefaultGame.ini` 작성 (빈 플레이스홀더)**
 
 ```ini
 [/Script/EngineSettings.GeneralProjectSettings]
@@ -126,7 +126,7 @@ ProjectID=00000000000000000000000000000000
 ProjectName=UECommandForgeSample
 ```
 
-- [ ] **스텝 5: `README.md` 스켈레톤 작성**
+- [x] **스텝 5: `README.md` 스켈레톤 작성**
 
 ```markdown
 # UECommandForge
@@ -161,7 +161,7 @@ LLM 기반 Unreal Engine 자동화 브리지. 전체 설계는 `ue_commandlet_ba
 | 5 | UE/엔진 오류 |
 ```
 
-- [ ] **스텝 6: 커밋 준비 — 사용자에게 아래 내용을 보여주고 승인 요청**
+- [x] **스텝 6: 커밋 준비 — 사용자에게 아래 내용을 보여주고 승인 요청**
 
 ```
 커밋 메시지: feat: scaffold UECommandForgeSample uproject and Codex contract README
@@ -185,7 +185,7 @@ git commit -m "feat: scaffold UECommandForgeSample uproject and Codex contract R
 
 모든 래퍼는 순수 POSIX bash (zsh 전용 기능 없음)로 macOS와 Windows Git Bash 양쪽에서 동일하게 실행된다.
 
-- [ ] **스텝 1: `tools/ue/ue_env.sh` 작성**
+- [x] **스텝 1: `tools/ue/ue_env.sh` 작성**
 
 ```bash
 #!/usr/bin/env bash
@@ -239,7 +239,7 @@ resolve_ue_cmd() {
 resolve_ue_cmd
 ```
 
-- [ ] **스텝 2: `tools/ue/run_commandlet.sh` 작성**
+- [x] **스텝 2: `tools/ue/run_commandlet.sh` 작성**
 
 ```bash
 #!/usr/bin/env bash
@@ -281,7 +281,7 @@ echo "${OUTPUT_JSON}"
 exit ${UE_EXIT}
 ```
 
-- [ ] **스텝 3: `tools/ue/hello.sh` 작성**
+- [x] **스텝 3: `tools/ue/hello.sh` 작성**
 
 ```bash
 #!/usr/bin/env bash
@@ -290,13 +290,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 exec "${SCRIPT_DIR}/run_commandlet.sh" Hello "$@"
 ```
 
-- [ ] **스텝 4: 스크립트 실행 권한 부여**
+- [x] **스텝 4: 스크립트 실행 권한 부여**
 
 ```bash
 chmod +x tools/ue/ue_env.sh tools/ue/run_commandlet.sh tools/ue/hello.sh
 ```
 
-- [ ] **스텝 5: 스모크 테스트 (실패 예상 — Commandlet 미존재)**
+- [x] **스텝 5: 스모크 테스트 (실패 예상 — Commandlet 미존재)**
 
 ```bash
 ./tools/ue/hello.sh || echo "예상된 실패 exit=$?"
@@ -304,7 +304,7 @@ chmod +x tools/ue/ue_env.sh tools/ue/run_commandlet.sh tools/ue/hello.sh
 
 예상 결과: 0이 아닌 종료 코드. 이 단계는 래퍼가 `UnrealEditor-Cmd`를 부팅한다는 것을 증명한다. UE 실행 전에 실패한다면 (`UnrealEditor-Cmd not found` 등) `UE_ROOT`를 먼저 수정한다.
 
-- [ ] **스텝 6: 커밋 준비 — 사용자에게 아래 내용을 보여주고 승인 요청**
+- [x] **스텝 6: 커밋 준비 — 사용자에게 아래 내용을 보여주고 승인 요청**
 
 ```
 커밋 메시지: feat: cross-platform Shell wrappers for UnrealEditor-Cmd
@@ -322,12 +322,12 @@ git commit -m "feat: cross-platform Shell wrappers for UnrealEditor-Cmd"
 ## 태스크 3: 플러그인 디스크립터 및 런타임 모듈
 
 **파일:**
-- 생성: `Plugins/UECommandForge/UECommandForge.uplugin`
-- 생성: `Plugins/UECommandForge/Source/UECommandForgeRuntime/UECommandForgeRuntime.Build.cs`
-- 생성: `Plugins/UECommandForge/Source/UECommandForgeRuntime/Public/CommandForgeTypes.h`
-- 생성: `Plugins/UECommandForge/Source/UECommandForgeRuntime/Private/CommandForgeTypes.cpp`
+- 생성: `sample/Plugins/UECommandForge/UECommandForge.uplugin`
+- 생성: `sample/Plugins/UECommandForge/Source/UECommandForgeRuntime/UECommandForgeRuntime.Build.cs`
+- 생성: `sample/Plugins/UECommandForge/Source/UECommandForgeRuntime/Public/CommandForgeTypes.h`
+- 생성: `sample/Plugins/UECommandForge/Source/UECommandForgeRuntime/Private/CommandForgeTypes.cpp`
 
-- [ ] **스텝 1: `UECommandForge.uplugin` 작성**
+- [x] **스텝 1: `UECommandForge.uplugin` 작성**
 
 ```json
 {
@@ -361,7 +361,7 @@ git commit -m "feat: cross-platform Shell wrappers for UnrealEditor-Cmd"
 }
 ```
 
-- [ ] **스텝 2: `UECommandForgeRuntime.Build.cs` 작성**
+- [x] **스텝 2: `UECommandForgeRuntime.Build.cs` 작성**
 
 ```csharp
 using UnrealBuildTool;
@@ -376,7 +376,7 @@ public class UECommandForgeRuntime : ModuleRules
 }
 ```
 
-- [ ] **스텝 3: `CommandForgeTypes.h` 작성**
+- [x] **스텝 3: `CommandForgeTypes.h` 작성**
 
 ```cpp
 #pragma once
@@ -405,7 +405,7 @@ struct UECOMMANDFORGERUNTIME_API FCommandForgeError
 };
 ```
 
-- [ ] **스텝 4: `CommandForgeTypes.cpp` 작성**
+- [x] **스텝 4: `CommandForgeTypes.cpp` 작성**
 
 ```cpp
 #include "CommandForgeTypes.h"
@@ -414,18 +414,18 @@ struct UECOMMANDFORGERUNTIME_API FCommandForgeError
 IMPLEMENT_MODULE(FDefaultModuleImpl, UECommandForgeRuntime);
 ```
 
-- [ ] **스텝 5: 커밋 준비 — 사용자에게 아래 내용을 보여주고 승인 요청**
+- [x] **스텝 5: 커밋 준비 — 사용자에게 아래 내용을 보여주고 승인 요청**
 
 ```
 커밋 메시지: feat: UECommandForge plugin scaffold + Runtime types
-대상 파일: Plugins/UECommandForge/UECommandForge.uplugin
-          Plugins/UECommandForge/Source/UECommandForgeRuntime/
+대상 파일: sample/Plugins/UECommandForge/UECommandForge.uplugin
+          sample/Plugins/UECommandForge/Source/UECommandForgeRuntime/
 ```
 
 승인 후 실행:
 ```bash
-git add Plugins/UECommandForge/UECommandForge.uplugin \
-        Plugins/UECommandForge/Source/UECommandForgeRuntime
+git add sample/Plugins/UECommandForge/UECommandForge.uplugin \
+        sample/Plugins/UECommandForge/Source/UECommandForgeRuntime
 git commit -m "feat: UECommandForge plugin scaffold + Runtime types"
 ```
 
@@ -434,12 +434,12 @@ git commit -m "feat: UECommandForge plugin scaffold + Runtime types"
 ## 태스크 4: 에디터 모듈 스켈레톤 + `build_plugin.sh`
 
 **파일:**
-- 생성: `Plugins/UECommandForge/Source/UECommandForgeEditor/UECommandForgeEditor.Build.cs`
-- 생성: `Plugins/UECommandForge/Source/UECommandForgeEditor/Public/UECommandForgeEditorModule.h`
-- 생성: `Plugins/UECommandForge/Source/UECommandForgeEditor/Private/UECommandForgeEditorModule.cpp`
+- 생성: `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/UECommandForgeEditor.Build.cs`
+- 생성: `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Public/UECommandForgeEditorModule.h`
+- 생성: `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/UECommandForgeEditorModule.cpp`
 - 생성: `tools/ue/build_plugin.sh`
 
-- [ ] **스텝 1: `UECommandForgeEditor.Build.cs` 작성**
+- [x] **스텝 1: `UECommandForgeEditor.Build.cs` 작성**
 
 ```csharp
 using UnrealBuildTool;
@@ -467,7 +467,7 @@ public class UECommandForgeEditor : ModuleRules
 }
 ```
 
-- [ ] **스텝 2: `UECommandForgeEditorModule.h` 작성**
+- [x] **스텝 2: `UECommandForgeEditorModule.h` 작성**
 
 ```cpp
 #pragma once
@@ -482,7 +482,7 @@ public:
 };
 ```
 
-- [ ] **스텝 3: `UECommandForgeEditorModule.cpp` 작성**
+- [x] **스텝 3: `UECommandForgeEditorModule.cpp` 작성**
 
 ```cpp
 #include "UECommandForgeEditorModule.h"
@@ -491,7 +491,7 @@ public:
 IMPLEMENT_MODULE(FUECommandForgeEditorModule, UECommandForgeEditor);
 ```
 
-- [ ] **스텝 4: `tools/ue/build_plugin.sh` 작성**
+- [x] **스텝 4: `tools/ue/build_plugin.sh` 작성**
 
 ```bash
 #!/usr/bin/env bash
@@ -506,8 +506,8 @@ case "${UE_PLATFORM}" in
   Win64) RUN_UAT="${ENGINE_DIR}/Build/BatchFiles/RunUAT.bat" ;;
 esac
 
-PLUGIN="${REPO_ROOT}/Plugins/UECommandForge/UECommandForge.uplugin"
-OUT="${REPO_ROOT}/Saved/PluginBuild"
+PLUGIN="${REPO_ROOT}/sample/Plugins/UECommandForge/UECommandForge.uplugin"
+OUT="${REPO_ROOT}/sample/Saved/PluginBuild"
 mkdir -p "${OUT}"
 
 exec "${RUN_UAT}" BuildPlugin \
@@ -517,13 +517,13 @@ exec "${RUN_UAT}" BuildPlugin \
   -Rocket
 ```
 
-- [ ] **스텝 5: 스크립트 실행 권한 부여**
+- [x] **스텝 5: 스크립트 실행 권한 부여**
 
 ```bash
 chmod +x tools/ue/build_plugin.sh
 ```
 
-- [ ] **스텝 6: 빌드로 스캐폴딩 컴파일 검증**
+- [x] **스텝 6: 빌드로 스캐폴딩 컴파일 검증**
 
 ```bash
 ./tools/ue/build_plugin.sh
@@ -531,17 +531,17 @@ chmod +x tools/ue/build_plugin.sh
 
 예상 결과: BuildPlugin 성공 (아직 Commandlet 없음, 두 모듈이 깨끗하게 링크). 실패 시 모듈 의존성을 수정한 뒤 진행.
 
-- [ ] **스텝 7: 커밋 준비 — 사용자에게 아래 내용을 보여주고 승인 요청**
+- [x] **스텝 7: 커밋 준비 — 사용자에게 아래 내용을 보여주고 승인 요청**
 
 ```
 커밋 메시지: feat: Editor module skeleton + RunUAT BuildPlugin wrapper
-대상 파일: Plugins/UECommandForge/Source/UECommandForgeEditor/
+대상 파일: sample/Plugins/UECommandForge/Source/UECommandForgeEditor/
           tools/ue/build_plugin.sh
 ```
 
 승인 후 실행:
 ```bash
-git add Plugins/UECommandForge/Source/UECommandForgeEditor tools/ue/build_plugin.sh
+git add sample/Plugins/UECommandForge/Source/UECommandForgeEditor tools/ue/build_plugin.sh
 git commit -m "feat: Editor module skeleton + RunUAT BuildPlugin wrapper"
 ```
 
@@ -550,14 +550,14 @@ git commit -m "feat: Editor module skeleton + RunUAT BuildPlugin wrapper"
 ## 태스크 5: JsonReportWriter (TDD — 테스트 먼저)
 
 **파일:**
-- 생성: `Plugins/UECommandForge/Source/UECommandForgeEditor/Public/Reports/JsonReportWriter.h`
-- 생성: `Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Reports/JsonReportWriter.cpp`
-- 생성: `Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/JsonReportWriterTest.cpp`
+- 생성: `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Public/Reports/JsonReportWriter.h`
+- 생성: `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Reports/JsonReportWriter.cpp`
+- 생성: `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/JsonReportWriterTest.cpp`
 - 생성: `tools/ue/run_automation_tests.sh`
 
 Result JSON 봉투 형식은 `ue_commandlet_based_llm_automation_plan.md` §11에 정의되어 있다.
 
-- [ ] **스텝 1: 실패 자동화 테스트 작성 (RED)**
+- [x] **스텝 1: 실패 자동화 테스트 작성 (RED)**
 
 ```cpp
 // Tests/JsonReportWriterTest.cpp
@@ -592,7 +592,7 @@ bool FUECommandForgeJsonReportWriterTest::RunTest(const FString& Parameters)
 }
 ```
 
-- [ ] **스텝 2: `JsonReportWriter.h` 작성**
+- [x] **스텝 2: `JsonReportWriter.h` 작성**
 
 ```cpp
 #pragma once
@@ -621,7 +621,7 @@ namespace UECommandForge
 }
 ```
 
-- [ ] **스텝 3: `JsonReportWriter.cpp` 작성**
+- [x] **스텝 3: `JsonReportWriter.cpp` 작성**
 
 ```cpp
 #include "Reports/JsonReportWriter.h"
@@ -679,7 +679,7 @@ namespace UECommandForge
 }
 ```
 
-- [ ] **스텝 4: `tools/ue/run_automation_tests.sh` 작성**
+- [x] **스텝 4: `tools/ue/run_automation_tests.sh` 작성**
 
 ```bash
 #!/usr/bin/env bash
@@ -698,7 +698,7 @@ mkdir -p "${REPORT_DIR}"
   -log -stdout -FullStdOutLogOutput
 ```
 
-- [ ] **스텝 5: 실행 권한 부여 및 테스트 실행 (GREEN)**
+- [x] **스텝 5: 실행 권한 부여 및 테스트 실행 (GREEN)**
 
 ```bash
 chmod +x tools/ue/run_automation_tests.sh
@@ -707,21 +707,21 @@ chmod +x tools/ue/run_automation_tests.sh
 
 예상 결과: `FUECommandForgeJsonReportWriterTest` 통과. JSON 직렬화 형식(공백·들여쓰기)이 맞지 않으면 Writer가 아닌 테스트의 assertion 문자열을 UE 5.7 실제 출력에 맞춰 조정한다.
 
-- [ ] **스텝 6: 커밋 준비 — 사용자에게 아래 내용을 보여주고 승인 요청**
+- [x] **스텝 6: 커밋 준비 — 사용자에게 아래 내용을 보여주고 승인 요청**
 
 ```
 커밋 메시지: feat: JsonReportWriter with automation test
-대상 파일: Plugins/UECommandForge/Source/UECommandForgeEditor/Public/Reports/
-          Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Reports/
-          Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/
+대상 파일: sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Public/Reports/
+          sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Reports/
+          sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/
           tools/ue/run_automation_tests.sh
 ```
 
 승인 후 실행:
 ```bash
-git add Plugins/UECommandForge/Source/UECommandForgeEditor/Public/Reports \
-        Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Reports \
-        Plugins/UECommandForge/Source/UECommandForgeEditor/Tests \
+git add sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Public/Reports \
+        sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Reports \
+        sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests \
         tools/ue/run_automation_tests.sh
 git commit -m "feat: JsonReportWriter with automation test"
 ```
@@ -731,10 +731,10 @@ git commit -m "feat: JsonReportWriter with automation test"
 ## 태스크 6: HelloCommandlet — 엔드투엔드 스모크
 
 **파일:**
-- 생성: `Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Commandlets/HelloCommandlet.h`
-- 생성: `Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Commandlets/HelloCommandlet.cpp`
+- 생성: `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Commandlets/HelloCommandlet.h`
+- 생성: `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Commandlets/HelloCommandlet.cpp`
 
-- [ ] **스텝 1: `HelloCommandlet.h` 작성**
+- [x] **스텝 1: `HelloCommandlet.h` 작성**
 
 ```cpp
 #pragma once
@@ -753,7 +753,7 @@ public:
 };
 ```
 
-- [ ] **스텝 2: `HelloCommandlet.cpp` 작성**
+- [x] **스텝 2: `HelloCommandlet.cpp` 작성**
 
 ```cpp
 #include "HelloCommandlet.h"
@@ -791,7 +791,7 @@ int32 UHelloCommandlet::Main(const FString& Params)
 }
 ```
 
-- [ ] **스텝 3: 플러그인 재빌드**
+- [x] **스텝 3: 플러그인 재빌드**
 
 ```bash
 ./tools/ue/build_plugin.sh
@@ -799,7 +799,7 @@ int32 UHelloCommandlet::Main(const FString& Params)
 
 예상 결과: 성공.
 
-- [ ] **스텝 4: 엔드투엔드 스모크 실행**
+- [x] **스텝 4: 엔드투엔드 스모크 실행**
 
 ```bash
 ./tools/ue/hello.sh
@@ -807,7 +807,7 @@ int32 UHelloCommandlet::Main(const FString& Params)
 
 예상 결과: `Saved/CodexReports/Hello_<UTC>.json` 경로를 출력하고 종료 코드 0으로 종료.
 
-- [ ] **스텝 5: Result JSON 계약 검증**
+- [x] **스텝 5: Result JSON 계약 검증**
 
 ```bash
 jq -e '.ok == true and .commandlet == "Hello" and .validation.engine_boot == "ok"' \
@@ -816,17 +816,17 @@ jq -e '.ok == true and .commandlet == "Hello" and .validation.engine_boot == "ok
 
 예상 결과: `true` 출력 후 종료 코드 0.
 
-- [ ] **스텝 6: 커밋 준비 — 사용자에게 아래 내용을 보여주고 승인 요청**
+- [x] **스텝 6: 커밋 준비 — 사용자에게 아래 내용을 보여주고 승인 요청**
 
 ```
 커밋 메시지: feat: HelloCommandlet — end-to-end Result JSON smoke
-대상 파일: Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Commandlets/HelloCommandlet.h
-          Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Commandlets/HelloCommandlet.cpp
+대상 파일: sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Commandlets/HelloCommandlet.h
+          sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Commandlets/HelloCommandlet.cpp
 ```
 
 승인 후 실행:
 ```bash
-git add Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Commandlets/HelloCommandlet.*
+git add sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Commandlets/HelloCommandlet.*
 git commit -m "feat: HelloCommandlet — end-to-end Result JSON smoke"
 ```
 
