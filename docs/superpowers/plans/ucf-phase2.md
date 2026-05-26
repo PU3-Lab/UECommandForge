@@ -211,7 +211,7 @@ bool FAIFlowSpecParserTest::RunTest(const FString& Parameters)
 - [ ] **Step 2: 테스트 실행 — 실패 확인**
 
 ```bash
-./tools/ue/run_automation_tests.sh
+./tools/test/run_automation_tests.sh
 ```
 
 예상: `FAIFlowSpecParserTest` FAIL — `FAIFlowSpecParser` 미정의.
@@ -262,7 +262,7 @@ namespace UECommandForge
 - [ ] **Step 5: 테스트 재실행 — 통과 확인**
 
 ```bash
-./tools/ue/run_automation_tests.sh
+./tools/test/run_automation_tests.sh
 ```
 
 예상: `FAIFlowSpecParserTest` PASS.
@@ -316,7 +316,7 @@ bool FAIFlowSpecValidatorTest::RunTest(const FString& Parameters)
 - [ ] **Step 2: 테스트 실행 — 실패 확인**
 
 ```bash
-./tools/ue/run_automation_tests.sh
+./tools/test/run_automation_tests.sh
 ```
 
 예상: `FAIFlowSpecValidatorTest` FAIL — `FAIFlowSpecValidator` 미정의.
@@ -404,7 +404,7 @@ namespace UECommandForge
 - [ ] **Step 5: 테스트 재실행 — 통과 확인**
 
 ```bash
-./tools/ue/run_automation_tests.sh
+./tools/test/run_automation_tests.sh
 ```
 
 예상: `FAIFlowSpecValidatorTest` PASS.
@@ -427,7 +427,7 @@ git commit -m "feat: AIFlowSpecValidator — 필수 필드·경로 접두사·Ta
 ./tools/ue/build_plugin.sh
 
 # 2. 자동화 테스트 (Parser + Validator 모두 통과)
-./tools/ue/run_automation_tests.sh
+./tools/test/run_automation_tests.sh
 
 # 3. guard_ai.json 파서 통합 확인
 ./tools/ue/run_commandlet.sh ParseSpecCheck -SpecFile="${PWD}/specs/examples/guard_ai.json"

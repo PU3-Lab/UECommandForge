@@ -59,7 +59,7 @@ bool FMapActorPlacerTest::RunTest(const FString& Parameters)
 - [ ] **Step 2: 테스트 실행 — 실패 확인**
 
 ```bash
-./tools/ue/run_automation_tests.sh
+./tools/test/run_automation_tests.sh
 ```
 
 예상: `FMapActorPlacerTest` FAIL — `FMapActorPlacer` 미정의.
@@ -183,7 +183,7 @@ namespace UECommandForge
 - [ ] **Step 5: 테스트 재실행 — 통과 확인**
 
 ```bash
-./tools/ue/run_automation_tests.sh
+./tools/test/run_automation_tests.sh
 ```
 
 예상: `FMapActorPlacerTest` PASS.
@@ -366,7 +366,7 @@ git commit -m "feat: PlaceActorCommandlet + Shell Wrapper"
 ./tools/ue/build_plugin.sh
 
 # 2. 자동화 테스트
-./tools/ue/run_automation_tests.sh
+./tools/test/run_automation_tests.sh
 
 # 3. Actor 배치
 ./tools/ue/place_actor.sh specs/examples/guard_ai.json

@@ -269,7 +269,7 @@ namespace UECommandForge
 - [ ] **Step 4: 테스트 실행 — 스파이크 완료 후 통과 확인**
 
 ```bash
-./tools/ue/run_automation_tests.sh
+./tools/test/run_automation_tests.sh
 ```
 
 예상: 어댑터 구현 완료 후 `FStateTreeBuilderTest` PASS.
@@ -336,7 +336,7 @@ git commit -m "feat: CreateStateTreeCommandlet + Shell Wrapper"
 ./tools/ue/build_plugin.sh
 
 # 2. 자동화 테스트
-./tools/ue/run_automation_tests.sh
+./tools/test/run_automation_tests.sh
 
 # 3. StateTree 생성
 ./tools/ue/create_statetree.sh specs/examples/guard_ai.json

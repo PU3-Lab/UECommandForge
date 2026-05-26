@@ -63,7 +63,7 @@ bool FAIFlowBinderTest::RunTest(const FString& Parameters)
 - [ ] **Step 2: 테스트 실행 — 실패 확인**
 
 ```bash
-./tools/ue/run_automation_tests.sh
+./tools/test/run_automation_tests.sh
 ```
 
 예상: `FAIFlowBinderTest` FAIL — `FAIFlowBinder` 미정의.
@@ -192,7 +192,7 @@ namespace UECommandForge
 - [ ] **Step 5: 테스트 재실행 — 통과 확인**
 
 ```bash
-./tools/ue/run_automation_tests.sh
+./tools/test/run_automation_tests.sh
 ```
 
 - [ ] **Step 6: 커밋**
@@ -310,7 +310,7 @@ namespace UECommandForge
 - [ ] **Step 4: 테스트 실행 — 통과 확인**
 
 ```bash
-./tools/ue/run_automation_tests.sh
+./tools/test/run_automation_tests.sh
 ```
 
 - [ ] **Step 5: 커밋**
@@ -371,7 +371,7 @@ git commit -m "feat: BindAIFlow·ValidateAIFlow Commandlet + Shell Wrapper"
 ./tools/ue/build_plugin.sh
 
 # 2. 자동화 테스트
-./tools/ue/run_automation_tests.sh
+./tools/test/run_automation_tests.sh
 
 # 3. 바인딩
 ./tools/ue/bind_ai_flow.sh specs/examples/guard_ai.json
