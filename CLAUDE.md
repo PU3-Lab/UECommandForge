@@ -29,6 +29,12 @@
 - `~/.claude/` 등 전역 경로에 프로젝트 관련 문서를 저장하지 않는다.
 - 새 문서 유형이 필요하면 `docs/` 하위에 적절한 서브디렉토리를 만든다.
 
+## 코드 리뷰 규칙
+
+- **코드 품질 리뷰는 `codex:codex-rescue` 에이전트를 사용한다.**
+  - 리뷰 수행 시 `ecc:cpp-reviewer` 등 해당 언어 스킬을 활용하도록 지시한다.
+  - `ecc:cpp-reviewer` 서브에이전트를 직접 호출하지 않는다.
+
 ## 참고
 
 - 기획서: `ue_commandlet_based_llm_automation_plan.md`
