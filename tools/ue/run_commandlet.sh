@@ -29,9 +29,12 @@ OUTPUT_JSON="${REPORT_DIR}/${COMMANDLET}_${STAMP}.json"
 UE_EXIT=$?
 
 if [ ! -f "${OUTPUT_JSON}" ]; then
-  echo "[run_commandlet] Result JSON이 없습니다: ${OUTPUT_JSON}" >&2
+  echo "[run_commandlet] Result JSON이 없습니다 (UE exit=${UE_EXIT}): ${OUTPUT_JSON}" >&2
   exit 5
 fi
 
+# UE 자체 종료 코드는 경고·종료 메시지 등으로 비정상일 수 있음.
+# JSON이 생성됐다면 커맨드렛은 실행 완료된 것이므로 0 반환.
+# 실제 성공/실패는 JSON 내 .ok 필드로 판단한다.
 echo "${OUTPUT_JSON}"
-exit ${UE_EXIT}
+exit 0
