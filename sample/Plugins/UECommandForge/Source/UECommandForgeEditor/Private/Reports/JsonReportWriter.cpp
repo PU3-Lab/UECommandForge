@@ -48,6 +48,6 @@ namespace UECommandForge
 
         const FString Dir = FPaths::GetPath(OutPath);
         FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*Dir);
-        return FFileHelper::SaveStringToFile(Serialized, *OutPath);
+        return FFileHelper::SaveStringToFile(Serialized, *OutPath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
     }
 }
