@@ -1,7 +1,7 @@
 #include "Commandlets/CompileBlueprintsCommandlet.h"
 #include "Reports/JsonReportWriter.h"
 #include "CommandForgeTypes.h"
-#include "KismetEditorUtilities.h"
+#include "Kismet2/KismetEditorUtilities.h"
 #include "Engine/Blueprint.h"
 #include "Misc/PackageName.h"
 

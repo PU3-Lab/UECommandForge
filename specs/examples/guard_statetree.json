@@ -1,0 +1,7 @@
+{
+  "assetPath": "/Game/AI/StateTrees/ST_Guard",
+  "tasks": [
+    { "taskType": "Wait",   "stateName": "Idle" },
+    { "taskType": "MoveTo", "stateName": "Patrol" }
+  ]
+}

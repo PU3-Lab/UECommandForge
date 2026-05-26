@@ -1,5 +1,5 @@
 #include "Builders/AIControllerBlueprintBuilder.h"
-#include "KismetEditorUtilities.h"
+#include "Kismet2/KismetEditorUtilities.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Misc/PackageName.h"
 #include "UObject/SavePackage.h"
@@ -62,9 +62,9 @@ namespace UECommandForge
         SaveArgs.TopLevelFlags = RF_Public | RF_Standalone;
         const FString FileName = FPackageName::LongPackageNameToFilename(
             Spec.AssetPath, FPackageName::GetAssetPackageExtension());
-        const ESavePackageResult SaveResult = UPackage::SavePackage(Package, BP, *FileName, SaveArgs);
+        const bool bSavedResult = UPackage::SavePackage(Package, BP, *FileName, SaveArgs);
 
-        const bool bSavedOk = (SaveResult == ESavePackageResult::Success) &&
+        const bool bSavedOk = bSavedResult &&
                                FPlatformFileManager::Get().GetPlatformFile().FileExists(*FileName);
         OutValidation.Add(TEXT("asset_on_disk"), bSavedOk ? TEXT("true") : TEXT("false"));
         if (!bSavedOk)

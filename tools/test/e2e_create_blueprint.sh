@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Phase 3 end-to-end smoke test
-# 사용법: ./tools/test/phase3_blueprint.sh <spec_file>
-#   예시: ./tools/test/phase3_blueprint.sh specs/examples/guard_ai.json
+# End-to-end smoke test — CreateCharacterBP / CreateAIControllerBP 커맨드렛 검증
+# 사용법: ./tools/test/e2e_create_blueprint.sh <spec_file>
+#   예시: ./tools/test/e2e_create_blueprint.sh specs/examples/guard_ai.json
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -24,7 +24,7 @@ check() {
     fi
 }
 
-echo "=== Phase 3 Smoke Test ==="
+echo "=== E2E Test — Blueprint 생성 ==="
 echo "Spec: ${SPEC_FILE}"
 echo ""
 
