@@ -46,7 +46,7 @@ namespace UECommandForge
             return StateTree;
         }
 
-        bool ComponentUsesStateTree(UStateTreeComponent* Component, UStateTree* ExpectedStateTree)
+        bool ComponentUsesStateTree(UStateTreeComponent* Component, const UStateTree* ExpectedStateTree)
         {
             if (!Component || !ExpectedStateTree)
             {
@@ -65,7 +65,7 @@ namespace UECommandForge
             return StateTreeRef && StateTreeRef->GetStateTree() == ExpectedStateTree;
         }
 
-        bool HasBoundStateTreeComponent(UBlueprint* CharacterBlueprint, UStateTree* StateTree)
+        bool HasBoundStateTreeComponent(UBlueprint* CharacterBlueprint, const UStateTree* StateTree)
         {
             if (!CharacterBlueprint || !CharacterBlueprint->SimpleConstructionScript)
             {

@@ -17,6 +17,8 @@
 #include "UObject/GarbageCollection.h"
 #include "UObject/SavePackage.h"
 
+#include <algorithm>
+
 namespace UECommandForge
 {
     namespace
@@ -66,12 +68,14 @@ namespace UECommandForge
 
         UStateTreeState* FindChildState(UStateTreeState* RootState, const FName StateName)
         {
-            for (TObjectPtr<UStateTreeState>& Child : RootState->Children)
-            {
-                if (Child && Child->Name == StateName)
+            const auto Child = std::find_if(RootState->Children.begin(), RootState->Children.end(),
+                [StateName](const TObjectPtr<UStateTreeState>& Candidate)
                 {
-                    return Child.Get();
-                }
+                    return Candidate && Candidate->Name == StateName;
+                });
+            if (Child != RootState->Children.end())
+            {
+                return Child->Get();
             }
             return nullptr;
         }

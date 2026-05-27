@@ -67,7 +67,7 @@ namespace UECommandForge
         void RemoveExistingPlacedActors(UWorld* World, UClass* ActorClass)
         {
             TArray<AActor*> ActorsToRemove;
-            for (ULevel* Level : World->GetLevels())
+            for (const ULevel* Level : World->GetLevels())
             {
                 if (!Level)
                 {

@@ -14,6 +14,8 @@
 #include "UObject/UnrealType.h"
 #include "Validators/AIFlowValidator.h"
 
+#include <algorithm>
+
 namespace UECommandForge
 {
     namespace
@@ -67,19 +69,21 @@ namespace UECommandForge
             }
 
             USimpleConstructionScript* SCS = CharacterBlueprint->SimpleConstructionScript;
-            for (USCS_Node* Node : SCS->GetAllNodes())
-            {
-                if (Node && Node->GetVariableName() == StateTreeComponentName)
+            const TArray<USCS_Node*>& Nodes = SCS->GetAllNodes();
+            const auto ExistingNode = std::find_if(Nodes.begin(), Nodes.end(), [](const USCS_Node* Node)
                 {
-                    UStateTreeComponent* ExistingComponent = Cast<UStateTreeComponent>(Node->ComponentTemplate);
-                    if (!ExistingComponent)
-                    {
-                        AddBinderError(OutErrors, TEXT("STATETREE_COMPONENT_TYPE_MISMATCH"),
-                            TEXT("CommandForgeStateTree SCS 노드가 StateTreeComponent가 아닙니다."),
-                            TEXT("StateTree.AssetPath"));
-                    }
-                    return ExistingComponent;
+                    return Node && Node->GetVariableName() == StateTreeComponentName;
+                });
+            if (ExistingNode != Nodes.end())
+            {
+                UStateTreeComponent* ExistingComponent = Cast<UStateTreeComponent>((*ExistingNode)->ComponentTemplate);
+                if (!ExistingComponent)
+                {
+                    AddBinderError(OutErrors, TEXT("STATETREE_COMPONENT_TYPE_MISMATCH"),
+                        TEXT("CommandForgeStateTree SCS 노드가 StateTreeComponent가 아닙니다."),
+                        TEXT("StateTree.AssetPath"));
                 }
+                return ExistingComponent;
             }
 
             USCS_Node* NewNode = SCS->CreateNode(UStateTreeComponent::StaticClass(), StateTreeComponentName);
