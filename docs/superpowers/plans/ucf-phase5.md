@@ -9,6 +9,8 @@
 
 **기술 스택:** UE 5.7, `BlueprintGraph`, `KismetCompiler`, `GameplayStateTree` (StateTree 컴포넌트), CDO 리플렉션.
 
+**2026-05-27 구현 결과:** Phase 5 완료. UE 5.7의 `UStateTreeComponent::SetStateTree()`는 SCS 템플릿 컴포넌트에서 owner 기반 검증을 수행하므로, 실제 구현은 `StateTreeRef` UPROPERTY를 리플렉션으로 설정하고 validator도 같은 참조를 읽어 검증한다. 자동화 테스트는 `UECommandForge.Builders.AIFlowBinder.BindsAndValidatesFlow`로 통합했다.
+
 ---
 
 ## 파일 구조
@@ -21,7 +23,7 @@
 | `Plugins/.../Private/Validators/AIFlowValidator.cpp` | 구현 |
 | `Plugins/.../Private/Commandlets/BindAIFlowCommandlet.h/.cpp` | 바인딩 Commandlet |
 | `Plugins/.../Private/Commandlets/ValidateAIFlowCommandlet.h/.cpp` | 검증 Commandlet |
-| `Plugins/.../Tests/AIFlowBinderTest.cpp` | 자동화 테스트 |
+| `Plugins/.../Tests/AIFlowBindingTest.cpp` | 바인딩·검증 통합 자동화 테스트 |
 | `tools/ue/bind_ai_flow.sh` | 바인딩 Shell Wrapper |
 | `tools/ue/validate_ai_flow.sh` | 검증 Shell Wrapper |
 
@@ -375,12 +377,29 @@ git commit -m "feat: BindAIFlow·ValidateAIFlow Commandlet + Shell Wrapper"
 
 # 3. 바인딩
 ./tools/ue/bind_ai_flow.sh specs/examples/guard_ai.json
-jq -e '.ok == true' "$(ls -t Saved/CodexReports/BindAIFlow_*.json | head -1)"
+jq -e '.ok == true' "$(ls -t sample/Saved/CodexReports/BindAIFlow_*.json | head -1)"
 
 # 4. 검증
 ./tools/ue/validate_ai_flow.sh specs/examples/guard_ai.json
-jq -e '.ok and .validation.ai_controller_class == "ok" and .validation.auto_possess_ai == "ok"' \
-  "$(ls -t Saved/CodexReports/ValidateAIFlow_*.json | head -1)"
+jq -e '.ok and .validation.ai_controller_class == "ok" and .validation.auto_possess_ai == "ok" and .validation.statetree_component == "ok"' \
+  "$(ls -t sample/Saved/CodexReports/ValidateAIFlow_*.json | head -1)"
+
+# 5. 전체 smoke
+./tools/test/smoke/ai_flow_binding.sh specs/examples/guard_ai.json
 ```
 
-Phase 5 완료 조건: CDO에서 `AIControllerClass`와 `AutoPossessAI`가 Spec 값과 일치함이 검증됨.
+Phase 5 완료 조건: CDO에서 `AIControllerClass`와 `AutoPossessAI`가 Spec 값과 일치하고, Character Blueprint SCS의 `UStateTreeComponent`가 Spec의 StateTree를 참조함이 검증됨.
+
+## Phase 5 검증 결과
+
+- `./tools/ue/build_plugin.sh` 성공
+- 샘플 `UnrealEditor` 타깃 빌드 성공
+- `./tools/test/automation/run.sh` PASS 10 / FAIL 0 / SKIP 0
+- `./tools/test/smoke/ai_flow_binding.sh specs/examples/guard_ai.json` PASS 8 / FAIL 0
+- 생성/갱신 에셋:
+  - `sample/Content/AI/Characters/BP_Guard.uasset`
+  - `sample/Content/AI/Controllers/BP_GuardController.uasset`
+  - `sample/Content/AI/StateTrees/ST_Guard.uasset`
+  - `sample/Content/Tests/BP_TestCharacter.uasset`
+  - `sample/Content/Tests/BP_TestController.uasset`
+  - `sample/Content/Tests/ST_TestTree.uasset`

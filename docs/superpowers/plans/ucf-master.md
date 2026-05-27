@@ -42,7 +42,7 @@ jq -e '.ok and .validation.actor_placed and .validation.blueprint_compile == "pa
 | 2 | 완료 | Guard AI 예제 Spec 파싱·검증 경로에서 재검증 |
 | 3 | 완료 | `./tools/test/smoke/create_blueprint.sh specs/examples/guard_ai.json` PASS 10 / FAIL 0 |
 | 4 | 완료 | `./tools/test/automation/run.sh` PASS 9 / FAIL 0, `CreateStateTree` 리포트 `ok: true` |
-| 5 | 대기 | Phase 4 완료 후 진행 |
+| 5 | 완료 | `./tools/test/automation/run.sh` PASS 10 / FAIL 0, `./tools/test/smoke/ai_flow_binding.sh specs/examples/guard_ai.json` PASS 8 / FAIL 0 |
 | 6 | 대기 | Phase 5 완료 후 진행 |
 | 7 | 대기 | Phase 6 완료 후 진행 |
 
@@ -68,6 +68,19 @@ jq -e '.ok and .validation.actor_placed and .validation.blueprint_compile == "pa
   - `./tools/test/automation/run.sh` PASS 9 / FAIL 0 / SKIP 0
   - `./tools/test/smoke/create_statetree.sh specs/examples/guard_ai.json` PASS 5 / FAIL 0
   - `sample/Saved/CodexReports/CreateStateTree_20260527T091001Z.json` 기준 `ok: true`, `compile_status: ok`, `asset_on_disk: true`, `asset_in_registry: true`
+
+### 2026-05-27 Phase 5 마감 노트
+
+- AI Flow 바인딩 흐름을 `AIFlowBinder`, `AIFlowValidator`, `BindAIFlowCommandlet`, `ValidateAIFlowCommandlet`와 `tools/ue/bind_ai_flow.sh`, `tools/ue/validate_ai_flow.sh`로 추가했다.
+- `UStateTreeComponent::SetStateTree()`가 SCS 템플릿에서 owner 검증을 수행하는 UE 5.7 동작을 피하기 위해, 바인더는 `StateTreeRef` UPROPERTY를 리플렉션으로 설정하고 validator도 같은 참조를 읽어 검증한다.
+- 샘플 에셋 `BP_Guard.uasset`, `BP_GuardController.uasset`, `ST_Guard.uasset`와 자동화 테스트 에셋 `BP_TestCharacter.uasset`, `BP_TestController.uasset`, `ST_TestTree.uasset`를 커밋 대상에 포함한다.
+- 검증 결과:
+  - `./tools/ue/build_plugin.sh` 성공
+  - 샘플 `UnrealEditor` 타깃 빌드 성공
+  - `./tools/test/automation/run.sh` PASS 10 / FAIL 0 / SKIP 0
+  - `./tools/test/smoke/ai_flow_binding.sh specs/examples/guard_ai.json` PASS 8 / FAIL 0
+  - `sample/Saved/CodexReports/BindAIFlow_20260527T094750Z.json` 기준 `ok: true`, `ai_controller_class: ok`, `auto_possess_ai: ok`, `statetree_component: ok`
+  - `sample/Saved/CodexReports/ValidateAIFlow_20260527T094757Z.json` 기준 `ok: true`, `ai_controller_class: ok`, `auto_possess_ai: ok`, `statetree_component: ok`
 
 ---
 
