@@ -35,7 +35,7 @@
 | `tools/ue/create_character_bp.sh` | Character BP Shell Wrapper |
 | `tools/ue/create_ai_controller.sh` | AIController BP Shell Wrapper |
 | `tools/ue/compile_blueprints.sh` | 일괄 컴파일 Shell Wrapper |
-| `tools/test/phase3_blueprint.sh` | Phase 3 end-to-end Smoke Test |
+| `tools/test/smoke/create_blueprint.sh` | Phase 3 end-to-end Smoke Test |
 
 ---
 
@@ -89,7 +89,7 @@ bool FCharacterBlueprintBuilderTest::RunTest(const FString& Parameters)
 - [ ] **Step 2: 테스트 실행 — 실패 확인**
 
 ```bash
-./tools/test/run_automation_tests.sh
+./tools/test/automation/run.sh
 ```
 
 예상: `FCharacterBlueprintBuilderTest` FAIL.
@@ -219,7 +219,7 @@ namespace UECommandForge
 - [ ] **Step 5: 테스트 재실행 — 통과 확인**
 
 ```bash
-./tools/test/run_automation_tests.sh
+./tools/test/automation/run.sh
 ```
 
 예상: `FCharacterBlueprintBuilderTest` PASS.
@@ -515,19 +515,19 @@ git commit -m "feat: Blueprint 생성/컴파일 Commandlet 3종 + Shell Wrapper"
 
 ## Task 4: Smoke Test 스크립트
 
-- [ ] **Step 1: `tools/test/phase3_blueprint.sh` 작성**
+- [ ] **Step 1: `tools/test/smoke/create_blueprint.sh` 작성**
 
 ```bash
 #!/usr/bin/env bash
-# Phase 3 end-to-end smoke test
-# 사용법: ./tools/test/phase3_blueprint.sh <spec_file>
-#   예시: ./tools/test/phase3_blueprint.sh specs/examples/guard_ai.json
+# Blueprint 생성 end-to-end smoke test (Character + AIController)
+# 사용법: ./tools/test/smoke/create_blueprint.sh <spec_file>
+#   예시: ./tools/test/smoke/create_blueprint.sh specs/examples/guard_ai.json
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SAMPLE_DIR="$(cd "${SCRIPT_DIR}/../../sample" && pwd)"
-UE_TOOLS="${SCRIPT_DIR}/../ue"
-SPEC_FILE="${1:-${SCRIPT_DIR}/../../specs/examples/guard_ai.json}"
+SAMPLE_DIR="$(cd "${SCRIPT_DIR}/../../../sample" && pwd)"
+UE_TOOLS="${SCRIPT_DIR}/../../ue"
+SPEC_FILE="${1:-${SCRIPT_DIR}/../../../specs/examples/guard_ai.json}"
 
 PASS=0
 FAIL=0
@@ -544,7 +544,7 @@ check() {
     fi
 }
 
-echo "=== Phase 3 Smoke Test ==="
+echo "=== Blueprint Create Smoke Test ==="
 echo "Spec: ${SPEC_FILE}"
 echo ""
 
@@ -597,13 +597,13 @@ fi
 - [ ] **Step 2: 실행 권한 부여**
 
 ```bash
-chmod +x tools/test/phase3_blueprint.sh
+chmod +x tools/test/smoke/create_blueprint.sh
 ```
 
 - [ ] **Step 3: 커밋**
 
 ```bash
-git add tools/test/phase3_blueprint.sh
+git add tools/test/smoke/create_blueprint.sh
 git commit -m "test: Phase 3 smoke test 스크립트 추가 (tools/smoke/)"
 ```
 
@@ -616,7 +616,7 @@ git commit -m "test: Phase 3 smoke test 스크립트 추가 (tools/smoke/)"
 ./tools/ue/build_plugin.sh
 
 # 2. 자동화 테스트 (compile_status, asset_on_disk, asset_in_registry 포함)
-./tools/test/run_automation_tests.sh
+./tools/test/automation/run.sh
 
 # 3. Character BP 생성
 ./tools/ue/create_character_bp.sh specs/examples/guard_ai.json

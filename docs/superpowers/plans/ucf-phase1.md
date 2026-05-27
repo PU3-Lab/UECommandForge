@@ -17,7 +17,7 @@
 ./tools/ue/build_plugin.sh
 
 # 2. 자동화 테스트 통과
-./tools/test/run_automation_tests.sh
+./tools/test/automation/run.sh
 
 # 3. Hello commandlet 엔드투엔드
 ./tools/ue/hello.sh
@@ -53,7 +53,7 @@ jq -e '.ok and .commandlet == "Hello"' "$(ls -t sample/Saved/CodexReports/Hello_
 | `tools/ue/run_commandlet.sh` | 공통 래퍼: 프로젝트 경로·플래그·출력 경로 | 2 |
 | `tools/ue/hello.sh` | `Hello` commandlet 호출 | 2 |
 | `tools/ue/build_plugin.sh` | CI 게이트용 `RunUAT BuildPlugin` | 4 |
-| `tools/test/run_automation_tests.sh` | `UECommandForge` 자동화 테스트 실행 | 5 |
+| `tools/test/automation/run.sh` | `UECommandForge` 자동화 테스트 실행 | 5 |
 
 **경계 결정:**
 - **런타임 모듈 = 데이터 전용.** `UnrealEd`/`AssetTools`를 건드리는 모든 코드는 에디터 모듈에 위치.
@@ -249,7 +249,7 @@ resolve_ue_cmd
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
-source "${SCRIPT_DIR}/ue_env.sh"
+source "${SCRIPT_DIR}/../../ue/ue_env.sh"
 
 if [ $# -lt 1 ]; then
   echo "사용법: $0 <CommandletName> [extra args...]" >&2
@@ -553,7 +553,7 @@ git commit -m "feat: Editor module skeleton + RunUAT BuildPlugin wrapper"
 - 생성: `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Public/Reports/JsonReportWriter.h`
 - 생성: `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Reports/JsonReportWriter.cpp`
 - 생성: `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/JsonReportWriterTest.cpp`
-- 생성: `tools/test/run_automation_tests.sh`
+- 생성: `tools/test/automation/run.sh`
 
 Result JSON 봉투 형식은 `ue_commandlet_based_llm_automation_plan.md` §11에 정의되어 있다.
 
@@ -679,7 +679,7 @@ namespace UECommandForge
 }
 ```
 
-- [x] **스텝 4: `tools/test/run_automation_tests.sh` 작성**
+- [x] **스텝 4: `tools/test/automation/run.sh` 작성**
 
 ```bash
 #!/usr/bin/env bash
@@ -694,15 +694,15 @@ mkdir -p "${REPORT_DIR}"
 "${UNREAL_EDITOR_CMD}" "${PROJECT_FILE}" \
   -unattended -nop4 -nosplash -nullrhi \
   -ExecCmds="Automation RunTests UECommandForge; Quit" \
-  -ReportOutputPath="${REPORT_DIR}" \
+  -ReportExportPath="${REPORT_DIR}" \
   -log -stdout -FullStdOutLogOutput
 ```
 
 - [x] **스텝 5: 실행 권한 부여 및 테스트 실행 (GREEN)**
 
 ```bash
-chmod +x tools/test/run_automation_tests.sh
-./tools/test/run_automation_tests.sh
+chmod +x tools/test/automation/run.sh
+./tools/test/automation/run.sh
 ```
 
 예상 결과: `FUECommandForgeJsonReportWriterTest` 통과. JSON 직렬화 형식(공백·들여쓰기)이 맞지 않으면 Writer가 아닌 테스트의 assertion 문자열을 UE 5.7 실제 출력에 맞춰 조정한다.
@@ -714,7 +714,7 @@ chmod +x tools/test/run_automation_tests.sh
 대상 파일: sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Public/Reports/
           sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Reports/
           sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/
-          tools/test/run_automation_tests.sh
+          tools/test/automation/run.sh
 ```
 
 승인 후 실행:
@@ -722,7 +722,7 @@ chmod +x tools/test/run_automation_tests.sh
 git add sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Public/Reports \
         sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Reports \
         sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests \
-        tools/test/run_automation_tests.sh
+        tools/test/automation/run.sh
 git commit -m "feat: JsonReportWriter with automation test"
 ```
 
@@ -841,7 +841,7 @@ git commit -m "feat: HelloCommandlet — end-to-end Result JSON smoke"
 ./tools/ue/build_plugin.sh
 
 # 2. 자동화 테스트 통과
-./tools/test/run_automation_tests.sh
+./tools/test/automation/run.sh
 
 # 3. Hello commandlet 엔드투엔드
 ./tools/ue/hello.sh
