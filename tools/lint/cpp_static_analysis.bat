@@ -97,6 +97,18 @@ if exist "C:\Program Files\LLVM\bin\clang-tidy.exe" (
   set "CLANG_TIDY_BIN=C:\Program Files\LLVM\bin\clang-tidy.exe"
   exit /b 0
 )
+if exist "C:\Program Files\Microsoft Visual Studio\2026\Community\VC\Tools\Llvm\x64\bin\clang-tidy.exe" (
+  set "CLANG_TIDY_BIN=C:\Program Files\Microsoft Visual Studio\2026\Community\VC\Tools\Llvm\x64\bin\clang-tidy.exe"
+  exit /b 0
+)
+if exist "C:\Program Files\Microsoft Visual Studio\2026\Professional\VC\Tools\Llvm\x64\bin\clang-tidy.exe" (
+  set "CLANG_TIDY_BIN=C:\Program Files\Microsoft Visual Studio\2026\Professional\VC\Tools\Llvm\x64\bin\clang-tidy.exe"
+  exit /b 0
+)
+if exist "C:\Program Files\Microsoft Visual Studio\2026\Enterprise\VC\Tools\Llvm\x64\bin\clang-tidy.exe" (
+  set "CLANG_TIDY_BIN=C:\Program Files\Microsoft Visual Studio\2026\Enterprise\VC\Tools\Llvm\x64\bin\clang-tidy.exe"
+  exit /b 0
+)
 if exist "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\Llvm\x64\bin\clang-tidy.exe" (
   set "CLANG_TIDY_BIN=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\Llvm\x64\bin\clang-tidy.exe"
   exit /b 0

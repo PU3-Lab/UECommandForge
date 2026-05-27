@@ -44,6 +44,9 @@ find_clang_tidy() {
       "${path_candidate}" \
       "$(path_command clang-tidy.exe)" \
       "/c/Program Files/LLVM/bin/clang-tidy.exe" \
+      "/c/Program Files/Microsoft Visual Studio/2026/Community/VC/Tools/Llvm/x64/bin/clang-tidy.exe" \
+      "/c/Program Files/Microsoft Visual Studio/2026/Professional/VC/Tools/Llvm/x64/bin/clang-tidy.exe" \
+      "/c/Program Files/Microsoft Visual Studio/2026/Enterprise/VC/Tools/Llvm/x64/bin/clang-tidy.exe" \
       "/c/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/x64/bin/clang-tidy.exe" \
       "/c/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/Llvm/x64/bin/clang-tidy.exe" \
       "/c/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-tidy.exe"
