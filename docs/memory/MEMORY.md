@@ -9,6 +9,6 @@
 - [Filename Length](feedback_filename_length.md) — 계획 파일명에 날짜 접두사 붙이지 말 것; `ucf-phase2.md` 형식 사용
 - [Filename Keywords](feedback_filename_keywords.md) — 파일명 단축 시 도메인 키워드(phase 등) 탈락 금지
 - [Code Review Agent](feedback_code_review_agent.md) — 코드 품질 리뷰는 codex:codex-rescue + ecc:cpp-reviewer 스킬 사용, 직접 ecc:cpp-reviewer 호출 금지
+- [Reporting Language](feedback_reporting_language.md) — 사용자에게 진행/리뷰/검증/완료 보고 시 반드시 한글로 작성
 - [Session 2026-05-25](session-2026-05-25.md) — Phase 1 완료 검증, DefaultInput.ini gitignore 처리, 체크박스 완료 커밋
 - [Session 2026-05-26](session-2026-05-26.md) — run_automation_tests.sh 수정, Phase 3 Blueprint Builder·Commandlet·Shell Wrapper 3종 구현
-
