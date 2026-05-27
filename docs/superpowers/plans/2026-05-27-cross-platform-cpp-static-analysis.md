@@ -4,9 +4,9 @@
 
 **Goal:** Add a repo-local C++ static analysis entry point that works on macOS, Linux, and Windows Git Bash without bundling LLVM or Cppcheck into the Unreal plugin package.
 
-**Architecture:** Add focused wrappers under `tools/lint/`: a Bash wrapper for macOS/Linux/Windows Git Bash and a PowerShell wrapper for Windows native use. Each wrapper discovers `clang-tidy` and `cppcheck` from environment variables, PATH, Homebrew LLVM, Windows LLVM, Cppcheck install paths, and Visual Studio LLVM candidates. Keep Unreal plugin distribution clean by documenting external prerequisites instead of vendoring analyzer binaries.
+**Architecture:** Add focused wrappers under `tools/lint/`: a Bash wrapper for macOS/Linux/Windows Git Bash, a PowerShell wrapper for Windows native use, and a batch wrapper for Windows Command Prompt. Each wrapper discovers `clang-tidy` and `cppcheck` from environment variables, PATH, Homebrew LLVM, Windows LLVM, Cppcheck install paths, and Visual Studio LLVM candidates. Keep Unreal plugin distribution clean by documenting external prerequisites instead of vendoring analyzer binaries.
 
-**Tech Stack:** Bash, PowerShell, Homebrew LLVM, LLVM for Windows, Cppcheck, Unreal plugin C++ source files.
+**Tech Stack:** Bash, PowerShell, Windows batch, Homebrew LLVM, LLVM for Windows, Cppcheck, Unreal plugin C++ source files.
 
 ---
 
@@ -228,14 +228,47 @@ Run: `bash tools/test/lint/cpp_static_analysis_windows_wrapper.sh`
 
 Expected: PASS.
 
-### Task 4: Documentation And Verification
+### Task 4: Windows Command Prompt Wrapper
+
+**Files:**
+- Create: `tools/test/lint/cpp_static_analysis_bat_wrapper.sh`
+- Create: `tools/lint/cpp_static_analysis.bat`
+- Modify: `README.md`
+
+- [ ] **Step 1: Write the failing batch wrapper contract test**
+
+Create `tools/test/lint/cpp_static_analysis_bat_wrapper.sh` to assert that the batch entry point exists, exposes `--check-tools`, `--cppcheck-only`, and `--clang-tidy-only`, and includes Windows LLVM/Cppcheck install path candidates.
+
+- [ ] **Step 2: Run test to verify it fails**
+
+Run: `bash tools/test/lint/cpp_static_analysis_bat_wrapper.sh`
+
+Expected: FAIL because `tools/lint/cpp_static_analysis.bat` does not exist yet.
+
+- [ ] **Step 3: Add the batch wrapper**
+
+Create `tools/lint/cpp_static_analysis.bat` with cmd.exe-native tool discovery and behavior matching the Bash and PowerShell wrappers.
+
+- [ ] **Step 4: Run test to verify it passes**
+
+Run: `bash tools/test/lint/cpp_static_analysis_bat_wrapper.sh`
+
+Expected: PASS.
+
+### Task 5: Documentation And Verification
 
 **Files:**
 - Modify: `README.md`
 
 - [ ] **Step 1: Document macOS and Windows prerequisites**
 
-Add README guidance that static analysis tools are development prerequisites, not part of the Unreal plugin package.
+Add README guidance that static analysis tools are development prerequisites, not part of the Unreal plugin package. Document the three supported entry points:
+
+```text
+macOS/Linux/Windows Git Bash: tools/lint/cpp_static_analysis.sh
+Windows PowerShell:          tools/lint/cpp_static_analysis.ps1
+Windows Command Prompt:      tools/lint/cpp_static_analysis.bat
+```
 
 - [ ] **Step 2: Verify on current host**
 
@@ -245,17 +278,20 @@ Run:
 tools/lint/cpp_static_analysis.sh --check-tools
 bash tools/test/lint/cpp_static_analysis_detection.sh
 bash tools/test/lint/cpp_static_analysis_windows_wrapper.sh
+bash tools/test/lint/cpp_static_analysis_bat_wrapper.sh
+tools/lint/cpp_static_analysis.sh
 git diff --check
 ```
 
 Expected:
 - `--check-tools` reports installed `clang-tidy` and `cppcheck`.
 - Detection tests pass.
+- The full Bash wrapper runs `cppcheck`; if `compile_commands.json` is missing, it skips `clang-tidy` with an explanatory message.
 - `git diff --check` prints no errors.
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add README.md docs/superpowers/plans/2026-05-27-cross-platform-cpp-static-analysis.md tools/lint/cpp_static_analysis.sh tools/lint/cpp_static_analysis.ps1 tools/test/lint/cpp_static_analysis_detection.sh tools/test/lint/cpp_static_analysis_windows_wrapper.sh
+git add README.md docs/superpowers/plans/2026-05-27-cross-platform-cpp-static-analysis.md tools/lint/cpp_static_analysis.sh tools/lint/cpp_static_analysis.ps1 tools/lint/cpp_static_analysis.bat tools/test/lint/cpp_static_analysis_detection.sh tools/test/lint/cpp_static_analysis_windows_wrapper.sh tools/test/lint/cpp_static_analysis_bat_wrapper.sh
 git commit -m "chore: add cross-platform cpp static analysis wrapper"
 ```

@@ -61,6 +61,12 @@ Windows PowerShell:
 .\tools\lint\cpp_static_analysis.ps1 -CheckTools
 ```
 
+Windows Command Prompt:
+
+```bat
+tools\lint\cpp_static_analysis.bat --check-tools
+```
+
 탐색 우선순위:
 
 - `CLANG_TIDY`, `CPPCHECK` 환경변수
@@ -68,7 +74,7 @@ Windows PowerShell:
 - macOS Homebrew LLVM: `/opt/homebrew/opt/llvm/bin/clang-tidy`, `/usr/local/opt/llvm/bin/clang-tidy`
 - Windows LLVM/Cppcheck 기본 설치 경로와 Visual Studio LLVM 후보 경로
 
-`tools/lint/cpp_static_analysis.sh`는 macOS/Linux/Windows Git Bash용이고, `tools/lint/cpp_static_analysis.ps1`은 Windows PowerShell용이다. `clang-tidy` 실행에는 `compile_commands.json`이 필요하다. 기본 위치는 repo root이며, 다른 위치를 쓰려면 `COMPILE_COMMANDS_DIR`를 설정한다. 파일이 없으면 래퍼는 `cppcheck`만 실행하고 `clang-tidy`는 건너뛴다.
+`tools/lint/cpp_static_analysis.sh`는 macOS/Linux/Windows Git Bash용이고, `tools/lint/cpp_static_analysis.ps1`은 Windows PowerShell용이며, `tools/lint/cpp_static_analysis.bat`은 Windows Command Prompt용이다. `clang-tidy` 실행에는 `compile_commands.json`이 필요하다. 기본 위치는 repo root이며, 다른 위치를 쓰려면 `COMPILE_COMMANDS_DIR`를 설정한다. 파일이 없으면 래퍼는 `cppcheck`만 실행하고 `clang-tidy`는 건너뛴다.
 
 ## Result JSON
 
