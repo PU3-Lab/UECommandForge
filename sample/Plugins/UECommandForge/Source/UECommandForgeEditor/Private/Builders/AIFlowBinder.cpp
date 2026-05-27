@@ -20,35 +20,35 @@ namespace UECommandForge
     {
         constexpr const TCHAR* StateTreeComponentName = TEXT("CommandForgeStateTree");
 
-        void AddError(TArray<FCommandForgeError>& OutErrors,
-                      const TCHAR* Code,
-                      const FString& Message,
-                      const TCHAR* Field)
+        void AddBinderError(TArray<FCommandForgeError>& OutErrors,
+                            const TCHAR* Code,
+                            const FString& Message,
+                            const TCHAR* Field)
         {
             OutErrors.Add({ Code, Message, Field });
         }
 
-        UBlueprint* LoadBlueprint(const FString& AssetPath,
-                                  const TCHAR* Field,
-                                  TArray<FCommandForgeError>& OutErrors)
+        UBlueprint* LoadBinderBlueprint(const FString& AssetPath,
+                                        const TCHAR* Field,
+                                        TArray<FCommandForgeError>& OutErrors)
         {
             UBlueprint* Blueprint = LoadObject<UBlueprint>(nullptr, *AssetPath);
             if (!Blueprint || !Blueprint->GeneratedClass)
             {
-                AddError(OutErrors, TEXT("ASSET_NOT_FOUND"),
+                AddBinderError(OutErrors, TEXT("ASSET_NOT_FOUND"),
                     FString::Printf(TEXT("Blueprint 없음: %s"), *AssetPath), Field);
                 return nullptr;
             }
             return Blueprint;
         }
 
-        UStateTree* LoadStateTree(const FString& AssetPath,
-                                  TArray<FCommandForgeError>& OutErrors)
+        UStateTree* LoadBinderStateTree(const FString& AssetPath,
+                                        TArray<FCommandForgeError>& OutErrors)
         {
             UStateTree* StateTree = LoadObject<UStateTree>(nullptr, *AssetPath);
             if (!StateTree)
             {
-                AddError(OutErrors, TEXT("ASSET_NOT_FOUND"),
+                AddBinderError(OutErrors, TEXT("ASSET_NOT_FOUND"),
                     FString::Printf(TEXT("StateTree 없음: %s"), *AssetPath), TEXT("StateTree.AssetPath"));
                 return nullptr;
             }
@@ -60,7 +60,7 @@ namespace UECommandForge
         {
             if (!CharacterBlueprint->SimpleConstructionScript)
             {
-                AddError(OutErrors, TEXT("SCS_MISSING"),
+                AddBinderError(OutErrors, TEXT("SCS_MISSING"),
                     TEXT("Character Blueprint SimpleConstructionScript가 없습니다."),
                     TEXT("Character.AssetPath"));
                 return nullptr;
@@ -74,7 +74,7 @@ namespace UECommandForge
                     UStateTreeComponent* ExistingComponent = Cast<UStateTreeComponent>(Node->ComponentTemplate);
                     if (!ExistingComponent)
                     {
-                        AddError(OutErrors, TEXT("STATETREE_COMPONENT_TYPE_MISMATCH"),
+                        AddBinderError(OutErrors, TEXT("STATETREE_COMPONENT_TYPE_MISMATCH"),
                             TEXT("CommandForgeStateTree SCS 노드가 StateTreeComponent가 아닙니다."),
                             TEXT("StateTree.AssetPath"));
                     }
@@ -85,7 +85,7 @@ namespace UECommandForge
             USCS_Node* NewNode = SCS->CreateNode(UStateTreeComponent::StaticClass(), StateTreeComponentName);
             if (!NewNode)
             {
-                AddError(OutErrors, TEXT("STATETREE_COMPONENT_CREATE_FAILED"),
+                AddBinderError(OutErrors, TEXT("STATETREE_COMPONENT_CREATE_FAILED"),
                     TEXT("StateTreeComponent SCS 노드 생성 실패"),
                     TEXT("StateTree.AssetPath"));
                 return nullptr;
@@ -95,7 +95,7 @@ namespace UECommandForge
             UStateTreeComponent* NewComponent = Cast<UStateTreeComponent>(NewNode->ComponentTemplate);
             if (!NewComponent)
             {
-                AddError(OutErrors, TEXT("STATETREE_COMPONENT_TEMPLATE_INVALID"),
+                AddBinderError(OutErrors, TEXT("STATETREE_COMPONENT_TEMPLATE_INVALID"),
                     TEXT("생성된 CommandForgeStateTree 컴포넌트 템플릿이 StateTreeComponent가 아닙니다."),
                     TEXT("StateTree.AssetPath"));
                 return nullptr;
@@ -111,7 +111,7 @@ namespace UECommandForge
                 FindFProperty<FStructProperty>(UStateTreeComponent::StaticClass(), TEXT("StateTreeRef"));
             if (!StateTreeRefProperty || StateTreeRefProperty->Struct != FStateTreeReference::StaticStruct())
             {
-                AddError(OutErrors, TEXT("STATETREE_REF_PROPERTY_MISSING"),
+                AddBinderError(OutErrors, TEXT("STATETREE_REF_PROPERTY_MISSING"),
                     TEXT("StateTreeComponent StateTreeRef 속성을 찾을 수 없습니다."),
                     TEXT("StateTree.AssetPath"));
                 return false;
@@ -121,7 +121,7 @@ namespace UECommandForge
                 StateTreeRefProperty->ContainerPtrToValuePtr<FStateTreeReference>(Component);
             if (!StateTreeRef)
             {
-                AddError(OutErrors, TEXT("STATETREE_REF_ACCESS_FAILED"),
+                AddBinderError(OutErrors, TEXT("STATETREE_REF_ACCESS_FAILED"),
                     TEXT("StateTreeComponent StateTreeRef 접근 실패"),
                     TEXT("StateTree.AssetPath"));
                 return false;
@@ -138,7 +138,7 @@ namespace UECommandForge
             FKismetEditorUtilities::CompileBlueprint(Blueprint);
             if (Blueprint->Status == BS_Error)
             {
-                AddError(OutErrors, TEXT("BP_COMPILE_FAILED"),
+                AddBinderError(OutErrors, TEXT("BP_COMPILE_FAILED"),
                     FString::Printf(TEXT("Blueprint 컴파일 실패: %s"), *AssetPath),
                     TEXT("Character.AssetPath"));
                 return false;
@@ -153,7 +153,7 @@ namespace UECommandForge
             SaveArgs.TopLevelFlags = RF_Public | RF_Standalone;
             if (!UPackage::SavePackage(Package, Blueprint, *FileName, SaveArgs))
             {
-                AddError(OutErrors, TEXT("BP_SAVE_FAILED"),
+                AddBinderError(OutErrors, TEXT("BP_SAVE_FAILED"),
                     FString::Printf(TEXT("Blueprint 저장 실패: %s"), *FileName),
                     TEXT("Character.AssetPath"));
                 return false;
@@ -166,9 +166,9 @@ namespace UECommandForge
                              TArray<FCommandForgeError>& OutErrors,
                              TMap<FString, FString>& OutValidation)
     {
-        UBlueprint* CharacterBlueprint = LoadBlueprint(Spec.Character.AssetPath, TEXT("Character.AssetPath"), OutErrors);
-        UBlueprint* ControllerBlueprint = LoadBlueprint(Spec.AIController.AssetPath, TEXT("AIController.AssetPath"), OutErrors);
-        UStateTree* StateTree = LoadStateTree(Spec.StateTree.AssetPath, OutErrors);
+        UBlueprint* CharacterBlueprint = LoadBinderBlueprint(Spec.Character.AssetPath, TEXT("Character.AssetPath"), OutErrors);
+        UBlueprint* ControllerBlueprint = LoadBinderBlueprint(Spec.AIController.AssetPath, TEXT("AIController.AssetPath"), OutErrors);
+        UStateTree* StateTree = LoadBinderStateTree(Spec.StateTree.AssetPath, OutErrors);
         if (!CharacterBlueprint || !ControllerBlueprint || !StateTree)
         {
             return false;
@@ -177,7 +177,7 @@ namespace UECommandForge
         ACharacter* CharacterCDO = Cast<ACharacter>(CharacterBlueprint->GeneratedClass->GetDefaultObject());
         if (!CharacterCDO)
         {
-            AddError(OutErrors, TEXT("CDO_CAST_FAILED"),
+            AddBinderError(OutErrors, TEXT("CDO_CAST_FAILED"),
                 TEXT("Character Blueprint CDO를 ACharacter로 캐스트할 수 없습니다."),
                 TEXT("Character.AssetPath"));
             return false;

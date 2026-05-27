@@ -11,35 +11,35 @@ namespace UECommandForge
 {
     namespace
     {
-        void AddError(TArray<FCommandForgeError>& OutErrors,
-                      const TCHAR* Code,
-                      const FString& Message,
-                      const TCHAR* Field)
+        void AddValidatorError(TArray<FCommandForgeError>& OutErrors,
+                               const TCHAR* Code,
+                               const FString& Message,
+                               const TCHAR* Field)
         {
             OutErrors.Add({ Code, Message, Field });
         }
 
-        UBlueprint* LoadBlueprint(const FString& AssetPath,
-                                  const TCHAR* Field,
-                                  TArray<FCommandForgeError>& OutErrors)
+        UBlueprint* LoadValidatorBlueprint(const FString& AssetPath,
+                                           const TCHAR* Field,
+                                           TArray<FCommandForgeError>& OutErrors)
         {
             UBlueprint* Blueprint = LoadObject<UBlueprint>(nullptr, *AssetPath);
             if (!Blueprint || !Blueprint->GeneratedClass)
             {
-                AddError(OutErrors, TEXT("ASSET_NOT_FOUND"),
+                AddValidatorError(OutErrors, TEXT("ASSET_NOT_FOUND"),
                     FString::Printf(TEXT("Blueprint 없음: %s"), *AssetPath), Field);
                 return nullptr;
             }
             return Blueprint;
         }
 
-        UStateTree* LoadStateTree(const FString& AssetPath,
-                                  TArray<FCommandForgeError>& OutErrors)
+        UStateTree* LoadValidatorStateTree(const FString& AssetPath,
+                                           TArray<FCommandForgeError>& OutErrors)
         {
             UStateTree* StateTree = LoadObject<UStateTree>(nullptr, *AssetPath);
             if (!StateTree)
             {
-                AddError(OutErrors, TEXT("ASSET_NOT_FOUND"),
+                AddValidatorError(OutErrors, TEXT("ASSET_NOT_FOUND"),
                     FString::Printf(TEXT("StateTree 없음: %s"), *AssetPath), TEXT("StateTree.AssetPath"));
                 return nullptr;
             }
@@ -96,7 +96,7 @@ namespace UECommandForge
         {
             if (!bOk)
             {
-                AddError(OutErrors, Code, Message, Field);
+                AddValidatorError(OutErrors, Code, Message, Field);
             }
         }
     }
@@ -105,9 +105,9 @@ namespace UECommandForge
                                     TMap<FString, FString>& OutValidation,
                                     TArray<FCommandForgeError>& OutErrors)
     {
-        UBlueprint* CharacterBlueprint = LoadBlueprint(Spec.Character.AssetPath, TEXT("Character.AssetPath"), OutErrors);
-        UBlueprint* ControllerBlueprint = LoadBlueprint(Spec.AIController.AssetPath, TEXT("AIController.AssetPath"), OutErrors);
-        UStateTree* StateTree = LoadStateTree(Spec.StateTree.AssetPath, OutErrors);
+        UBlueprint* CharacterBlueprint = LoadValidatorBlueprint(Spec.Character.AssetPath, TEXT("Character.AssetPath"), OutErrors);
+        UBlueprint* ControllerBlueprint = LoadValidatorBlueprint(Spec.AIController.AssetPath, TEXT("AIController.AssetPath"), OutErrors);
+        UStateTree* StateTree = LoadValidatorStateTree(Spec.StateTree.AssetPath, OutErrors);
         if (!CharacterBlueprint || !ControllerBlueprint || !StateTree)
         {
             return false;
@@ -116,7 +116,7 @@ namespace UECommandForge
         ACharacter* CharacterCDO = Cast<ACharacter>(CharacterBlueprint->GeneratedClass->GetDefaultObject());
         if (!CharacterCDO)
         {
-            AddError(OutErrors, TEXT("CDO_CAST_FAILED"),
+            AddValidatorError(OutErrors, TEXT("CDO_CAST_FAILED"),
                 TEXT("Character Blueprint CDO를 ACharacter로 캐스트할 수 없습니다."),
                 TEXT("Character.AssetPath"));
             return false;
