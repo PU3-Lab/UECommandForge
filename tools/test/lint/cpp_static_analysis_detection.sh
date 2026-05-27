@@ -30,3 +30,5 @@ OUTPUT="$(
 echo "${OUTPUT}" | grep -q "clang-tidy: ${FAKE_BIN}/clang-tidy.exe"
 echo "${OUTPUT}" | grep -q "cppcheck: ${FAKE_BIN}/cppcheck.exe"
 echo "${OUTPUT}" | grep -q "platform: windows"
+grep -q 'RUN_CLANG_TIDY' "${REPO_ROOT}/tools/lint/cpp_static_analysis.sh"
+grep -q 'CLANG_TIDY_CHECKS' "${REPO_ROOT}/tools/lint/cpp_static_analysis.sh"

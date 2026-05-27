@@ -1,0 +1,57 @@
+name: C++ Static Analysis
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  windows-tools:
+    name: Windows lint wrappers
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install LLVM and Cppcheck
+        shell: pwsh
+        run: |
+          choco install llvm cppcheck -y --no-progress
+          "C:\Program Files\LLVM\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+          "C:\Program Files\Cppcheck" | Out-File -FilePath $env:GITHUB_PATH -Append
+
+      - name: Verify PowerShell wrapper tool discovery
+        shell: pwsh
+        run: .\tools\lint\cpp_static_analysis.ps1 -CheckTools
+
+      - name: Verify Command Prompt wrapper tool discovery
+        shell: cmd
+        run: tools\lint\cpp_static_analysis.bat --check-tools
+
+      - name: Run PowerShell wrapper cppcheck
+        shell: pwsh
+        run: .\tools\lint\cpp_static_analysis.ps1 -CppcheckOnly
+
+      - name: Run Command Prompt wrapper cppcheck
+        shell: cmd
+        run: tools\lint\cpp_static_analysis.bat --cppcheck-only
+
+  macos-tools:
+    name: macOS lint wrapper
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install LLVM and Cppcheck
+        run: brew install llvm cppcheck
+
+      - name: Verify Bash wrapper tool discovery
+        run: tools/lint/cpp_static_analysis.sh --check-tools
+
+      - name: Run Bash wrapper
+        run: tools/lint/cpp_static_analysis.sh --cppcheck-only

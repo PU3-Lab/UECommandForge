@@ -120,7 +120,7 @@ if [ "${MODE}" != "clang-tidy-only" ]; then
     "${CPP_FILES[@]}"
 fi
 
-if [ "${MODE}" != "cppcheck-only" ]; then
+if [ "${MODE}" = "clang-tidy-only" ] || [ "${RUN_CLANG_TIDY:-0}" = "1" ]; then
   if [ -z "${CLANG_TIDY_BIN}" ]; then
     echo "[lint] clang-tidy not found. Install LLVM or set CLANG_TIDY." >&2
     exit 127
@@ -133,5 +133,6 @@ if [ "${MODE}" != "cppcheck-only" ]; then
     exit 0
   fi
 
-  "${CLANG_TIDY_BIN}" -p "${COMPILE_COMMANDS_DIR}" "${CPP_FILES[@]}"
+  CLANG_TIDY_CHECKS="${CLANG_TIDY_CHECKS:-clang-analyzer-*}"
+  "${CLANG_TIDY_BIN}" -checks="${CLANG_TIDY_CHECKS}" -p "${COMPILE_COMMANDS_DIR}" "${CPP_FILES[@]}"
 fi

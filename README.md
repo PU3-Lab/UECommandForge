@@ -74,7 +74,29 @@ tools\lint\cpp_static_analysis.bat --check-tools
 - macOS Homebrew LLVM: `/opt/homebrew/opt/llvm/bin/clang-tidy`, `/usr/local/opt/llvm/bin/clang-tidy`
 - Windows LLVM/Cppcheck 기본 설치 경로와 Visual Studio LLVM 후보 경로
 
-`tools/lint/cpp_static_analysis.sh`는 macOS/Linux/Windows Git Bash용이고, `tools/lint/cpp_static_analysis.ps1`은 Windows PowerShell용이며, `tools/lint/cpp_static_analysis.bat`은 Windows Command Prompt용이다. `clang-tidy` 실행에는 `compile_commands.json`이 필요하다. 기본 위치는 repo root이며, 다른 위치를 쓰려면 `COMPILE_COMMANDS_DIR`를 설정한다. 파일이 없으면 래퍼는 `cppcheck`만 실행하고 `clang-tidy`는 건너뛴다.
+`tools/lint/cpp_static_analysis.sh`는 macOS/Linux/Windows Git Bash용이고, `tools/lint/cpp_static_analysis.ps1`은 Windows PowerShell용이며, `tools/lint/cpp_static_analysis.bat`은 Windows Command Prompt용이다. 기본 실행은 안정적인 `cppcheck`만 수행한다. `clang-tidy`는 `compile_commands.json` 생성 후 `--clang-tidy-only` 또는 `RUN_CLANG_TIDY=1`로 명시적으로 실행한다.
+
+`compile_commands.json` 생성:
+
+```bash
+tools/lint/generate_compile_commands.sh
+```
+
+Windows PowerShell:
+
+```powershell
+.\tools\lint\generate_compile_commands.ps1
+```
+
+Windows Command Prompt:
+
+```bat
+tools\lint\generate_compile_commands.bat
+```
+
+기본 출력 위치는 repo root의 `compile_commands.json`이고 git에는 포함하지 않는다. 다른 출력 위치를 쓰려면 세 환경 모두 `COMPILE_COMMANDS_DIR`를 설정한다.
+
+`clang-tidy` 기본 check set은 `clang-analyzer-*`이며 `CLANG_TIDY_CHECKS`로 재정의할 수 있다. Unreal/Xcode/LLVM 버전 차이로 모듈 관련 컴파일 오류가 날 수 있으므로 CI 기본 게이트에는 포함하지 않고, 로컬 정밀 분석용 opt-in 단계로 둔다.
 
 ## Result JSON
 

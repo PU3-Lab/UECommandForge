@@ -52,7 +52,11 @@ if not "%MODE%"=="clang-tidy-only" (
   )
 )
 
-if not "%MODE%"=="cppcheck-only" (
+if "%MODE%"=="clang-tidy-only" goto :run_clang_tidy
+if "%RUN_CLANG_TIDY%"=="1" goto :run_clang_tidy
+goto :finish
+
+:run_clang_tidy
   if not defined CLANG_TIDY_BIN (
     echo [lint] clang-tidy not found. Install LLVM or set CLANG_TIDY. 1>&2
     del "%FILE_LIST%" >nul 2>nul
@@ -65,15 +69,16 @@ if not "%MODE%"=="cppcheck-only" (
     del "%FILE_LIST%" >nul 2>nul
     exit /b 0
   )
+  if not defined CLANG_TIDY_CHECKS set "CLANG_TIDY_CHECKS=clang-analyzer-*"
   for /f "usebackq delims=" %%F in ("%FILE_LIST%") do (
-    "%CLANG_TIDY_BIN%" -p "%COMPILE_COMMANDS_DIR%" "%%F"
+    "%CLANG_TIDY_BIN%" -checks="%CLANG_TIDY_CHECKS%" -p "%COMPILE_COMMANDS_DIR%" "%%F"
     if errorlevel 1 (
       del "%FILE_LIST%" >nul 2>nul
       exit /b !ERRORLEVEL!
     )
   )
-)
 
+:finish
 del "%FILE_LIST%" >nul 2>nul
 exit /b 0
 

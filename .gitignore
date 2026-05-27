@@ -9,6 +9,7 @@ Saved/
 *.sln
 *.xcodeproj/
 *.xcworkspace/
+compile_commands.json
 
 # OS
 .DS_Store

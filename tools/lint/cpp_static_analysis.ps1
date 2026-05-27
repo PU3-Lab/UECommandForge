@@ -86,7 +86,7 @@ if (-not $ClangTidyOnly) {
         @CppFiles
 }
 
-if (-not $CppcheckOnly) {
+if ($ClangTidyOnly -or $env:RUN_CLANG_TIDY -eq "1") {
     if (-not $ClangTidy) {
         [Console]::Error.WriteLine("[lint] clang-tidy not found. Install LLVM or set CLANG_TIDY.")
         exit 127
@@ -100,5 +100,6 @@ if (-not $CppcheckOnly) {
         exit 0
     }
 
-    & $ClangTidy -p $CompileCommandsDir @CppFiles
+    $Checks = if ($env:CLANG_TIDY_CHECKS) { $env:CLANG_TIDY_CHECKS } else { "clang-analyzer-*" }
+    & $ClangTidy "-checks=${Checks}" -p $CompileCommandsDir @CppFiles
 }
