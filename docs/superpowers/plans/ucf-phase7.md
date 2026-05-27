@@ -91,7 +91,9 @@ for (const FCommandForgeStepResult& Step : Report.Steps)
 Root->SetArrayField(TEXT("steps"), StepValues);
 ```
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
+
+완료 커밋: `52135e4 feat: add workflow result steps to JSON report`
 
 ```bash
 git add Plugins/UECommandForge/Source/UECommandForgeRuntime/Public/CommandForgeTypes.h \
@@ -104,7 +106,7 @@ git commit -m "feat: Result JSON에 steps·rollback_available 필드 추가"
 
 ## Task 2: CreateAIFlowCommandlet (TDD)
 
-- [ ] **Step 1: 실패하는 자동화 테스트 작성**
+- [x] **Step 1: 실패하는 자동화 테스트 작성**
 
 ```cpp
 // Tests/CreateAIFlowCommandletTest.cpp
@@ -151,7 +153,7 @@ bool FCreateAIFlowCommandletTest::RunTest(const FString& Parameters)
 }
 ```
 
-- [ ] **Step 2: `CreateAIFlowCommandlet.h` 작성**
+- [x] **Step 2: `CreateAIFlowCommandlet.h` 작성**
 
 ```cpp
 #pragma once
@@ -181,7 +183,7 @@ public:
 };
 ```
 
-- [ ] **Step 3: `CreateAIFlowCommandlet.cpp` 작성**
+- [x] **Step 3: `CreateAIFlowCommandlet.cpp` 작성**
 
 ```cpp
 #include "Commandlets/CreateAIFlowCommandlet.h"
@@ -307,13 +309,21 @@ int32 UCreateAIFlowCommandlet::Main(const FString& Params)
 }
 ```
 
-- [ ] **Step 4: 테스트 재실행 — 통과 확인**
+- [x] **Step 4: 테스트 재실행 — 통과 확인**
 
 ```bash
 ./tools/test/automation/run.sh
 ```
 
 예상: `FCreateAIFlowCommandletTest` PASS.
+
+검증 결과:
+- RED: `CreateAIFlowCommandlet.h` 미존재로 샘플 타깃 빌드 실패 확인
+- GREEN: 샘플 타깃 빌드 성공
+- 리뷰 수정 RED: 리포트 저장 실패가 플로우 성공으로 처리되는 결함을 실패 테스트로 재현
+- 리뷰 수정 GREEN: 리포트 저장 실패 시 `REPORT_WRITE_FAILED` 기록 및 `EngineError` 반환 경로 추가
+- 자동화: `./tools/test/automation/run.sh` PASS 15 / FAIL 0
+- 리포트: `steps` 5개, `rollback_available=false`, `actor_placed=ok`
 
 - [ ] **Step 5: 커밋**
 
