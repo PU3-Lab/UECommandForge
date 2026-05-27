@@ -1,0 +1,25 @@
+{
+  "Version": "1",
+  "Character": {
+    "AssetPath": "/Game/Characters/NPC/BP_NPCCharacter",
+    "ParentClass": "Character",
+    "DisplayName": "NPCCharacter"
+  },
+  "AIController": {
+    "AssetPath": "/Game/Characters/NPC/BP_NPCController",
+    "ParentClass": "AIController",
+    "DisplayName": "NPCController"
+  },
+  "StateTree": {
+    "AssetPath": "/Game/Characters/NPC/ST_NPC",
+    "Tasks": [
+      { "TaskType": "Wait", "StateName": "Idle" }
+    ]
+  },
+  "Placement": {
+    "MapPath": "/Game/Maps/MainLevel",
+    "BlueprintPath": "/Game/Characters/NPC/BP_NPCCharacter",
+    "Location": { "X": 0.0, "Y": 0.0, "Z": 0.0 },
+    "Rotation": { "Pitch": 0.0, "Yaw": 0.0, "Roll": 0.0 }
+  }
+}
