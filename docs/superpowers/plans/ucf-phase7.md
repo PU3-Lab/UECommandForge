@@ -29,7 +29,7 @@
 
 Result JSON에 `steps` 배열을 추가해 각 단계 결과를 기록한다. `FCommandForgeReport`를 확장한다.
 
-- [ ] **Step 1: `CommandForgeTypes.h`에 `FCommandForgeStepResult` 추가**
+- [x] **Step 1: `CommandForgeTypes.h`에 `FCommandForgeStepResult` 추가**
 
 ```cpp
 // CommandForgeTypes.h에 추가
@@ -46,7 +46,7 @@ struct UECOMMANDFORGERUNTIME_API FCommandForgeStepResult
 };
 ```
 
-- [ ] **Step 2: `FCommandForgeReport`에 `Steps`와 `bRollbackAvailable` 추가**
+- [x] **Step 2: `FCommandForgeReport`에 `Steps`와 `bRollbackAvailable` 추가**
 
 ```cpp
 // JsonReportWriter.h의 FCommandForgeReport에 추가
@@ -54,7 +54,7 @@ TArray<FCommandForgeStepResult> Steps;
 bool bRollbackAvailable = false;
 ```
 
-- [ ] **Step 3: `JsonReportWriter.cpp`에 `steps`와 `rollback_available` 직렬화 추가**
+- [x] **Step 3: `JsonReportWriter.cpp`에 `steps`와 `rollback_available` 직렬화 추가**
 
 `Write` 메서드에 아래 코드 추가:
 

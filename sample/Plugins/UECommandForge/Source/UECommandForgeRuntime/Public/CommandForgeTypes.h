@@ -22,3 +22,15 @@ struct UECOMMANDFORGERUNTIME_API FCommandForgeError
     UPROPERTY() FString Message;
     UPROPERTY() FString Field;
 };
+
+USTRUCT()
+struct UECOMMANDFORGERUNTIME_API FCommandForgeStepResult
+{
+    GENERATED_BODY()
+
+    UPROPERTY() FString Step;
+    UPROPERTY() bool bOk = false;
+    UPROPERTY() TArray<FString> CreatedAssets;
+    UPROPERTY() TMap<FString, FString> Validation;
+    UPROPERTY() TArray<FCommandForgeError> Errors;
+};

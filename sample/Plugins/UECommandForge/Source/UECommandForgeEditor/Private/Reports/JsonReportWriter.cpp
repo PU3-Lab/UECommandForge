@@ -13,6 +13,7 @@ namespace UECommandForge
         TSharedRef<FJsonObject> Root = MakeShared<FJsonObject>();
         Root->SetBoolField(TEXT("ok"), Report.bOk);
         Root->SetStringField(TEXT("commandlet"), Report.Commandlet);
+        Root->SetBoolField(TEXT("rollback_available"), Report.bRollbackAvailable);
 
         auto ToArray = [](const TArray<FString>& In)
         {
@@ -41,6 +42,35 @@ namespace UECommandForge
             ErrorValues.Add(MakeShared<FJsonValueObject>(O));
         }
         Root->SetArrayField(TEXT("errors"), ErrorValues);
+
+        TArray<TSharedPtr<FJsonValue>> StepValues;
+        for (const FCommandForgeStepResult& Step : Report.Steps)
+        {
+            TSharedRef<FJsonObject> StepObject = MakeShared<FJsonObject>();
+            StepObject->SetStringField(TEXT("step"), Step.Step);
+            StepObject->SetBoolField(TEXT("ok"), Step.bOk);
+            StepObject->SetArrayField(TEXT("created_assets"), ToArray(Step.CreatedAssets));
+
+            TSharedRef<FJsonObject> StepValidation = MakeShared<FJsonObject>();
+            for (const auto& Kv : Step.Validation)
+            {
+                StepValidation->SetStringField(Kv.Key, Kv.Value);
+            }
+            StepObject->SetObjectField(TEXT("validation"), StepValidation);
+
+            TArray<TSharedPtr<FJsonValue>> StepErrors;
+            for (const FCommandForgeError& E : Step.Errors)
+            {
+                TSharedRef<FJsonObject> ErrorObject = MakeShared<FJsonObject>();
+                ErrorObject->SetStringField(TEXT("code"), E.Code);
+                ErrorObject->SetStringField(TEXT("message"), E.Message);
+                ErrorObject->SetStringField(TEXT("field"), E.Field);
+                StepErrors.Add(MakeShared<FJsonValueObject>(ErrorObject));
+            }
+            StepObject->SetArrayField(TEXT("errors"), StepErrors);
+            StepValues.Add(MakeShared<FJsonValueObject>(StepObject));
+        }
+        Root->SetArrayField(TEXT("steps"), StepValues);
 
         FString Serialized;
         TSharedRef<TJsonWriter<>> Writer = TJsonWriterFactory<>::Create(&Serialized);

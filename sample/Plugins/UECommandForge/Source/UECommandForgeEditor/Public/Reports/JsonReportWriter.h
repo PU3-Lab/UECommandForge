@@ -12,6 +12,8 @@ struct FCommandForgeReport
     TMap<FString, FString> Validation;
     TArray<FCommandForgeError> Errors;
     TArray<FString> NextSuggestions;
+    TArray<FCommandForgeStepResult> Steps;
+    bool bRollbackAvailable = false;
 };
 
 namespace UECommandForge
