@@ -98,6 +98,8 @@ tools\lint\generate_compile_commands.bat
 
 `clang-tidy` 기본 check set은 `clang-analyzer-*`이며 `CLANG_TIDY_CHECKS`로 재정의할 수 있다. Unreal/Xcode/LLVM 버전 차이로 모듈 관련 컴파일 오류가 날 수 있으므로 CI 기본 게이트에는 포함하지 않고, 로컬 정밀 분석용 opt-in 단계로 둔다.
 
+GitHub Actions의 `C++ Static Analysis` workflow는 push/PR에서 `cppcheck`와 wrapper 동작만 검증한다. `workflow_dispatch`에서 `run_clang_tidy`를 `true`로 실행하면 macOS job이 `tools/lint/generate_compile_commands.sh`로 `compile_commands.json`를 생성한 뒤 `tools/lint/cpp_static_analysis.sh --clang-tidy-only`를 실행한다. 이 opt-in 단계는 Unreal Engine이 설치된 runner가 필요하며, 기본 경로가 아니면 `ue_root` input으로 `UE_ROOT`를 넘긴다.
+
 ## Result JSON
 
 모든 commandlet은 `sample/Saved/CodexReports/<Commandlet>_<UTC>.json`에 기록한다. 종료 코드:

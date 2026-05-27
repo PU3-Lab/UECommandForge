@@ -6,6 +6,17 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      run_clang_tidy:
+        description: Generate compile_commands.json and run opt-in clang-tidy on macOS
+        required: false
+        default: false
+        type: boolean
+      ue_root:
+        description: Optional Unreal Engine root for opt-in clang-tidy generation
+        required: false
+        default: ""
+        type: string
 
 jobs:
   windows-tools:
@@ -31,6 +42,14 @@ jobs:
         shell: cmd
         run: tools\lint\cpp_static_analysis.bat --check-tools
 
+      - name: Verify PowerShell wrapper clang-tidy skip without compile database
+        shell: pwsh
+        run: .\tools\lint\cpp_static_analysis.ps1 -ClangTidyOnly
+
+      - name: Verify Command Prompt wrapper clang-tidy skip without compile database
+        shell: cmd
+        run: tools\lint\cpp_static_analysis.bat --clang-tidy-only
+
       - name: Run PowerShell wrapper cppcheck
         shell: pwsh
         run: .\tools\lint\cpp_static_analysis.ps1 -CppcheckOnly
@@ -55,3 +74,15 @@ jobs:
 
       - name: Run Bash wrapper
         run: tools/lint/cpp_static_analysis.sh --cppcheck-only
+
+      - name: Generate compile_commands for clang-tidy
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_clang_tidy }}
+        env:
+          UE_ROOT: ${{ inputs.ue_root }}
+        run: tools/lint/generate_compile_commands.sh
+
+      - name: Run opt-in clang-tidy
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_clang_tidy }}
+        env:
+          RUN_CLANG_TIDY: "1"
+        run: tools/lint/cpp_static_analysis.sh --clang-tidy-only

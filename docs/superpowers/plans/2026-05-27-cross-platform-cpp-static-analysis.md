@@ -8,6 +8,18 @@
 
 **Tech Stack:** Bash, PowerShell, Windows batch, Homebrew LLVM, LLVM for Windows, Cppcheck, Unreal plugin C++ source files.
 
+## Current Implementation Status
+
+This plan is historical; the repo implementation now includes the follow-up CI hardening work.
+
+- `tools/lint/cpp_static_analysis.sh`, `.ps1`, and `.bat` are the supported entry points.
+- Default local and push/PR CI analysis runs `cppcheck` only.
+- `clang-tidy` is opt-in through `--clang-tidy-only` or `RUN_CLANG_TIDY=1` after generating `compile_commands.json`.
+- Windows native CI validates PowerShell and Command Prompt wrappers, including the no-compile-database `clang-tidy` skip path.
+- `C++ Static Analysis` uses `actions/checkout@v6` and pins the Windows job to `windows-2025-vs2026`.
+- `workflow_dispatch` exposes `run_clang_tidy`; when true, the macOS job generates `compile_commands.json` and runs opt-in `clang-tidy`. This requires Unreal Engine on the runner; use the `ue_root` input if the engine is not in the default path.
+- Windows `clang-tidy` discovery checks `CLANG_TIDY`, PATH, LLVM's default install path, Visual Studio 2026 LLVM paths, then Visual Studio 2022 LLVM paths.
+
 ---
 
 ### Task 1: Tool Detection Test
@@ -116,6 +128,9 @@ find_clang_tidy() {
       "${path_candidate}" \
       "$(path_command clang-tidy.exe)" \
       "/c/Program Files/LLVM/bin/clang-tidy.exe" \
+      "/c/Program Files/Microsoft Visual Studio/2026/Community/VC/Tools/Llvm/x64/bin/clang-tidy.exe" \
+      "/c/Program Files/Microsoft Visual Studio/2026/Professional/VC/Tools/Llvm/x64/bin/clang-tidy.exe" \
+      "/c/Program Files/Microsoft Visual Studio/2026/Enterprise/VC/Tools/Llvm/x64/bin/clang-tidy.exe" \
       "/c/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/x64/bin/clang-tidy.exe" \
       "/c/Program Files/Microsoft Visual Studio/2022/Professional/VC/Tools/Llvm/x64/bin/clang-tidy.exe" \
       "/c/Program Files/Microsoft Visual Studio/2022/Enterprise/VC/Tools/Llvm/x64/bin/clang-tidy.exe"
@@ -181,7 +196,7 @@ if [ "${MODE}" != "clang-tidy-only" ]; then
   "${CPPCHECK_BIN}" --enable=warning,style,performance,portability --inline-suppr --std=c++20 --suppress=missingIncludeSystem "${CPP_FILES[@]}"
 fi
 
-if [ "${MODE}" != "cppcheck-only" ]; then
+if [ "${MODE}" = "clang-tidy-only" ] || [ "${RUN_CLANG_TIDY:-0}" = "1" ]; then
   if [ -z "${CLANG_TIDY_BIN}" ]; then
     echo "[lint] clang-tidy not found. Install LLVM or set CLANG_TIDY." >&2
     exit 127
@@ -192,7 +207,8 @@ if [ "${MODE}" != "cppcheck-only" ]; then
     echo "[lint] Generate one with UnrealBuildTool or set COMPILE_COMMANDS_DIR."
     exit 0
   fi
-  "${CLANG_TIDY_BIN}" -p "${COMPILE_COMMANDS_DIR}" "${CPP_FILES[@]}"
+  CLANG_TIDY_CHECKS="${CLANG_TIDY_CHECKS:-clang-analyzer-*}"
+  "${CLANG_TIDY_BIN}" -checks="${CLANG_TIDY_CHECKS}" -p "${COMPILE_COMMANDS_DIR}" "${CPP_FILES[@]}"
 fi
 ```
 
