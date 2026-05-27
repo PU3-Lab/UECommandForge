@@ -13,7 +13,7 @@ namespace UECommandForge
     private:
         static void CheckRequiredPath(const FString& Value, const FString& Field,
                                       TArray<FCommandForgeError>& OutErrors);
-        static void CheckGamePrefix(const FString& Value, const FString& Field,
-                                    TArray<FCommandForgeError>& OutErrors);
+        static void CheckGamePath(const FString& Value, const FString& Field,
+                                  TArray<FCommandForgeError>& OutErrors);
     };
 }

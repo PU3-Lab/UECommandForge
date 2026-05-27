@@ -73,6 +73,35 @@ bool FAIFlowSpecValidatorTest_RejectsInvalidPaths::RunTest(const FString& Parame
 }
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FAIFlowSpecValidatorTest_RejectsInvalidPackageNames,
+    "UECommandForge.Specs.AIFlowSpecValidator.RejectsInvalidPackageNames",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FAIFlowSpecValidatorTest_RejectsInvalidPackageNames::RunTest(const FString& Parameters)
+{
+    FAIFlowSpec Spec;
+    Spec.Version = TEXT("1");
+    Spec.Character.AssetPath = TEXT("/Game/AI/BP_Guard");
+    Spec.Character.ParentClass = TEXT("Character");
+    Spec.AIController.AssetPath = TEXT("/Game/AI/BP_AICtrl");
+    Spec.AIController.ParentClass = TEXT("AIController");
+    Spec.StateTree.AssetPath = TEXT("/Game/AI/ST_Guard");
+    Spec.Placement.MapPath = TEXT("/Game/Maps/Bad Map");
+    Spec.Placement.BlueprintPath = TEXT("/Game/AI/BP_Guard");
+
+    TArray<FCommandForgeError> Errors;
+    const bool bValid = UECommandForge::FAIFlowSpecValidator::Validate(Spec, Errors);
+
+    TestFalse(TEXT("validation should fail"), bValid);
+    TestTrue(TEXT("at least one error"), Errors.Num() > 0);
+    if (Errors.Num() > 0)
+    {
+        TestEqual(TEXT("error field"), Errors[0].Field, TEXT("Placement.MapPath"));
+    }
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     FAIFlowSpecValidatorTest_RejectsInvalidTaskType,
     "UECommandForge.Specs.AIFlowSpecValidator.RejectsInvalidTaskType",
     EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)

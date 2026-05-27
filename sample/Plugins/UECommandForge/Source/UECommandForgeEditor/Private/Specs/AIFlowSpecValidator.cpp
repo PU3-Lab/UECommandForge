@@ -1,4 +1,5 @@
 #include "Specs/AIFlowSpecValidator.h"
+#include "Misc/PackageName.h"
 
 namespace UECommandForge
 {
@@ -13,12 +14,21 @@ namespace UECommandForge
         }
     }
 
-    void FAIFlowSpecValidator::CheckGamePrefix(const FString& Value, const FString& Field,
-                                                TArray<FCommandForgeError>& OutErrors)
+    void FAIFlowSpecValidator::CheckGamePath(const FString& Value, const FString& Field,
+                                             TArray<FCommandForgeError>& OutErrors)
     {
         if (!Value.IsEmpty() && !Value.StartsWith(TEXT("/Game/")))
         {
             OutErrors.Add({ TEXT("INVALID_PATH"), FString::Printf(TEXT("'%s'는 /Game/ 으로 시작해야 합니다."), *Field), Field });
+            return;
+        }
+
+        FText Reason;
+        if (!Value.IsEmpty() && !FPackageName::IsValidLongPackageName(Value, false, &Reason))
+        {
+            OutErrors.Add({ TEXT("INVALID_PATH"),
+                FString::Printf(TEXT("'%s'는 유효한 Unreal 패키지 경로여야 합니다: %s"), *Field, *Reason.ToString()),
+                Field });
         }
     }
 
@@ -33,11 +43,11 @@ namespace UECommandForge
         CheckRequiredPath(Spec.Placement.MapPath,       TEXT("Placement.MapPath"),       OutErrors);
         CheckRequiredPath(Spec.Placement.BlueprintPath, TEXT("Placement.BlueprintPath"), OutErrors);
 
-        CheckGamePrefix(Spec.Character.AssetPath,     TEXT("Character.AssetPath"),     OutErrors);
-        CheckGamePrefix(Spec.AIController.AssetPath,  TEXT("AIController.AssetPath"),  OutErrors);
-        CheckGamePrefix(Spec.StateTree.AssetPath,     TEXT("StateTree.AssetPath"),     OutErrors);
-        CheckGamePrefix(Spec.Placement.MapPath,       TEXT("Placement.MapPath"),       OutErrors);
-        CheckGamePrefix(Spec.Placement.BlueprintPath, TEXT("Placement.BlueprintPath"), OutErrors);
+        CheckGamePath(Spec.Character.AssetPath,     TEXT("Character.AssetPath"),     OutErrors);
+        CheckGamePath(Spec.AIController.AssetPath,  TEXT("AIController.AssetPath"),  OutErrors);
+        CheckGamePath(Spec.StateTree.AssetPath,     TEXT("StateTree.AssetPath"),     OutErrors);
+        CheckGamePath(Spec.Placement.MapPath,       TEXT("Placement.MapPath"),       OutErrors);
+        CheckGamePath(Spec.Placement.BlueprintPath, TEXT("Placement.BlueprintPath"), OutErrors);
 
         for (const FStateTreeTaskSpec& Task : Spec.StateTree.Tasks)
         {

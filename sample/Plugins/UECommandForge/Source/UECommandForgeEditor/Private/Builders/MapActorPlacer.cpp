@@ -25,6 +25,31 @@ namespace UECommandForge
                 FPackageName::LongPackageNameToFilename(MapPath, FPackageName::GetMapPackageExtension()));
         }
 
+        bool ValidateMapPath(const FString& MapPath,
+                             TArray<FCommandForgeError>& OutErrors)
+        {
+            if (MapPath.IsEmpty() || !MapPath.StartsWith(TEXT("/Game/")))
+            {
+                AddMapError(OutErrors, TEXT("INVALID_MAP_PATH"),
+                    FString::Printf(TEXT("맵 경로는 /Game/ 으로 시작해야 합니다: %s"), *MapPath),
+                    TEXT("Placement.MapPath"));
+                return false;
+            }
+
+            FText Reason;
+            if (!FPackageName::IsValidLongPackageName(MapPath, false, &Reason))
+            {
+                AddMapError(OutErrors, TEXT("INVALID_MAP_PATH"),
+                    FString::Printf(TEXT("유효한 Unreal 맵 패키지 경로가 아닙니다: %s (%s)"),
+                        *MapPath,
+                        *Reason.ToString()),
+                    TEXT("Placement.MapPath"));
+                return false;
+            }
+
+            return true;
+        }
+
         UBlueprint* LoadPlacementBlueprint(const FString& BlueprintPath,
                                            TArray<FCommandForgeError>& OutErrors)
         {
@@ -38,16 +63,37 @@ namespace UECommandForge
             }
             return Blueprint;
         }
+
+        void RemoveExistingPlacedActors(UWorld* World, UClass* ActorClass)
+        {
+            TArray<AActor*> ActorsToRemove;
+            for (ULevel* Level : World->GetLevels())
+            {
+                if (!Level)
+                {
+                    continue;
+                }
+                for (AActor* Actor : Level->Actors)
+                {
+                    if (Actor && Actor->IsA(ActorClass))
+                    {
+                        ActorsToRemove.Add(Actor);
+                    }
+                }
+            }
+
+            for (AActor* Actor : ActorsToRemove)
+            {
+                World->EditorDestroyActor(Actor, true);
+            }
+        }
     }
 
     UWorld* FMapActorPlacer::LoadOrCreateMap(const FString& MapPath,
                                              TArray<FCommandForgeError>& OutErrors)
     {
-        if (MapPath.IsEmpty() || !MapPath.StartsWith(TEXT("/Game/")))
+        if (!ValidateMapPath(MapPath, OutErrors))
         {
-            AddMapError(OutErrors, TEXT("INVALID_MAP_PATH"),
-                FString::Printf(TEXT("맵 경로는 /Game/ 으로 시작해야 합니다: %s"), *MapPath),
-                TEXT("Placement.MapPath"));
             return nullptr;
         }
 
@@ -95,6 +141,7 @@ namespace UECommandForge
             return false;
         }
 
+        RemoveExistingPlacedActors(World, Blueprint->GeneratedClass);
         const FTransform Transform(Spec.Rotation, Spec.Location);
         AActor* Actor = GEditor ? GEditor->AddActor(World->GetCurrentLevel(), Blueprint->GeneratedClass, Transform) : nullptr;
         if (!Actor)
@@ -120,6 +167,12 @@ namespace UECommandForge
                                             TMap<FString, FString>& OutValidation,
                                             TArray<FCommandForgeError>& OutErrors)
     {
+        if (!ValidateMapPath(Spec.MapPath, OutErrors))
+        {
+            OutValidation.Add(TEXT("actor_placed"), TEXT("not_found"));
+            return false;
+        }
+
         UWorld* World = GEditor ? GEditor->GetEditorWorldContext().World() : nullptr;
         if (!World || World->GetOutermost()->GetName() != Spec.MapPath)
         {
