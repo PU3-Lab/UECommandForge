@@ -310,7 +310,7 @@ int32 UCreateAIFlowCommandlet::Main(const FString& Params)
 - [ ] **Step 4: 테스트 재실행 — 통과 확인**
 
 ```bash
-./tools/test/run_automation_tests.sh
+./tools/test/automation/run.sh
 ```
 
 예상: `FCreateAIFlowCommandletTest` PASS.
@@ -468,7 +468,7 @@ git commit -m "docs: README 커맨드 표면 업데이트 (Phase 7 전체 반영
 ./tools/ue/build_plugin.sh
 
 # 2. 전체 자동화 테스트
-./tools/test/run_automation_tests.sh
+./tools/test/automation/run.sh
 
 # 3. 워크플로우 엔드-투-엔드
 ./tools/ue/create_ai_flow.sh specs/examples/guard_ai.json

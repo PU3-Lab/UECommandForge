@@ -1,8 +1,11 @@
 #include "Builders/AIControllerBlueprintBuilder.h"
-#include "KismetEditorUtilities.h"
+#include "Kismet2/KismetEditorUtilities.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Misc/PackageName.h"
+#include "Misc/Paths.h"
+#include "ObjectTools.h"
 #include "UObject/SavePackage.h"
+#include "UObject/GarbageCollection.h"
 #include "HAL/PlatformFileManager.h"
 #include "Engine/Blueprint.h"
 #include "Engine/BlueprintGeneratedClass.h"
@@ -28,10 +31,40 @@ namespace UECommandForge
             return false;
         }
 
+        const FString AssetName = FPackageName::GetLongPackageAssetName(Spec.AssetPath);
+        if (UPackage* ExistingPackage = FindPackage(nullptr, *Spec.AssetPath))
+        {
+            ExistingPackage->FullyLoad();
+            if (UObject* ExistingAsset = FindObject<UObject>(ExistingPackage, *AssetName))
+            {
+                TArray<UObject*> AssetsToDelete;
+                AssetsToDelete.Add(ExistingAsset);
+                if (ObjectTools::ForceDeleteObjects(AssetsToDelete, false) != AssetsToDelete.Num())
+                {
+                    OutErrors.Add({ TEXT("BP_DELETE_EXISTING_FAILED"),
+                        FString::Printf(TEXT("기존 Blueprint 삭제 실패: %s"), *Spec.AssetPath),
+                        TEXT("AIController.AssetPath") });
+                    return false;
+                }
+                CollectGarbage(RF_NoFlags);
+            }
+        }
+
+        const FString FileName = FPaths::ConvertRelativePathToFull(
+            FPackageName::LongPackageNameToFilename(Spec.AssetPath, FPackageName::GetAssetPackageExtension()));
+        IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+        if (PlatformFile.FileExists(*FileName) && !PlatformFile.DeleteFile(*FileName))
+        {
+            OutErrors.Add({ TEXT("BP_DELETE_EXISTING_FILE_FAILED"),
+                FString::Printf(TEXT("기존 Blueprint 파일 삭제 실패: %s"), *FileName),
+                TEXT("AIController.AssetPath") });
+            return false;
+        }
+
         UBlueprint* BP = FKismetEditorUtilities::CreateBlueprint(
             ParentClass,
             CreatePackage(*Spec.AssetPath),
-            *FPackageName::GetLongPackageAssetName(Spec.AssetPath),
+            *AssetName,
             BPTYPE_Normal,
             UBlueprint::StaticClass(),
             UBlueprintGeneratedClass::StaticClass());
@@ -60,12 +93,8 @@ namespace UECommandForge
         Package->SetDirtyFlag(true);
         FSavePackageArgs SaveArgs;
         SaveArgs.TopLevelFlags = RF_Public | RF_Standalone;
-        const FString FileName = FPackageName::LongPackageNameToFilename(
-            Spec.AssetPath, FPackageName::GetAssetPackageExtension());
-        const ESavePackageResult SaveResult = UPackage::SavePackage(Package, BP, *FileName, SaveArgs);
-
-        const bool bSavedOk = (SaveResult == ESavePackageResult::Success) &&
-                               FPlatformFileManager::Get().GetPlatformFile().FileExists(*FileName);
+        const bool bSavedOk = UPackage::SavePackage(Package, BP, *FileName, SaveArgs) &&
+                               PlatformFile.FileExists(*FileName);
         OutValidation.Add(TEXT("asset_on_disk"), bSavedOk ? TEXT("true") : TEXT("false"));
         if (!bSavedOk)
         {

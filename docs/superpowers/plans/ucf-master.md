@@ -34,6 +34,31 @@ jq -e '.ok and .validation.actor_placed and .validation.blueprint_compile == "pa
 
 ---
 
+## 현재 스프린트 상태
+
+| Phase | 상태 | 최근 검증 |
+|---|---|---|
+| 1 | 완료 | `./tools/test/automation/run.sh` 기준 자동화 리포트 생성 확인 |
+| 2 | 완료 | Guard AI 예제 Spec 파싱·검증 경로에서 재검증 |
+| 3 | 완료 | `./tools/test/smoke/create_blueprint.sh specs/examples/guard_ai.json` PASS 10 / FAIL 0 |
+| 4 | 대기 | Phase 3 인수 조건 통과 후 진행 |
+| 5 | 대기 | Phase 4 완료 후 진행 |
+| 6 | 대기 | Phase 5 완료 후 진행 |
+| 7 | 대기 | Phase 6 완료 후 진행 |
+
+### 2026-05-27 Phase 3 마감 노트
+
+- 테스트 스크립트 경로를 `tools/test/automation/run.sh`, `tools/test/smoke/create_blueprint.sh`로 정리했다.
+- Blueprint 생성 Commandlet은 기존 로드/부분 로드 에셋을 삭제한 뒤 저장하도록 보강했다.
+- 샘플 에셋 `BP_Guard.uasset`, `BP_GuardController.uasset`, `BP_TestCharacter.uasset`를 커밋 대상에 포함했다.
+- 검증 결과:
+  - `./tools/ue/build_plugin.sh` 성공
+  - 샘플 에디터 타깃 빌드 성공
+  - `./tools/test/automation/run.sh` PASS 8 / FAIL 0 / SKIP 0
+  - `./tools/test/smoke/create_blueprint.sh specs/examples/guard_ai.json` PASS 10 / FAIL 0
+
+---
+
 ## 리스크 및 가정
 
 | 리스크 | 완화 방안 |
