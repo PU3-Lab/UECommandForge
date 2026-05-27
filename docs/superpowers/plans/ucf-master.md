@@ -41,7 +41,7 @@ jq -e '.ok and .validation.actor_placed and .validation.blueprint_compile == "pa
 | 1 | 완료 | `./tools/test/automation/run.sh` 기준 자동화 리포트 생성 확인 |
 | 2 | 완료 | Guard AI 예제 Spec 파싱·검증 경로에서 재검증 |
 | 3 | 완료 | `./tools/test/smoke/create_blueprint.sh specs/examples/guard_ai.json` PASS 10 / FAIL 0 |
-| 4 | 대기 | Phase 3 인수 조건 통과 후 진행 |
+| 4 | 완료 | `./tools/test/automation/run.sh` PASS 9 / FAIL 0, `CreateStateTree` 리포트 `ok: true` |
 | 5 | 대기 | Phase 4 완료 후 진행 |
 | 6 | 대기 | Phase 5 완료 후 진행 |
 | 7 | 대기 | Phase 6 완료 후 진행 |
@@ -56,6 +56,18 @@ jq -e '.ok and .validation.actor_placed and .validation.blueprint_compile == "pa
   - 샘플 에디터 타깃 빌드 성공
   - `./tools/test/automation/run.sh` PASS 8 / FAIL 0 / SKIP 0
   - `./tools/test/smoke/create_blueprint.sh specs/examples/guard_ai.json` PASS 10 / FAIL 0
+
+### 2026-05-27 Phase 4 마감 노트
+
+- StateTree 생성 흐름을 `StateTreeEditorAdapter`, `StateTreeBuilder`, `CreateStateTreeCommandlet`, `tools/ue/create_statetree.sh`로 추가했다.
+- UE 5.7 StateTree Editor API 스파이크 결과를 반영해 `UStateTreeFactory`, `UStateTreeState::AddTask<T>`, `UStateTreeEditingSubsystem::CompileStateTree` 기반으로 구현했다.
+- 샘플 에셋 `ST_Guard.uasset`, 자동화 테스트 에셋 `ST_TestTree.uasset`를 커밋 대상에 포함한다.
+- 검증 결과:
+  - `./tools/ue/build_plugin.sh` 성공
+  - 샘플 `UnrealEditor` 타깃 빌드 성공
+  - `./tools/test/automation/run.sh` PASS 9 / FAIL 0 / SKIP 0
+  - `./tools/test/smoke/create_statetree.sh specs/examples/guard_ai.json` PASS 5 / FAIL 0
+  - `sample/Saved/CodexReports/CreateStateTree_20260527T091001Z.json` 기준 `ok: true`, `compile_status: ok`, `asset_on_disk: true`, `asset_in_registry: true`
 
 ---
 

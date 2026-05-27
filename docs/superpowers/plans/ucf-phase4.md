@@ -36,6 +36,7 @@ find "${UE_ROOT}/Engine/Plugins/Runtime/StateTree/Source/StateTreeEditorModule/P
 | `Plugins/.../Private/Commandlets/CreateStateTreeCommandlet.h/.cpp` | StateTree 생성 Commandlet |
 | `Plugins/.../Tests/StateTreeBuilderTest.cpp` | 자동화 테스트 |
 | `tools/ue/create_statetree.sh` | Shell Wrapper |
+| `tools/test/smoke/create_statetree.sh` | StateTree 생성 end-to-end smoke test |
 
 ---
 
@@ -339,8 +340,20 @@ git commit -m "feat: CreateStateTreeCommandlet + Shell Wrapper"
 ./tools/test/automation/run.sh
 
 # 3. StateTree 생성
-./tools/ue/create_statetree.sh specs/examples/guard_ai.json
-jq -e '.ok == true' "$(ls -t Saved/CodexReports/CreateStateTree_*.json | head -1)"
+./tools/test/smoke/create_statetree.sh specs/examples/guard_ai.json
+jq -e '.ok == true and .validation.compile_status == "ok" and .validation.asset_on_disk == "true"' \
+   "$(ls -t sample/Saved/CodexReports/CreateStateTree_*.json | head -1)"
 ```
 
 Phase 4 완료 조건: `ST_Guard.uasset`가 `Content/` 에 생성되고, `ok: true`가 Result JSON에 기록됨.
+
+### 2026-05-27 구현 메모
+
+- UE 5.7 스파이크 결과 `UStateTreeFactory`, `UStateTreeEditorData::AddRootState`, `UStateTreeState::AddChildState`, `UStateTreeState::AddTask<T>`, `UStateTreeEditingSubsystem::CompileStateTree` 공개 API를 사용했다.
+- `Wait`, `PlayMontage`는 CommandForge no-op StateTree task로 생성하고, `MoveTo`는 `FStateTreeMoveToTask`를 사용한다.
+- StateTree commandlet은 sandbox 밖 UE 캐시/설정 접근이 필요하므로 `tools/ue/create_statetree.sh` 실행 승인이 필요하다.
+- 검증 결과:
+  - `./tools/ue/build_plugin.sh` 성공
+  - `UnrealEditor Mac Development -Project=sample/UECommandForgeSample.uproject` 빌드 성공
+  - `./tools/test/automation/run.sh` PASS 9 / FAIL 0 / SKIP 0
+  - `./tools/test/smoke/create_statetree.sh specs/examples/guard_ai.json` PASS 5 / FAIL 0, `ST_Guard.uasset` 생성
