@@ -16,8 +16,9 @@ public class UECommandForgeEditor : ModuleRules
             "AssetTools", "AssetRegistry",
             "BlueprintGraph", "KismetCompiler", "Kismet",
             "EditorScriptingUtilities",
-            "AIModule"
-            // StateTree 모듈은 Phase 4에서 추가
+            "AIModule", "GameplayTasks", "NavigationSystem",
+            "StateTreeModule", "StateTreeEditorModule", "GameplayStateTreeModule",
+            "PropertyBindingUtils"
         });
     }
 }
