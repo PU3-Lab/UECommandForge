@@ -43,7 +43,7 @@ jq -e '.ok and .validation.actor_placed and .validation.blueprint_compile == "pa
 | 3 | 완료 | `./tools/test/smoke/create_blueprint.sh specs/examples/guard_ai.json` PASS 10 / FAIL 0 |
 | 4 | 완료 | `./tools/test/automation/run.sh` PASS 9 / FAIL 0, `CreateStateTree` 리포트 `ok: true` |
 | 5 | 완료 | `./tools/test/automation/run.sh` PASS 10 / FAIL 0, `./tools/test/smoke/ai_flow_binding.sh specs/examples/guard_ai.json` PASS 8 / FAIL 0 |
-| 6 | 대기 | Phase 5 완료 후 진행 |
+| 6 | 완료 | `PlaceActor` 리포트 `ok: true`, `actor_placed: ok` |
 | 7 | 대기 | Phase 6 완료 후 진행 |
 
 ### 2026-05-27 Phase 3 마감 노트
@@ -81,6 +81,15 @@ jq -e '.ok and .validation.actor_placed and .validation.blueprint_compile == "pa
   - `./tools/test/smoke/ai_flow_binding.sh specs/examples/guard_ai.json` PASS 8 / FAIL 0
   - `sample/Saved/CodexReports/BindAIFlow_20260527T094750Z.json` 기준 `ok: true`, `ai_controller_class: ok`, `auto_possess_ai: ok`, `statetree_component: ok`
   - `sample/Saved/CodexReports/ValidateAIFlow_20260527T094757Z.json` 기준 `ok: true`, `ai_controller_class: ok`, `auto_possess_ai: ok`, `statetree_component: ok`
+
+### 2026-05-27 Phase 6 마감 노트
+
+- 맵 배치 흐름을 `MapActorPlacer`, `PlaceActorCommandlet`, `tools/ue/place_actor.sh`로 추가했다.
+- `MapActorPlacer`는 `/Game/` 맵 경로 검증, 기존 맵 로드, 신규 빈 맵 생성·저장, Blueprint actor 배치, 저장 후 재검증을 수행한다.
+- 반복 실행 시 같은 Blueprint actor가 중복 배치되지 않도록 기존 actor를 제거한 뒤 다시 배치한다.
+- 검증 결과:
+  - `sample/Saved/CodexReports/PlaceActor_20260527T122059Z.json` 기준 `ok: true`, `actor_placed: ok`
+  - `MapActorPlacerTest`는 배치, 검증, 반복 실행 후 actor 1개 유지 조건을 포함한다.
 
 ---
 
