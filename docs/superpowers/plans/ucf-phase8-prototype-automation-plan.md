@@ -755,6 +755,9 @@ asset policy, C++ policy, data policy를 한 번에 실행하는 통합 검증 C
 
 Phase 8 명령 표면을 macOS/Linux/Git Bash와 Windows Command Prompt 기준으로 추가한다.
 
+진행 상태:
+- 2026-05-28: README에 release package 생성, 검증, install, update, uninstall, smoke, Windows host 제한 리포트 안내를 추가했다. 전체 Phase 8 명령 표면은 DataAsset/DataTable/Config Task 완료 후 최종 갱신한다.
+
 - [ ] **Step 2: 마스터 플랜 갱신**
 
 Phase 8 상태, 검증 결과, 남은 리스크를 기록한다.
@@ -762,6 +765,9 @@ Phase 8 상태, 검증 결과, 남은 리스크를 기록한다.
 - [ ] **Step 3: 리뷰/eval 리포트 작성**
 
 `docs/superpowers/plans/ucf-phase8-review-eval-report.md`를 작성한다.
+
+진행 상태:
+- 2026-05-28: 배포 및 릴리즈 패키징 구간 review/eval report를 `docs/superpowers/plans/ucf-phase8-review-eval-report.md`에 작성했다. Phase 8 전체 최종 report는 남은 DataAsset/DataTable/Config Task 완료 후 재확정한다.
 
 ## Task 6: 배포 및 릴리즈 계획
 

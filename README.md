@@ -45,6 +45,73 @@ LLM은 이 표에 있는 명령만 호출해야 한다.
 - Windows 기본값 (Git Bash): `/c/Program Files/Epic Games/UE_5.7`
 - Windows 기본값 (Command Prompt): `C:\Program Files\Epic Games\UE_5.7`
 
+## 설치 및 릴리즈 패키지
+
+릴리즈 설치는 UE 플러그인과 Codex 도구를 분리한다.
+
+| 대상 | 설치 위치 |
+|---|---|
+| UE plugin | `<Project>/Plugins/UECommandForge` |
+| Codex tools/specs | `~/.codex/UECommandForge` |
+| 프로젝트 연결 manifest | `<Project>/UECommandForge/uecommandforge-project.json` |
+| Codex 설치 manifest | `~/.codex/UECommandForge/uecommandforge-installed.json` |
+
+로컬 릴리즈 패키지 생성:
+
+```bash
+tools/release/package_plugin.sh --version 0.1.0 --channel local --out-dir sample/Saved/Release
+tools/release/package_tools.sh --version 0.1.0 --channel local --out-dir sample/Saved/Release
+tools/release/package_source.sh --version 0.1.0 --channel local --out-dir sample/Saved/Release
+```
+
+각 패키지 ZIP 옆에는 같은 디렉터리의 `checksums.txt`가 있어야 한다. 설치 전 검증:
+
+```bash
+tools/release/verify_release_package.sh sample/Saved/Release/UECommandForge-0.1.0-Tools.zip sample/Saved/Release/checksums.txt
+```
+
+프로젝트 설치:
+
+```bash
+./install-uecommandforge.sh \
+  --project /path/to/MyProject.uproject \
+  --plugin-package sample/Saved/Release/UECommandForge-0.1.0-UE5.7-Mac.zip \
+  --tools-package sample/Saved/Release/UECommandForge-0.1.0-Tools.zip
+```
+
+업데이트는 backup을 강제한다.
+
+```bash
+tools/release/update_install.sh \
+  --project /path/to/MyProject.uproject \
+  --plugin-package sample/Saved/Release/UECommandForge-0.1.0-UE5.7-Mac.zip \
+  --tools-package sample/Saved/Release/UECommandForge-0.1.0-Tools.zip
+```
+
+삭제:
+
+```bash
+tools/release/uninstall.sh --project /path/to/MyProject.uproject
+```
+
+기본 삭제는 프로젝트 플러그인과 project link만 제거하고 Codex tools/specs와 설치 manifest는 보존한다. Codex tools/specs까지 제거하려면 명시적으로 지정한다.
+
+```bash
+tools/release/uninstall.sh \
+  --project /path/to/MyProject.uproject \
+  --remove-codex-tools true \
+  --remove-specs true
+```
+
+설치 검증 smoke:
+
+```bash
+tools/test/smoke/release_package_install.sh
+tools/test/smoke/installer_install_update_uninstall.sh
+```
+
+Windows Command Prompt와 PowerShell wrapper는 포함되어 있지만, 실제 `.bat` 실행 검증은 Windows 호스트가 필요하다. macOS에서는 `tools/test/smoke/windows_release_validation_report.sh`가 `windows_host_required` 제한 리포트를 생성한다.
+
 ## 개발용 C++ 정적 분석
 
 `clang-tidy`와 `cppcheck`는 UECommandForge 플러그인 배포물에 포함하지 않는다. 배포 패키지는 Unreal 플러그인 코드만 포함하고, 정적 분석기는 개발/CI 환경의 외부 prerequisite로 설치한다.

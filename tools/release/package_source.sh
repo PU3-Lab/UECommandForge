@@ -122,9 +122,8 @@ specs
 
 Installer status:
 
-Task 6 installer scripts are not shipped yet. Until then, copy plugin files to
-\`<Project>/Plugins/UECommandForge\` and Codex tools/specs to
-\`~/.codex/UECommandForge\`.
+Use \`tools/release/install_local.sh\` with a verified plugin package and tools
+package to install project plugin files and Codex-side tools/specs.
 INSTALL
 
 cat > "${PACKAGE_DIR}/release-notes.md" <<NOTES

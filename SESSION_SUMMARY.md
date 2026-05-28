@@ -46,6 +46,8 @@
 | `tools/test/smoke/release_package_install.sh` | package install/uninstall smoke |
 | `tools/test/smoke/installer_install_update_uninstall.sh` | install/update/uninstall smoke |
 | `tools/test/smoke/windows_release_validation_report.sh` | Windows 실기 제한 리포트 smoke |
+| `docs/superpowers/plans/ucf-phase8-review-eval-report.md` | 배포/릴리즈 패키징 구간 리뷰 및 eval 리포트 |
+| `README.md` | 릴리즈 패키지 생성, 검증, install/update/uninstall, Windows 제한 안내 |
 | `docs/superpowers/plans/ucf-phase8-prototype-automation-plan.md` | Task 6 진행 로그, 독립 리뷰 findings, 수정/검증 결과 기록 |
 | `SESSION_SUMMARY.md` | 이번 세션 요약 갱신 |
 
@@ -84,6 +86,7 @@
 | `./tools/test/smoke/windows_command_wrappers.sh` 리뷰 수정 후 | 통과 |
 | `./tools/test/smoke/windows_release_validation_report.sh` 리뷰 수정 후 | 통과 |
 | `UECF_RELEASE_PLUGIN_SKIP_BUILD=1 ./tools/test/smoke/release_package_plugin.sh` | 통과 |
+| source package install guide regression | `installer scripts are not shipped yet` 문구 제거 및 `tools/release/install_local.sh` 안내 확인 |
 | source zip internal/generated output scan | `docs/memory`, plugin `Binaries`, `Intermediate`, `Saved`, `DerivedDataCache` 매치 없음 |
 | `git diff --check` | 통과 |
 | secret pattern scan | 이상 없음 |
@@ -102,5 +105,5 @@
 1. Phase 8 Task 6 남은 항목 진행
    - Windows 실제 호스트에서 `.bat` package/install wrapper 실기 검증
    - UE commandlet 기반 설치 후 검증 smoke
-   - README install 섹션과 Phase 8 review/eval report 갱신
 2. 필요 시 release version `0.8.0` 승격과 `CHANGELOG.md` 작성 여부 결정
+3. Phase 8 DataAsset/DataTable/Config 제품화 Task 진행

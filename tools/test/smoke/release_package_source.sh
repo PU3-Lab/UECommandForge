@@ -86,6 +86,12 @@ unzip -p "${SOURCE_ZIP}" validation-report.json | jq -e \
    and .status == "pass"
    and (.checks[] | select(.name == "generated source package"))' >/dev/null
 
+if unzip -p "${SOURCE_ZIP}" install.md | grep -q 'installer scripts are not shipped yet'; then
+  echo "source package install guide must not claim installer scripts are missing" >&2
+  exit 1
+fi
+unzip -p "${SOURCE_ZIP}" install.md | grep -q 'tools/release/install_local.sh'
+
 "${REPO_ROOT}/tools/release/verify_release_package.sh" "${SOURCE_ZIP}" "${CHECKSUMS}"
 
 grep -q "UECommandForge-${VERSION}-Source.zip" "${CHECKSUMS}"
