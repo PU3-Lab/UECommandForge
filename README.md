@@ -59,15 +59,17 @@ LLM은 이 표에 있는 명령만 호출해야 한다.
 로컬 릴리즈 패키지 생성:
 
 ```bash
-tools/release/package_plugin.sh --version 0.1.0 --channel local --out-dir sample/Saved/Release
-tools/release/package_tools.sh --version 0.1.0 --channel local --out-dir sample/Saved/Release
-tools/release/package_source.sh --version 0.1.0 --channel local --out-dir sample/Saved/Release
+tools/release/package_plugin.sh --version 0.1.0 --channel local --out-dir sample/Saved/Release/Plugin
+tools/release/package_tools.sh --version 0.1.0 --channel local --out-dir sample/Saved/Release/Tools
+tools/release/package_source.sh --version 0.1.0 --channel local --out-dir sample/Saved/Release/Source
 ```
 
 각 패키지 ZIP 옆에는 같은 디렉터리의 `checksums.txt`가 있어야 한다. 설치 전 검증:
 
 ```bash
-tools/release/verify_release_package.sh sample/Saved/Release/UECommandForge-0.1.0-Tools.zip sample/Saved/Release/checksums.txt
+tools/release/verify_release_package.sh \
+  sample/Saved/Release/Tools/UECommandForge-0.1.0-Tools.zip \
+  sample/Saved/Release/Tools/checksums.txt
 ```
 
 프로젝트 설치:
@@ -75,8 +77,8 @@ tools/release/verify_release_package.sh sample/Saved/Release/UECommandForge-0.1.
 ```bash
 ./install-uecommandforge.sh \
   --project /path/to/MyProject.uproject \
-  --plugin-package sample/Saved/Release/UECommandForge-0.1.0-UE5.7-Mac.zip \
-  --tools-package sample/Saved/Release/UECommandForge-0.1.0-Tools.zip
+  --plugin-package sample/Saved/Release/Plugin/UECommandForge-0.1.0-UE5.7-Mac.zip \
+  --tools-package sample/Saved/Release/Tools/UECommandForge-0.1.0-Tools.zip
 ```
 
 업데이트는 backup을 강제한다.
@@ -84,8 +86,8 @@ tools/release/verify_release_package.sh sample/Saved/Release/UECommandForge-0.1.
 ```bash
 tools/release/update_install.sh \
   --project /path/to/MyProject.uproject \
-  --plugin-package sample/Saved/Release/UECommandForge-0.1.0-UE5.7-Mac.zip \
-  --tools-package sample/Saved/Release/UECommandForge-0.1.0-Tools.zip
+  --plugin-package sample/Saved/Release/Plugin/UECommandForge-0.1.0-UE5.7-Mac.zip \
+  --tools-package sample/Saved/Release/Tools/UECommandForge-0.1.0-Tools.zip
 ```
 
 삭제:
