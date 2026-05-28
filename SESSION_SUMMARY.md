@@ -86,13 +86,15 @@
 ## 현재 상태
 
 - **브랜치:** `main`
-- **워킹 트리:** installer / Windows validation 변경 사항 커밋 예정
-- **커밋 메시지 후보:** `feat: add release installer smoke`
+- **워킹 트리:** clean
+- **최신 커밋:** `d9db79b feat: add release installer smoke`
+- **origin 대비:** 5 commits ahead
 - **푸시:** 아직 요청되지 않았으므로 실행하지 않음
 
 ## 다음 작업
 
-1. 이번 변경 커밋
-2. Phase 8 Task 6 남은 항목 진행
+1. Phase 8 Task 6 남은 항목 진행
    - Windows 실제 호스트에서 `.bat` package/install wrapper 실기 검증
    - UE commandlet 기반 설치 후 검증 smoke
+   - README install 섹션과 Phase 8 review/eval report 갱신
+2. 필요 시 release version `0.8.0` 승격과 `CHANGELOG.md` 작성 여부 결정
