@@ -14,6 +14,7 @@ struct FCommandForgeReport
     TArray<FString> ModifiedAssets;
     TArray<FString> ChangedAssets;
     TArray<FString> ChangedFiles;
+    TArray<FCommandForgeAssetSnapshotRecord> Assets;
     TMap<FString, FString> Validation;
     TMap<FString, FString> PostValidation;
     TArray<FCommandForgeValidationIssue> ValidationIssues;

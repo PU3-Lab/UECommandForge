@@ -31,6 +31,24 @@ namespace UECommandForge
         Root->SetArrayField(TEXT("changed_files"),   ToArray(Report.ChangedFiles));
         Root->SetArrayField(TEXT("next_suggestions"), ToArray(Report.NextSuggestions));
 
+        TArray<TSharedPtr<FJsonValue>> AssetValues;
+        for (const FCommandForgeAssetSnapshotRecord& Asset : Report.Assets)
+        {
+            TSharedRef<FJsonObject> O = MakeShared<FJsonObject>();
+            O->SetStringField(TEXT("asset_name"), Asset.AssetName);
+            O->SetStringField(TEXT("package_path"), Asset.PackagePath);
+            O->SetStringField(TEXT("object_path"), Asset.ObjectPath);
+            O->SetStringField(TEXT("asset_class"), Asset.AssetClass);
+            O->SetStringField(TEXT("package_name"), Asset.PackageName);
+            O->SetStringField(TEXT("disk_path"), Asset.DiskPath);
+            O->SetBoolField(TEXT("is_redirector"), Asset.bIsRedirector);
+            O->SetBoolField(TEXT("package_dirty"), Asset.bPackageDirty);
+            O->SetArrayField(TEXT("dependencies"), ToArray(Asset.Dependencies));
+            O->SetArrayField(TEXT("referencers"), ToArray(Asset.Referencers));
+            AssetValues.Add(MakeShared<FJsonValueObject>(O));
+        }
+        Root->SetArrayField(TEXT("assets"), AssetValues);
+
         auto ToObject = [](const TMap<FString, FString>& In)
         {
             TSharedRef<FJsonObject> Out = MakeShared<FJsonObject>();

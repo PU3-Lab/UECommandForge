@@ -32,7 +32,7 @@ run_unreal_commandlet() {
   "${UNREAL_EDITOR_CMD}" "${PROJECT_FILE}" \
     -run="${COMMANDLET}" \
     -Output="${OUTPUT_JSON}" \
-    -unattended -nop4 -nosplash -log -stdout -FullStdOutLogOutput \
+    -unattended -nop4 -nosplash -nullrhi -log -stdout -FullStdOutLogOutput \
     "$@"
 }
 

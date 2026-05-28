@@ -63,6 +63,23 @@ struct UECOMMANDFORGERUNTIME_API FCommandForgeRollbackPlan
 };
 
 USTRUCT()
+struct UECOMMANDFORGERUNTIME_API FCommandForgeAssetSnapshotRecord
+{
+    GENERATED_BODY()
+
+    UPROPERTY() FString AssetName;
+    UPROPERTY() FString PackagePath;
+    UPROPERTY() FString ObjectPath;
+    UPROPERTY() FString AssetClass;
+    UPROPERTY() FString PackageName;
+    UPROPERTY() FString DiskPath;
+    UPROPERTY() bool bIsRedirector = false;
+    UPROPERTY() bool bPackageDirty = false;
+    UPROPERTY() TArray<FString> Dependencies;
+    UPROPERTY() TArray<FString> Referencers;
+};
+
+USTRUCT()
 struct UECOMMANDFORGERUNTIME_API FCommandForgeStepResult
 {
     GENERATED_BODY()
