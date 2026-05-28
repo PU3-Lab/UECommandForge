@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 사용법: run_commandlet.sh <CommandletName> [extra-args...]
-# Result JSON은 항상 sample/Saved/CodexReports/<Commandlet>_<UTC>.json에 기록된다.
+# Result JSON은 대상 project의 Saved/CodexReports/<Commandlet>_<UTC>.json에 기록된다.
 
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,7 +15,13 @@ fi
 COMMANDLET="$1"
 shift
 
-REPORT_DIR="${REPO_ROOT}/sample/Saved/CodexReports"
+if [ ! -f "${PROJECT_FILE}" ]; then
+  echo "[run_commandlet] Project file을 찾을 수 없습니다: ${PROJECT_FILE}" >&2
+  exit 2
+fi
+
+PROJECT_DIR="$(cd "$(dirname "${PROJECT_FILE}")" && pwd)"
+REPORT_DIR="${UECF_REPORT_DIR:-${PROJECT_DIR}/Saved/CodexReports}"
 mkdir -p "${REPORT_DIR}"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 OUTPUT_JSON="${REPORT_DIR}/${COMMANDLET}_${STAMP}.json"

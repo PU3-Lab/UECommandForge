@@ -5,7 +5,13 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-PROJECT_FILE="${REPO_ROOT}/sample/UECommandForgeSample.uproject"
+if [ -n "${UECF_PROJECT_FILE:-}" ]; then
+  PROJECT_FILE="${UECF_PROJECT_FILE}"
+elif [ -n "${PROJECT_FILE:-}" ]; then
+  PROJECT_FILE="${PROJECT_FILE}"
+else
+  PROJECT_FILE="${REPO_ROOT}/sample/UECommandForgeSample.uproject"
+fi
 
 resolve_ue_cmd() {
   if [ -n "${UNREAL_EDITOR_CMD:-}" ]; then

@@ -5,7 +5,11 @@ set "SCRIPT_DIR=%~dp0"
 for %%I in ("%SCRIPT_DIR%..\..") do set "RESOLVED_REPO_ROOT=%%~fI"
 
 if not defined REPO_ROOT set "REPO_ROOT=%RESOLVED_REPO_ROOT%"
-if not defined PROJECT_FILE set "PROJECT_FILE=%REPO_ROOT%\sample\UECommandForgeSample.uproject"
+if defined UECF_PROJECT_FILE (
+  set "PROJECT_FILE=%UECF_PROJECT_FILE%"
+) else (
+  if not defined PROJECT_FILE set "PROJECT_FILE=%REPO_ROOT%\sample\UECommandForgeSample.uproject"
+)
 
 if not defined UNREAL_EDITOR_CMD (
   if not defined UE_ROOT set "UE_ROOT=C:\Program Files\Epic Games\UE_5.7"

@@ -580,6 +580,49 @@ Spec 필드:
 남은 항목:
 - 없음
 
+## Task 2.5: 중간 실사용 검증
+
+배포 스크립트를 만들기 전에, repo-root에서만 동작하는 개발자 smoke가 아니라 실제 설치 형태에 가까운 사용 흐름을 먼저 검증한다.
+
+검증 가정:
+- UE 플러그인은 대상 프로젝트에 설치되어 있다.
+- Codex가 호출하는 `tools/ue`, `tools/test`, `specs`는 `~/.codex/UECommandForge`와 같은 Codex 전용 루트에 설치된다.
+- Codex 도구 루트의 wrapper는 `UECF_PROJECT_FILE` 또는 `PROJECT_FILE`로 대상 `.uproject`를 찾고, Result JSON은 대상 프로젝트의 `Saved/CodexReports`에 기록한다.
+
+- [x] **Step 1: Codex 도구 루트 분리 실행 지원**
+
+구현 상태:
+- 2026-05-28: `tools/ue/ue_env.sh`와 `tools/ue/ue_env.bat`가 `UECF_PROJECT_FILE`을 우선 사용하도록 수정했다. 기존 `PROJECT_FILE` override도 보존하고, 둘 다 없으면 repo sample project를 기본값으로 사용한다.
+- 2026-05-28: `tools/ue/run_commandlet.sh`와 `tools/ue/run_commandlet.bat`가 Result JSON을 repo-root가 아니라 대상 project directory의 `Saved/CodexReports`에 쓰도록 수정했다. 고급 override는 `UECF_REPORT_DIR`로 제공한다.
+- 2026-05-28: `windows_command_wrappers.sh`에 `UECF_PROJECT_FILE`, `UECF_REPORT_DIR` 정적 검증을 추가했다.
+
+검증:
+- RED: `tools/test/smoke/mid_real_project_flow.sh`를 먼저 추가해 Codex 전용 루트 복사본에서 `Hello`를 실행했고, 기존 wrapper가 복사된 루트 아래의 `sample/UECommandForgeSample.uproject`를 찾으려 해 실패했다.
+- GREEN: wrapper override 수정 후 `/bin/zsh -lc "UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/mid_real_project_flow.sh"` 승인된 샌드박스 외부 실행 통과.
+- GREEN: 기존 repo-root 기본 실행도 `/bin/zsh -lc "UE_COMMANDLET_TIMEOUT=90 ./tools/ue/hello.sh"` 승인된 샌드박스 외부 실행으로 재검증해 통과했다.
+- REVIEW-FIX: `mid_real_project_flow.sh`가 `latest_report`로 stale JSON을 재사용할 수 있어, 각 wrapper stdout에서 실제 Result JSON path 패턴만 캡처해 검증하도록 수정했다. Unreal Trace Server 종료 로그가 path 뒤에 섞이는 경우도 같이 보정했다. Windows wrapper도 `.uproject\..` 대신 `%%~dpI`로 project directory를 계산하도록 보강했다.
+
+- [x] **Step 2: 중간 실사용 smoke 추가**
+
+추가 파일:
+- `tools/test/smoke/mid_real_project_flow.sh`
+
+검증 흐름:
+- repo `tools`와 `specs`를 `sample/Saved/CodexReports/MidRealProject/codex-home/UECommandForge`에 복사한다.
+- `UECF_PROJECT_FILE`로 sample `.uproject`를 지정한다.
+- Codex 도구 루트에서 `Hello`, `AssetSnapshot`, `ValidateAssetRules`, `ValidateBuildCs`, `GenerateCppClass` dry-run, `ValidateCppReflection` 실패 리포트, `AnalyzeUhtLog` 실패 리포트/Markdown을 실행한다.
+- 결과 요약은 `sample/Saved/CodexReports/MidRealProject/mid_real_project_flow.md`에 기록한다.
+
+검증 결과:
+- GREEN: `mid_real_project_flow.md` 기준 PASS 8개.
+- PASS: Codex tools root에서 `Hello` 실행
+- PASS: Codex tools root에서 asset snapshot 실행
+- PASS: Codex specs root에서 asset policy 실행
+- PASS: Codex specs root에서 Build.cs policy 실행
+- PASS: Codex specs root에서 C++ generation dry-run 실행
+- PASS: project fixture 기반 reflection policy violation 리포트 생성
+- PASS: UHT log analysis JSON/Markdown 리포트 생성
+
 ## Task 3: DataAsset / DataTable / Config 관리 제품화
 
 - [ ] **Step 1: `DataSchemaSpec` 정의**
@@ -965,6 +1008,7 @@ git diff --check
 ./tools/test/smoke/cpp_generation.sh
 ./tools/test/smoke/cpp_reflection_policy.sh
 ./tools/test/smoke/uht_log_analysis.sh
+./tools/test/smoke/mid_real_project_flow.sh
 ./tools/test/smoke/data_validation.sh
 ./tools/test/smoke/data_import_rollback.sh
 ./tools/test/smoke/release_package_install.sh

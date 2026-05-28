@@ -13,7 +13,18 @@ if "%~1"=="" (
 set "COMMANDLET=%~1"
 shift /1
 
-set "REPORT_DIR=%REPO_ROOT%\sample\Saved\CodexReports"
+if not exist "%PROJECT_FILE%" (
+  echo [run_commandlet] Project file을 찾을 수 없습니다: %PROJECT_FILE% 1>&2
+  exit /b 2
+)
+
+if defined UECF_REPORT_DIR (
+  set "REPORT_DIR=%UECF_REPORT_DIR%"
+) else (
+  for %%I in ("%PROJECT_FILE%") do set "PROJECT_DIR=%%~dpI"
+  if "!PROJECT_DIR:~-1!"=="\" set "PROJECT_DIR=!PROJECT_DIR:~0,-1!"
+  set "REPORT_DIR=!PROJECT_DIR!\Saved\CodexReports"
+)
 if not exist "%REPORT_DIR%" mkdir "%REPORT_DIR%"
 
 for /f "usebackq delims=" %%I in (`powershell -NoProfile -Command "Get-Date -AsUTC -Format yyyyMMddTHHmmssZ" 2^>nul`) do set "STAMP=%%I"

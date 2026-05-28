@@ -48,7 +48,10 @@ do
 done
 
 require_contains tools/ue/ue_env.bat 'UnrealEditor-Cmd.exe'
+require_contains tools/ue/ue_env.bat 'UECF_PROJECT_FILE'
 require_contains tools/ue/run_commandlet.bat 'Saved\\CodexReports'
+require_contains tools/ue/run_commandlet.bat 'UECF_REPORT_DIR'
+require_contains tools/ue/run_commandlet.bat '%%~dpI'
 require_contains tools/ue/snapshot_assets.bat 'AssetSnapshot'
 require_contains tools/ue/validate_asset_rules.bat 'ValidateAssetRules'
 require_contains tools/ue/plan_asset_changes.bat 'PlanAssetChanges'
