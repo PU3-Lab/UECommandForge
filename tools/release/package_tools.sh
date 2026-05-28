@@ -69,6 +69,9 @@ mkdir -p "${PACKAGE_DIR}"
 
 cp -R "${REPO_ROOT}/tools" "${PACKAGE_DIR}/tools"
 cp -R "${REPO_ROOT}/specs" "${PACKAGE_DIR}/specs"
+cp "${REPO_ROOT}/install-uecommandforge.sh" "${PACKAGE_DIR}/install-uecommandforge.sh"
+cp "${REPO_ROOT}/install-uecommandforge.bat" "${PACKAGE_DIR}/install-uecommandforge.bat"
+cp "${REPO_ROOT}/install-uecommandforge.ps1" "${PACKAGE_DIR}/install-uecommandforge.ps1"
 
 if find "${PACKAGE_DIR}" -type l -print -quit | grep -q .; then
   echo "[package_tools] symlinks are not allowed in release packages" >&2
@@ -86,8 +89,8 @@ Install plugin files into the target Unreal project and install Codex tools/spec
 
 Installer status:
 
-Task 6 installer scripts are not shipped yet. Until then, copy this package into
-\`~/.codex/UECommandForge\` and set \`UECF_PROJECT_FILE\` when invoking wrappers.
+Use \`install-uecommandforge.sh\` with a verified plugin package and this tools
+package to install project plugin files and Codex-side tools/specs.
 INSTALL
 
 cat > "${PACKAGE_DIR}/release-notes.md" <<NOTES
@@ -102,7 +105,7 @@ cat > "${PACKAGE_DIR}/release-notes.md" <<NOTES
 ## Validation
 
 - Manifest file list and checksum verification are required.
-- Installer commands are intentionally empty until Task 6 installers ship.
+- Installer commands are recorded in \`uecommandforge-manifest.json\`.
 
 ## Known Limits
 
@@ -127,7 +130,6 @@ cat > "${PACKAGE_DIR}/validation-report.json" <<REPORT
     }
   ],
   "known_limits": [
-    "Installer scripts are not shipped yet.",
     "Windows wrapper execution requires verification on a Windows host."
   ]
 }
@@ -138,11 +140,17 @@ REPORT
   --version "${VERSION}" \
   --channel "${CHANNEL}" \
   --package-type tools \
+  --install-command "./install-uecommandforge.sh" \
+  --install-command "install-uecommandforge.bat" \
+  --install-command "install-uecommandforge.ps1" \
   --output "${PACKAGE_DIR}/uecommandforge-manifest.json"
 
 (
   cd "${PACKAGE_DIR}"
-  zip -qr "${ZIP_PATH}" tools specs uecommandforge-manifest.json install.md release-notes.md validation-report.json
+  zip -qr "${ZIP_PATH}" \
+    tools specs \
+    install-uecommandforge.sh install-uecommandforge.bat install-uecommandforge.ps1 \
+    uecommandforge-manifest.json install.md release-notes.md validation-report.json
 )
 
 "${SCRIPT_DIR}/write_checksums.sh" "${ZIP_PATH}" > "${CHECKSUMS_PATH}"

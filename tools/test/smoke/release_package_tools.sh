@@ -26,6 +26,9 @@ grep -q '^tools/ue/run_commandlet.sh$' "${ZIP_LIST}"
 grep -q '^tools/test/smoke/mid_real_project_flow.sh$' "${ZIP_LIST}"
 grep -q '^tools/release/package_tools.sh$' "${ZIP_LIST}"
 grep -q '^specs/policies/assets.policy.json$' "${ZIP_LIST}"
+grep -q '^install-uecommandforge.sh$' "${ZIP_LIST}"
+grep -q '^install-uecommandforge.bat$' "${ZIP_LIST}"
+grep -q '^install-uecommandforge.ps1$' "${ZIP_LIST}"
 grep -q '^uecommandforge-manifest.json$' "${ZIP_LIST}"
 grep -q '^validation-report.json$' "${ZIP_LIST}"
 
@@ -37,8 +40,11 @@ unzip -p "${TOOLS_ZIP}" uecommandforge-manifest.json | jq -e \
    and (.tool_files | index("tools/ue/run_commandlet.sh"))
    and (.tool_files | index("tools/test/smoke/mid_real_project_flow.sh"))
    and (.spec_files | index("specs/policies/assets.policy.json"))
-   and (.install_commands | length == 0)
+   and (.install_commands | index("./install-uecommandforge.sh"))
+   and (.install_commands | index("install-uecommandforge.bat"))
+   and (.install_commands | index("install-uecommandforge.ps1"))
    and (.checksums["tools/ue/run_commandlet.sh"] | type == "string")
+   and (.checksums["install-uecommandforge.sh"] | type == "string")
    and (.checksums["install.md"] | type == "string")
    and (.checksums["release-notes.md"] | type == "string")
    and (.checksums["validation-report.json"] | type == "string")

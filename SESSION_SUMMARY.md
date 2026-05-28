@@ -16,6 +16,11 @@
 | validation report | plugin/tools/source package 모두 `validation-report.json` 생성 및 checksum 필수 |
 | source package | tracked-file allowlist 기반으로 README, release-facing docs, sample plugin source, tools, specs 포함, `.git`, `docs/memory`, generated output 제외 |
 | source version 검증 | package version과 packaged `.uplugin` `VersionName` 불일치 시 실패 |
+| installer | plugin package는 대상 프로젝트 `Plugins/UECommandForge`, tools/specs는 Codex home `UECommandForge`에 설치 |
+| installer hardening | symlink target 거부, unmanaged target overwrite/delete 거부, external checksum fail-closed |
+| update | plugin/tools/specs 모두 backup, `update_install.sh`는 backup 강제 |
+| uninstall | plugin/project link 제거, Codex tools/specs는 명시 옵션으로 제거, env/installed manifest 제거 |
+| Windows validation | macOS에서는 실기 blocked report 생성, `.bat` wrapper 정적 검증 강화 |
 | zip content 검증 | 실제 ZIP 파일 목록, manifest 파일 목록, checksum key 목록이 정확히 일치해야 통과 |
 | external checksum | `checksums.txt`는 현재 ZIP basename 1개만 허용하고 SHA256을 직접 비교 |
 | installer command | installer 구현 전까지 `install_commands: []`만 허용 |
@@ -28,11 +33,19 @@
 | `tools/release/package_plugin.sh` | stale build output 제거, platform 감지/검증, `.uplugin` version 일치 검증, symlink 차단, checksum 기반 verify 호출 |
 | `tools/release/package_source.sh` | source package 생성, generated output 제외, validation report 생성, checksum 기반 verify 호출 |
 | `tools/release/package_tools.sh` | symlink 차단, installer 미구현 안내 정리, checksum 기반 verify 호출 |
+| `tools/release/install_local.sh` | plugin/tools package 검증 후 프로젝트와 Codex home에 설치, manifest/env/project link/log 생성 |
+| `tools/release/uninstall.sh` | plugin/project link 제거, Codex tools/specs 선택 제거 |
+| `tools/release/update_install.sh` | backup을 켠 install flow로 update 수행 |
+| `tools/release/write_windows_validation_report.sh` | Windows 실기 검증 제한 리포트 생성 |
+| `install-uecommandforge.sh`, `.bat`, `.ps1` | root installer entrypoint |
 | `tools/release/write_manifest.sh` | package 전체 payload checksum 생성, package type 기록, installer command 빈 배열 유지 |
 | `tools/release/verify_release_package.sh` | zip-slip/path traversal/symlink/checksum/file-list 검증 강화 |
 | `tools/test/smoke/release_package_plugin.sh` | full build 기본 smoke, skip-build는 opt-in, version/platform 음성 테스트 |
 | `tools/test/smoke/release_package_source.sh` | source package 정상/변조 검증 |
 | `tools/test/smoke/release_package_tools.sh` | 변조 ZIP/checksum 음성 테스트 확장 |
+| `tools/test/smoke/release_package_install.sh` | package install/uninstall smoke |
+| `tools/test/smoke/installer_install_update_uninstall.sh` | install/update/uninstall smoke |
+| `tools/test/smoke/windows_release_validation_report.sh` | Windows 실기 제한 리포트 smoke |
 | `docs/superpowers/plans/ucf-phase8-prototype-automation-plan.md` | Task 6 진행 로그, 독립 리뷰 findings, 수정/검증 결과 기록 |
 | `SESSION_SUMMARY.md` | 이번 세션 요약 갱신 |
 
@@ -60,6 +73,11 @@
 | `UECF_RELEASE_PLUGIN_SKIP_BUILD=1 ./tools/test/smoke/release_package_plugin.sh` | 통과 |
 | `./tools/test/smoke/release_package_plugin.sh` | full build 통과, `UECommandForge-0.1.0-UE5.7-Mac.zip` 생성 |
 | `./tools/test/smoke/windows_command_wrappers.sh` | 통과 |
+| `./tools/test/smoke/release_package_install.sh` | 통과 |
+| `./tools/test/smoke/installer_install_update_uninstall.sh` | 통과 |
+| `./tools/test/smoke/windows_release_validation_report.sh` | 통과 |
+| `./tools/test/smoke/release_package_source.sh` | 통과 |
+| `UECF_RELEASE_PLUGIN_SKIP_BUILD=1 ./tools/test/smoke/release_package_plugin.sh` | 통과 |
 | source zip internal/generated output scan | `docs/memory`, plugin `Binaries`, `Intermediate`, `Saved`, `DerivedDataCache` 매치 없음 |
 | `git diff --check` | 통과 |
 | secret pattern scan | 이상 없음 |
@@ -68,15 +86,13 @@
 ## 현재 상태
 
 - **브랜치:** `main`
-- **워킹 트리:** source package 서브에이전트 리뷰 수정 사항 커밋 예정
-- **커밋 메시지 후보:** `fix: harden source release package`
+- **워킹 트리:** installer / Windows validation 변경 사항 커밋 예정
+- **커밋 메시지 후보:** `feat: add release installer smoke`
 - **푸시:** 아직 요청되지 않았으므로 실행하지 않음
 
 ## 다음 작업
 
 1. 이번 변경 커밋
 2. Phase 8 Task 6 남은 항목 진행
-   - Windows 실기 package wrapper 검증
-3. 이후 자동 설치 스크립트 구현
-   - Codex-side tools/specs는 `~/.codex/UECommandForge` 설치
-   - UE plugin은 대상 프로젝트 `Plugins/UECommandForge` 설치
+   - Windows 실제 호스트에서 `.bat` package/install wrapper 실기 검증
+   - UE commandlet 기반 설치 후 검증 smoke

@@ -960,6 +960,15 @@ Windows 설치 동작:
 - project link manifest 제거
 - uninstall manifest와 로그 기록
 
+진행 상태:
+- 2026-05-28: macOS/Linux/Git Bash installer `install-uecommandforge.sh`, `tools/release/install_local.sh`, `tools/release/install_into_sample_project.sh`, `tools/release/uninstall.sh`, `tools/release/update_install.sh` 추가.
+- 2026-05-28: Windows compatibility wrapper `install-uecommandforge.bat`, `install-uecommandforge.ps1`, `tools/release/install_local.bat`, `tools/release/install_into_sample_project.bat`, `tools/release/uninstall.bat`, `tools/release/update_install.bat`, `tools/test/smoke/release_package_install.bat` 추가.
+- RED: `./tools/test/smoke/release_package_install.sh` 1차 실행은 `tools/release/install_local.sh`가 없어 실패했다.
+- GREEN: `./tools/test/smoke/release_package_install.sh` 통과. plugin package와 tools package를 임시 프로젝트/Codex home에 설치하고 plugin path, Codex tools/specs, env file, installed manifest, project link manifest, install log, uninstall log를 검증했다.
+- GREEN: `./tools/test/smoke/installer_install_update_uninstall.sh` 통과. install 후 local edit를 만들고 update에서 기존 설치가 backup으로 이동되는지, uninstall에서 plugin/tools/specs가 제거되는지 검증했다.
+- SUBAGENT-REVIEW: `reviewer`와 `security_reviewer` 서브에이전트 리뷰에서 symlink target overwrite/delete, unmanaged target overwrite/delete, external checksum downgrade, specs backup 누락, tools package installer 미포함, update backup 강제 실패, stale metadata, Windows root wrapper 누락이 지적됐다.
+- REVIEW-FIX: install/uninstall은 symlink target을 거부하고 managed manifest가 없는 기존 target overwrite/delete를 거부한다. release installer는 sibling `checksums.txt`가 없거나 현재 package를 참조하지 않으면 실패한다. update는 `--backup true`를 마지막 인자로 강제하고 plugin/tools/specs를 모두 backup한다. uninstall은 env/installed manifest를 제거한다. Tools package는 root installer entrypoint를 포함하고 manifest `install_commands`에 기록한다.
+
 - [ ] **Step 5: 설치 검증 스크립트 추가**
 
 추가 파일:
@@ -979,6 +988,9 @@ Windows 설치 동작:
 - `Hello` commandlet 실행
 - `ValidateProjectRules` 실행
 - Result JSON 생성 확인
+
+진행 상태:
+- 2026-05-28: 파일 시스템 설치/삭제 smoke `tools/test/smoke/release_package_install.sh`를 추가했다. UE commandlet 검증은 `--run-commandlet-check true` 옵션으로 분리했으며, 기본 smoke에서는 로컬 UE 실행 의존성을 피한다.
 
 - [ ] **Step 6: 설치 manifest 스키마 정의**
 
@@ -1104,6 +1116,11 @@ tools\test\smoke\prototype_automation.bat
 tools\test\smoke\release_package_install.bat
 tools\test\smoke\installer_install_update_uninstall.bat
 ```
+
+현재 Windows 검증 상태:
+- 2026-05-28: macOS 호스트에서는 Windows Command Prompt `.bat` 실기 실행이 불가능하므로 `tools/release/write_windows_validation_report.sh`와 `tools/test/smoke/windows_release_validation_report.sh`를 추가했다.
+- `tools/test/smoke/windows_command_wrappers.sh` 정적 검증은 package/install/update/uninstall `.bat` wrapper 존재와 Git Bash bridge 연결을 확인한다.
+- `windows-package-wrapper-validation.json`은 `status: "blocked"`, `reason: "windows_host_required"`로 기록하며, 실제 Windows 호스트에서 실행해야 하는 명령 목록을 포함한다.
 
 최종 인수 조건:
 - 자동화 테스트 전체 PASS

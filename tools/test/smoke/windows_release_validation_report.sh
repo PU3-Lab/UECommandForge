@@ -16,6 +16,9 @@ jq -e '
   .status == "blocked"
   and .reason == "windows_host_required"
   and (.static_checks[] | select(. == "tools/test/smoke/windows_command_wrappers.sh"))
+  and (.required_windows_commands[] | select(. == "install-uecommandforge.bat"))
+  and (.required_windows_commands[] | select(. == "install-uecommandforge.ps1"))
   and (.required_windows_commands[] | select(. == "tools\\release\\package_plugin.bat"))
   and (.required_windows_commands[] | select(. == "tools\\release\\install_local.bat"))
+  and (.required_windows_commands[] | select(. == "tools\\test\\smoke\\installer_install_update_uninstall.bat"))
 ' "${REPORT}" >/dev/null

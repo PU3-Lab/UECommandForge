@@ -17,6 +17,7 @@ require_contains() {
 }
 
 for wrapper in \
+    install-uecommandforge.bat \
     tools/ue/ue_env.bat \
     tools/ue/run_commandlet.bat \
     tools/ue/hello.bat \
@@ -43,16 +44,25 @@ for wrapper in \
     tools/release/package_plugin.bat \
     tools/release/package_source.bat \
     tools/release/package_tools.bat \
+    tools/release/install_into_sample_project.bat \
+    tools/release/install_local.bat \
+    tools/release/uninstall.bat \
+    tools/release/update_install.bat \
     tools/release/verify_release_package.bat \
     tools/release/write_checksums.bat \
     tools/release/write_manifest.bat \
     tools/test/automation/run.bat \
+    tools/test/smoke/installer_install_update_uninstall.bat \
+    tools/test/smoke/release_package_install.bat \
     tools/test/smoke/create_ai_flow.bat
 do
     require_file "${wrapper}"
     require_contains "${wrapper}" '@echo off'
 done
 
+require_file install-uecommandforge.ps1
+require_contains install-uecommandforge.bat 'install-uecommandforge.sh'
+require_contains install-uecommandforge.ps1 'install-uecommandforge.sh'
 require_contains tools/ue/ue_env.bat 'UnrealEditor-Cmd.exe'
 require_contains tools/ue/ue_env.bat 'UECF_PROJECT_FILE'
 require_contains tools/ue/run_commandlet.bat 'Saved\\CodexReports'
@@ -74,9 +84,15 @@ require_contains tools/ue/setup_patrol_ai.bat 'specs\\profiles\\patrol_ai.json'
 require_contains tools/release/package_plugin.bat 'package_plugin.sh'
 require_contains tools/release/package_source.bat 'package_source.sh'
 require_contains tools/release/package_tools.bat 'package_tools.sh'
+require_contains tools/release/install_into_sample_project.bat 'install_into_sample_project.sh'
+require_contains tools/release/install_local.bat 'install_local.sh'
+require_contains tools/release/uninstall.bat 'uninstall.sh'
+require_contains tools/release/update_install.bat 'update_install.sh'
 require_contains tools/release/verify_release_package.bat 'verify_release_package.sh'
 require_contains tools/release/write_checksums.bat 'write_checksums.sh'
 require_contains tools/release/write_manifest.bat 'write_manifest.sh'
 require_contains tools/test/automation/run.bat 'Automation RunTests UECommandForge; Quit'
+require_contains tools/test/smoke/installer_install_update_uninstall.bat 'installer_install_update_uninstall.sh'
+require_contains tools/test/smoke/release_package_install.bat 'release_package_install.sh'
 require_contains tools/test/smoke/create_ai_flow.bat 'created_assets'
 require_contains tools/test/smoke/create_ai_flow.bat 'Missing asset'

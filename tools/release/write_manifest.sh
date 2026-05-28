@@ -7,6 +7,7 @@ CHANNEL="local"
 OUTPUT=""
 ENGINE_VERSION="UE5.7"
 PACKAGE_TYPE="generic"
+INSTALL_COMMANDS='[]'
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -28,6 +29,12 @@ while [ $# -gt 0 ]; do
       ;;
     --package-type)
       PACKAGE_TYPE="$2"
+      shift 2
+      ;;
+    --install-command)
+      INSTALL_COMMANDS="$(
+        jq --arg command "$2" '. + [$command]' <<< "${INSTALL_COMMANDS}"
+      )"
       shift 2
       ;;
     *)
@@ -101,6 +108,7 @@ jq -n \
   --argjson tool_files "${tool_files}" \
   --argjson spec_files "${spec_files}" \
   --argjson checksums "${checksums}" \
+  --argjson install_commands "${INSTALL_COMMANDS}" \
   '{
     version: $version,
     engine_version: $engine_version,
@@ -110,7 +118,7 @@ jq -n \
     tool_files: $tool_files,
     spec_files: $spec_files,
     checksums: $checksums,
-    install_commands: [],
+    install_commands: $install_commands,
     post_install_checks: (
       if $package_type == "source" then
         ["source package file list", "source package checksum"]
@@ -119,7 +127,6 @@ jq -n \
       end
     ),
     known_limits: [
-      "Install scripts are added in the next Task 6 step.",
-      "Until installers ship, copy plugin files to <Project>/Plugins/UECommandForge and Codex tools/specs to ~/.codex/UECommandForge."
+      "Windows wrapper execution requires verification on a Windows host."
     ]
   }' > "${OUTPUT}"
