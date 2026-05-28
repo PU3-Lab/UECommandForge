@@ -832,19 +832,25 @@ Phase 8은 내부 개발용 코드만 머지하는 것으로 끝내지 않는다
 진행 상태:
 - 2026-05-28: `tools/release/package_tools.sh`, `tools/release/write_manifest.sh`, `tools/release/write_checksums.sh`, `tools/release/verify_release_package.sh`를 추가했다.
 - 2026-05-28: `tools/test/smoke/release_package_tools.sh`를 추가해 Tools zip에 `tools/ue`, `tools/test`, `tools/release`, `specs`, manifest, install notes, release notes가 포함되는지 검증한다.
+- 2026-05-28: `tools/release/package_plugin.sh`와 `tools/test/smoke/release_package_plugin.sh`를 추가했다. 기본 동작은 `tools/ue/build_plugin.sh`를 먼저 실행하고, 중간 smoke는 `--skip-build`로 기존 `sample/Saved/PluginBuild` 산출물을 패키징한다.
+- 2026-05-28: Windows Command Prompt 호환 wrapper `package_plugin.bat`, `package_tools.bat`, `verify_release_package.bat`, `write_checksums.bat`, `write_manifest.bat`를 추가했다. Windows wrapper는 Git Bash의 `bash`를 호출하는 compatibility layer로 시작한다.
 
 검증:
 - RED: `./tools/test/smoke/release_package_tools.sh` 1차 실행은 `tools/release/package_tools.sh`가 없어 실패했다.
 - GREEN: 최소 tools packaging 스크립트 구현 후 `./tools/test/smoke/release_package_tools.sh` 통과.
 - REVIEW-FIX: `unzip -l | grep -q`가 `pipefail` 환경에서 SIGPIPE 141을 낼 수 있어, zip file list를 `unzip -Z1`로 파일에 저장한 뒤 grep하도록 수정했다.
 - REVIEW-FIX: release 입력값 보안 검토 후 `--version`, `--channel`은 안전한 문자만 허용하고, zip 검증은 압축 해제 전에 absolute path와 `..` entry를 차단하도록 보강했다.
+- RED: `./tools/test/smoke/release_package_plugin.sh` 1차 실행은 `tools/release/package_plugin.sh`가 없어 실패했다.
+- GREEN: plugin packaging 스크립트 구현 후 `./tools/test/smoke/release_package_plugin.sh` 통과. `UECommandForge-0.8.0-test-UE5.7-Mac.zip`에 `.uplugin`, Mac binaries, Source Build.cs, manifest, install/release notes 포함을 확인했다.
+- GREEN: manifest 확장 후 `./tools/test/smoke/release_package_tools.sh`, `./tools/test/smoke/windows_command_wrappers.sh`, `git diff --check` 재실행 통과.
+- REVIEW-FIX: `package_plugin.sh` full build 경로에서 `--out-dir` 상대 경로를 전달하면 build 성공 후 zip 생성이 실패하는 문제를 확인했다. `package_plugin.sh`와 `package_tools.sh` 모두 `OUT_DIR`를 절대 경로로 정규화하도록 수정했다.
+- GREEN: 상대 `--out-dir` 보정 후 `./tools/test/smoke/release_package_plugin.sh`와 `./tools/test/smoke/release_package_tools.sh` 재실행 통과.
+- GREEN: `/bin/zsh -lc "./tools/release/package_plugin.sh --version 0.8.0-test --channel local-smoke --out-dir sample/Saved/CodexReports/ReleasePackagePluginFull"` 승인된 샌드박스 외부 실행 통과. `build_plugin.sh`가 Mac Development/Shipping plugin build를 완료하고 `UECommandForge-0.8.0-test-UE5.7-Mac.zip`을 생성했다.
 
 남은 항목:
-- `package_plugin.sh/.bat`
-- Windows `.bat` release helper
-- plugin package 검증
 - source package 검증
 - release notes/validation report 정식화
+- Windows 실기 package wrapper 검증
 
 - [ ] **Step 4: 자동 설치 스크립트 추가**
 
@@ -1050,6 +1056,7 @@ git diff --check
 ./tools/test/smoke/uht_log_analysis.sh
 ./tools/test/smoke/mid_real_project_flow.sh
 ./tools/test/smoke/release_package_tools.sh
+./tools/test/smoke/release_package_plugin.sh
 ./tools/test/smoke/data_validation.sh
 ./tools/test/smoke/data_import_rollback.sh
 ./tools/test/smoke/release_package_install.sh

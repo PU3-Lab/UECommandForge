@@ -42,26 +42,46 @@ if [ ! -d "${PACKAGE_ROOT}" ]; then
   exit 2
 fi
 
-tool_files="$(
+files_json() {
+  local root="$1"
+  local dir="$2"
+  if [ -d "${root}/${dir}" ]; then
+    (
+      cd "${root}"
+      find "${dir}" -type f | sort | jq -R -s 'split("\n")[:-1]'
+    )
+  else
+    printf '[]'
+  fi
+}
+
+plugin_files="$(
   cd "${PACKAGE_ROOT}"
-  find tools -type f | sort | jq -R -s 'split("\n")[:-1]'
+  find . -type f \
+    ! -path './tools/*' \
+    ! -path './specs/*' \
+    ! -name 'uecommandforge-manifest.json' \
+    ! -name 'install.md' \
+    ! -name 'release-notes.md' \
+    | sed 's#^\./##' \
+    | sort \
+    | jq -R -s 'split("\n")[:-1]'
 )"
-spec_files="$(
-  cd "${PACKAGE_ROOT}"
-  find specs -type f | sort | jq -R -s 'split("\n")[:-1]'
-)"
+tool_files="$(files_json "${PACKAGE_ROOT}" tools)"
+spec_files="$(files_json "${PACKAGE_ROOT}" specs)"
 
 jq -n \
   --arg version "${VERSION}" \
   --arg engine_version "${ENGINE_VERSION}" \
   --arg release_channel "${CHANNEL}" \
+  --argjson plugin_files "${plugin_files}" \
   --argjson tool_files "${tool_files}" \
   --argjson spec_files "${spec_files}" \
   '{
     version: $version,
     engine_version: $engine_version,
     release_channel: $release_channel,
-    plugin_files: [],
+    plugin_files: $plugin_files,
     tool_files: $tool_files,
     spec_files: $spec_files,
     checksums: {},

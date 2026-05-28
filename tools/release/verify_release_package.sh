@@ -36,11 +36,17 @@ jq -e '
   (.version | length > 0)
   and .engine_version == "UE5.7"
   and (.release_channel | length > 0)
-  and (.tool_files | type == "array" and length > 0)
-  and (.spec_files | type == "array" and length > 0)
+  and (.plugin_files | type == "array")
+  and (.tool_files | type == "array")
+  and (.spec_files | type == "array")
+  and ((.plugin_files | length) + (.tool_files | length) + (.spec_files | length) > 0)
   and (.install_commands | type == "array" and length > 0)
   and (.post_install_checks | type == "array" and length > 0)
 ' "${MANIFEST}" >/dev/null
+
+jq -r '.plugin_files[]' "${MANIFEST}" | while IFS= read -r path; do
+  test -f "${WORK_DIR}/${path}"
+done
 
 jq -r '.tool_files[]' "${MANIFEST}" | while IFS= read -r path; do
   test -f "${WORK_DIR}/${path}"

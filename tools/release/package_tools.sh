@@ -50,6 +50,7 @@ case "${CHANNEL}" in
 esac
 
 mkdir -p "${OUT_DIR}"
+OUT_DIR="$(cd "${OUT_DIR}" && pwd)"
 PACKAGE_NAME="UECommandForge-${VERSION}-Tools"
 PACKAGE_DIR="${OUT_DIR}/${PACKAGE_NAME}"
 ZIP_PATH="${OUT_DIR}/${PACKAGE_NAME}.zip"

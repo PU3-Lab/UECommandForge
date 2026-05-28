@@ -40,6 +40,11 @@ for wrapper in \
     tools/ue/create_ai_flow.bat \
     tools/ue/setup_npc_character.bat \
     tools/ue/setup_patrol_ai.bat \
+    tools/release/package_plugin.bat \
+    tools/release/package_tools.bat \
+    tools/release/verify_release_package.bat \
+    tools/release/write_checksums.bat \
+    tools/release/write_manifest.bat \
     tools/test/automation/run.bat \
     tools/test/smoke/create_ai_flow.bat
 do
@@ -65,6 +70,11 @@ require_contains tools/ue/analyze_uht_log.bat 'AnalyzeUhtLog'
 require_contains tools/ue/create_ai_flow.bat 'CreateAIFlow'
 require_contains tools/ue/setup_npc_character.bat 'specs\\profiles\\npc_character.json'
 require_contains tools/ue/setup_patrol_ai.bat 'specs\\profiles\\patrol_ai.json'
+require_contains tools/release/package_plugin.bat 'package_plugin.sh'
+require_contains tools/release/package_tools.bat 'package_tools.sh'
+require_contains tools/release/verify_release_package.bat 'verify_release_package.sh'
+require_contains tools/release/write_checksums.bat 'write_checksums.sh'
+require_contains tools/release/write_manifest.bat 'write_manifest.sh'
 require_contains tools/test/automation/run.bat 'Automation RunTests UECommandForge; Quit'
 require_contains tools/test/smoke/create_ai_flow.bat 'created_assets'
 require_contains tools/test/smoke/create_ai_flow.bat 'Missing asset'
