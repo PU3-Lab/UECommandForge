@@ -26,10 +26,23 @@
 | installer command | installer 구현 전까지 `install_commands: []`만 허용 |
 | 문서 | `docs/superpowers/plans/ucf-phase8-prototype-automation-plan.md`에 리뷰-수정-검증 로그 업데이트 |
 
+### 세션 마무리 및 에이전트 지침 정리
+
+작업 종료 절차를 프로젝트 지침에 추가하고, 기존 `CLAUDE.md`의 에이전트 공통 규칙을 Codex가 기본 인식하는 `AGENTS.md`로 옮겼다.
+
+| 항목 | 결과 |
+|---|---|
+| 작업 종료 규칙 | 사용자가 `작업 종료`라고 말하면 `SESSION_SUMMARY.md` 갱신, 커밋, 푸시를 수행하도록 명시 |
+| 지침 파일 | `CLAUDE.md`를 `AGENTS.md`로 rename하고 제목/첫 문장을 AGENTS 기준으로 조정 |
+| 원격 반영 | `main` 브랜치에 커밋과 푸시 완료 |
+
 ## 변경 파일
 
 | 파일 | 내용 |
 |---|---|
+| `AGENTS.md` | 한글 문서 작성, 문서 저장 위치, 서브에이전트 리뷰, 작업 종료 규칙을 담은 프로젝트 에이전트 지침 |
+| `CLAUDE.md` | `AGENTS.md`로 이동됨 |
+| `CHANGELOG.md` | `0.8.0 - 2026-05-28` release entry 추가 |
 | `tools/release/package_plugin.sh` | stale build output 제거, platform 감지/검증, `.uplugin` version 일치 검증, symlink 차단, checksum 기반 verify 호출 |
 | `tools/release/package_source.sh` | source package 생성, generated output 제외, validation report 생성, checksum 기반 verify 호출 |
 | `tools/release/package_tools.sh` | symlink 차단, installer 미구현 안내 정리, checksum 기반 verify 호출 |
@@ -45,6 +58,7 @@
 | `tools/test/smoke/release_package_tools.sh` | 변조 ZIP/checksum 음성 테스트 확장 |
 | `tools/test/smoke/release_package_install.sh` | package install/uninstall smoke |
 | `tools/test/smoke/installer_install_update_uninstall.sh` | install/update/uninstall smoke |
+| `tools/test/smoke/release_version_policy.sh` | `0.8.0` release version, CHANGELOG, README artifact 예시 regression 검증 |
 | `tools/test/smoke/windows_release_validation_report.sh` | Windows 실기 제한 리포트 smoke |
 | `docs/superpowers/plans/ucf-phase8-review-eval-report.md` | 배포/릴리즈 패키징 구간 리뷰 및 eval 리포트 |
 | `README.md` | 릴리즈 패키지 생성, 검증, install/update/uninstall, Windows 제한 안내 |
@@ -99,9 +113,9 @@
 
 - **브랜치:** `main`
 - **워킹 트리:** clean
-- **최근 커밋 흐름:** release installer review regression/fix sequence
-- **origin 대비:** local commits ahead
-- **푸시:** 아직 요청되지 않았으므로 실행하지 않음
+- **최근 커밋 흐름:** release version promotion, 작업 종료 규칙 추가, `AGENTS.md` 지침 이동
+- **origin 대비:** `main`과 `origin/main` 동기화
+- **푸시:** 완료
 
 ## 다음 작업
 
