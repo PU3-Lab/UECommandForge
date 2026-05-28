@@ -67,16 +67,18 @@ test -f "${PROJECT_DIR}/Saved/UECommandForge/install.log"
 
 jq -e \
   --arg project_file "${PROJECT_FILE}" \
+  --arg version "${VERSION}" \
   --arg codex_home "${CODEX_HOME}" \
   '.project_file == $project_file
    and .codex_home == $codex_home
-   and .installed_version == "0.1.0"' \
+   and .installed_version == $version' \
   "${PROJECT_DIR}/UECommandForge/uecommandforge-project.json" >/dev/null
 
 jq -e \
   --arg project_file "${PROJECT_FILE}" \
+  --arg version "${VERSION}" \
   '.project_file == $project_file
-   and .version == "0.1.0"
+   and .version == $version
    and (.checksums | type == "object")' \
   "${CODEX_HOME}/UECommandForge/uecommandforge-installed.json" >/dev/null
 

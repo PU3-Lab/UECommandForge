@@ -65,6 +65,7 @@
 | 최종 | `code-reviewer`, `security-reviewer` 모두 CRITICAL/HIGH/MEDIUM findings 없음 | 승인 |
 | source package 서브에이전트 리뷰 | source package version mismatch, `docs/memory` 포함, generated output 제외 smoke 부족 | 수정 완료 |
 | installer 서브에이전트 리뷰 | default uninstall 후 재설치 실패, plugin/tools version mismatch 허용, source zip 내부 계획 문서 포함, unmanaged metadata overwrite | 수정 완료 |
+| release version pre-commit 리뷰 | `gpt-5.5 high` 리뷰에서 CRITICAL/HIGH/MEDIUM findings 없음 | 승인 |
 
 ## 검증 결과
 
@@ -74,7 +75,7 @@
 | `./tools/test/smoke/release_package_tools.sh` | 통과 |
 | `./tools/test/smoke/release_package_source.sh` | 통과 |
 | `UECF_RELEASE_PLUGIN_SKIP_BUILD=1 ./tools/test/smoke/release_package_plugin.sh` | 통과 |
-| `./tools/test/smoke/release_package_plugin.sh` | full build 통과, `UECommandForge-0.1.0-UE5.7-Mac.zip` 생성 |
+| `./tools/test/smoke/release_package_plugin.sh` | full build 통과, `UECommandForge-0.8.0-UE5.7-Mac.zip` 생성 |
 | `./tools/test/smoke/windows_command_wrappers.sh` | 통과 |
 | `./tools/test/smoke/release_package_install.sh` | 통과 |
 | `./tools/test/smoke/installer_install_update_uninstall.sh` | 통과 |
@@ -87,6 +88,8 @@
 | `./tools/test/smoke/windows_release_validation_report.sh` 리뷰 수정 후 | 통과 |
 | `UECF_RELEASE_PLUGIN_SKIP_BUILD=1 ./tools/test/smoke/release_package_plugin.sh` | 통과 |
 | source package install guide regression | `installer scripts are not shipped yet` 문구 제거 및 `tools/release/install_local.sh` 안내 확인 |
+| `./tools/test/smoke/release_version_policy.sh` | `0.8.0` release version, CHANGELOG, README artifact 예시 검증 |
+| `tools/release/install_local.sh --run-commandlet-check true ...` | 샌드박스 외부 통과, UE Hello commandlet 기반 post-install 검증 |
 | source zip internal/generated output scan | `docs/memory`, plugin `Binaries`, `Intermediate`, `Saved`, `DerivedDataCache` 매치 없음 |
 | `git diff --check` | 통과 |
 | secret pattern scan | 이상 없음 |
@@ -104,6 +107,4 @@
 
 1. Phase 8 Task 6 남은 항목 진행
    - Windows 실제 호스트에서 `.bat` package/install wrapper 실기 검증
-   - UE commandlet 기반 설치 후 검증 smoke
-2. 필요 시 release version `0.8.0` 승격과 `CHANGELOG.md` 작성 여부 결정
-3. Phase 8 DataAsset/DataTable/Config 제품화 Task 진행
+2. Phase 8 DataAsset/DataTable/Config 제품화 Task 진행

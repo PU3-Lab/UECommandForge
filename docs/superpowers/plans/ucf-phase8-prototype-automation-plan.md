@@ -1049,7 +1049,7 @@ Windows 설치 동작:
 - 2026-05-28: `tools/release/install_local.sh`가 `uecommandforge-installed.json`과 `uecommandforge-project.json`을 생성하며, install smoke가 핵심 필드와 경로 일치를 검증한다.
 - 2026-05-28: `tools/release/verify_release_package.sh`가 manifest 스키마의 주요 타입, file list/checksum 일치, install command string array, post-install check 존재를 검증한다.
 
-- [ ] **Step 7: 버전 정책 정의**
+- [x] **Step 7: 버전 정책 정의**
 
 버전 규칙:
 - `major.minor.patch`
@@ -1063,6 +1063,11 @@ Windows 설치 동작:
 - `CHANGELOG.md`
 - release notes
 - `uecommandforge-manifest.json`
+
+진행 상태:
+- 2026-05-28: `UECommandForge.uplugin` VersionName을 `0.8.0`, Version을 `8`로 승격했다.
+- 2026-05-28: `CHANGELOG.md`에 `0.8.0 - 2026-05-28` release entry를 작성했다.
+- 2026-05-28: `tools/test/smoke/release_version_policy.sh`를 추가해 `0.8.0` VersionName, CHANGELOG entry, README release artifact 예시를 검증한다.
 
 - [ ] **Step 8: 배포 전 게이트 정의**
 
