@@ -14,7 +14,8 @@
 | symlink 방지 | zip 생성 전 staging tree symlink 차단 |
 | manifest checksum | plugin/tool/spec 파일과 `install.md`, `release-notes.md` 모두 checksum 필수 |
 | validation report | plugin/tools/source package 모두 `validation-report.json` 생성 및 checksum 필수 |
-| source package | README, docs, sample plugin source, tools, specs 포함, `.git`, `sample/Saved`, plugin binaries 제외 |
+| source package | tracked-file allowlist 기반으로 README, release-facing docs, sample plugin source, tools, specs 포함, `.git`, `docs/memory`, generated output 제외 |
+| source version 검증 | package version과 packaged `.uplugin` `VersionName` 불일치 시 실패 |
 | zip content 검증 | 실제 ZIP 파일 목록, manifest 파일 목록, checksum key 목록이 정확히 일치해야 통과 |
 | external checksum | `checksums.txt`는 현재 ZIP basename 1개만 허용하고 SHA256을 직접 비교 |
 | installer command | installer 구현 전까지 `install_commands: []`만 허용 |
@@ -47,6 +48,7 @@
 | 4차 | verifier 임시 파일명이 package 파일명과 충돌하는 reserved filename 우회 | 수정 완료 |
 | 5차 | nested `uecommandforge-manifest.json` basename 제외 우회 | 수정 완료 |
 | 최종 | `code-reviewer`, `security-reviewer` 모두 CRITICAL/HIGH/MEDIUM findings 없음 | 승인 |
+| source package 서브에이전트 리뷰 | source package version mismatch, `docs/memory` 포함, generated output 제외 smoke 부족 | 수정 완료 |
 
 ## 검증 결과
 
@@ -58,6 +60,7 @@
 | `UECF_RELEASE_PLUGIN_SKIP_BUILD=1 ./tools/test/smoke/release_package_plugin.sh` | 통과 |
 | `./tools/test/smoke/release_package_plugin.sh` | full build 통과, `UECommandForge-0.1.0-UE5.7-Mac.zip` 생성 |
 | `./tools/test/smoke/windows_command_wrappers.sh` | 통과 |
+| source zip internal/generated output scan | `docs/memory`, plugin `Binaries`, `Intermediate`, `Saved`, `DerivedDataCache` 매치 없음 |
 | `git diff --check` | 통과 |
 | secret pattern scan | 이상 없음 |
 | UE 관련 잔여 프로세스 확인 | 없음 |
@@ -65,8 +68,8 @@
 ## 현재 상태
 
 - **브랜치:** `main`
-- **워킹 트리:** source package / validation report 변경 사항 커밋 예정
-- **커밋 메시지 후보:** `feat: add source release package`
+- **워킹 트리:** source package 서브에이전트 리뷰 수정 사항 커밋 예정
+- **커밋 메시지 후보:** `fix: harden source release package`
 - **푸시:** 아직 요청되지 않았으므로 실행하지 않음
 
 ## 다음 작업

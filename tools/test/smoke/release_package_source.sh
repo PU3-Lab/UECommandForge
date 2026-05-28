@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 WORK_DIR="${REPO_ROOT}/sample/Saved/CodexReports/ReleasePackageSource"
-VERSION="0.8.0-test"
+VERSION="$(jq -r '.VersionName' "${REPO_ROOT}/sample/Plugins/UECommandForge/UECommandForge.uplugin")"
 
 rm -rf "${WORK_DIR}"
 mkdir -p "${WORK_DIR}"
@@ -45,6 +45,22 @@ if grep -q '^sample/Plugins/UECommandForge/Binaries/' "${ZIP_LIST}"; then
   echo "source package must not include plugin binaries" >&2
   exit 1
 fi
+if grep -q '^sample/Plugins/UECommandForge/Intermediate/' "${ZIP_LIST}"; then
+  echo "source package must not include plugin Intermediate" >&2
+  exit 1
+fi
+if grep -q '^sample/Plugins/UECommandForge/Saved/' "${ZIP_LIST}"; then
+  echo "source package must not include plugin Saved" >&2
+  exit 1
+fi
+if grep -q '^sample/Plugins/UECommandForge/DerivedDataCache/' "${ZIP_LIST}"; then
+  echo "source package must not include plugin DerivedDataCache" >&2
+  exit 1
+fi
+if grep -q '^docs/memory/' "${ZIP_LIST}"; then
+  echo "source package must not include internal memory docs" >&2
+  exit 1
+fi
 
 unzip -p "${SOURCE_ZIP}" uecommandforge-manifest.json | jq -e \
   --arg version "${VERSION}" \
@@ -82,5 +98,12 @@ printf 'unexpected\n' > "${BAD_SOURCE_DIR}/package/sample/Saved/leak.txt"
 if "${REPO_ROOT}/tools/release/verify_release_package.sh" \
   "${BAD_SOURCE_DIR}/saved-leak.zip" >/dev/null 2>&1; then
   echo "unlisted source package file should fail" >&2
+  exit 1
+fi
+
+if "${REPO_ROOT}/tools/release/package_source.sh" \
+  --version '0.0.0-mismatch' \
+  --out-dir "${WORK_DIR}/bad-version" >/dev/null 2>&1; then
+  echo "mismatched source package version should fail" >&2
   exit 1
 fi

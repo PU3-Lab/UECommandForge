@@ -875,6 +875,8 @@ Phase 8은 내부 개발용 코드만 머지하는 것으로 끝내지 않는다
 - RED: `./tools/test/smoke/release_package_source.sh` 1차 실행은 `tools/release/package_source.sh`가 없어 실패했다.
 - GREEN: source package 스크립트 구현 후 `./tools/test/smoke/release_package_source.sh` 통과. `UECommandForge-0.8.0-test-Source.zip`에 README, docs, sample plugin source, tools, specs, manifest, install notes, release notes, validation report가 포함되고 `.git`, `sample/Saved`, plugin binaries는 제외됨을 확인했다.
 - GREEN: `validation-report.json`을 plugin/tools/source package의 필수 checksum payload로 정식화하고, `./tools/test/smoke/release_package_tools.sh`, `UECF_RELEASE_PLUGIN_SKIP_BUILD=1 ./tools/test/smoke/release_package_plugin.sh`, `./tools/test/smoke/windows_command_wrappers.sh` 통과를 확인했다.
+- SUBAGENT-REVIEW: `reviewer`와 `security_reviewer` 서브에이전트 리뷰에서 source package version/`.uplugin` VersionName 불일치, `docs/memory` 내부 문서 포함, generated output 제외 smoke 부족이 지적됐다.
+- REVIEW-FIX: `package_source.sh`는 packaged `.uplugin` VersionName과 `--version` 불일치 시 실패하도록 수정했다. Source.zip 입력은 tracked-file allowlist 기반으로 바꾸고 `docs/memory`를 제외했다. source smoke는 plugin `Intermediate`, plugin `Saved`, `DerivedDataCache`, `docs/memory` 제외와 version mismatch 실패를 검증하도록 보강했다.
 
 남은 항목:
 - Windows 실기 package wrapper 검증

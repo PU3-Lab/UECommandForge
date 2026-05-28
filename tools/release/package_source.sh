@@ -49,6 +49,17 @@ case "${CHANNEL}" in
     ;;
 esac
 
+descriptor_version="$(jq -r '.VersionName' "${PLUGIN_DESCRIPTOR}")"
+if [ -z "${descriptor_version}" ] || [ "${descriptor_version}" = "null" ]; then
+  echo "[package_source] plugin VersionName is missing" >&2
+  exit 2
+fi
+
+if [ "${descriptor_version}" != "${VERSION}" ]; then
+  echo "[package_source] package version must match plugin VersionName: ${VERSION} != ${descriptor_version}" >&2
+  exit 2
+fi
+
 mkdir -p "${OUT_DIR}"
 OUT_DIR="$(cd "${OUT_DIR}" && pwd)"
 PACKAGE_NAME="UECommandForge-${VERSION}-Source"
@@ -65,47 +76,24 @@ case "${PACKAGE_DIR}" in
 esac
 
 rm -rf "${PACKAGE_DIR}" "${ZIP_PATH}"
-mkdir -p \
-  "${PACKAGE_DIR}/sample/Plugins/UECommandForge"
-
-cp "${REPO_ROOT}/README.md" "${PACKAGE_DIR}/README.md"
-cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" "${PACKAGE_DIR}/sample/UECommandForgeSample.uproject"
-cp "${PLUGIN_DESCRIPTOR}" "${PACKAGE_DIR}/sample/Plugins/UECommandForge/UECommandForge.uplugin"
-
-if [ -d "${REPO_ROOT}/docs" ]; then
-  cp -R "${REPO_ROOT}/docs" "${PACKAGE_DIR}/docs"
-fi
-if [ -d "${REPO_ROOT}/specs" ]; then
-  cp -R "${REPO_ROOT}/specs" "${PACKAGE_DIR}/specs"
-fi
-if [ -d "${REPO_ROOT}/tools" ]; then
-  cp -R "${REPO_ROOT}/tools" "${PACKAGE_DIR}/tools"
-fi
-if [ -d "${REPO_ROOT}/sample/Plugins/UECommandForge/Config" ]; then
-  cp -R "${REPO_ROOT}/sample/Plugins/UECommandForge/Config" \
-    "${PACKAGE_DIR}/sample/Plugins/UECommandForge/Config"
-fi
-if [ -d "${REPO_ROOT}/sample/Plugins/UECommandForge/Source" ]; then
-  cp -R "${REPO_ROOT}/sample/Plugins/UECommandForge/Source" \
-    "${PACKAGE_DIR}/sample/Plugins/UECommandForge/Source"
-fi
+mkdir -p "${PACKAGE_DIR}"
 
 (
-  cd "${PACKAGE_DIR}"
-  find . \
-    \( -path './.git' \
-      -o -path './.git/*' \
-      -o -path './sample/Saved' \
-      -o -path './sample/Saved/*' \
-      -o -path './sample/Plugins/UECommandForge/Binaries' \
-      -o -path './sample/Plugins/UECommandForge/Binaries/*' \
-      -o -path './sample/Plugins/UECommandForge/Intermediate' \
-      -o -path './sample/Plugins/UECommandForge/Intermediate/*' \
-      -o -path './sample/Plugins/UECommandForge/Saved' \
-      -o -path './sample/Plugins/UECommandForge/Saved/*' \
-      -o -path './sample/Plugins/UECommandForge/DerivedDataCache' \
-      -o -path './sample/Plugins/UECommandForge/DerivedDataCache/*' \) \
-    -prune -exec rm -rf {} +
+  cd "${REPO_ROOT}"
+  git ls-files \
+    README.md \
+    docs \
+    specs \
+    tools \
+    sample/UECommandForgeSample.uproject \
+    sample/Plugins/UECommandForge/UECommandForge.uplugin \
+    sample/Plugins/UECommandForge/Config \
+    sample/Plugins/UECommandForge/Source \
+    | grep -v '^docs/memory/' \
+    | while IFS= read -r path; do
+      mkdir -p "${PACKAGE_DIR}/$(dirname "${path}")"
+      cp "${path}" "${PACKAGE_DIR}/${path}"
+    done
 )
 
 if find "${PACKAGE_DIR}" -type l -print -quit | grep -q .; then
