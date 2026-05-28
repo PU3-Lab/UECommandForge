@@ -7,17 +7,35 @@ LLM 기반 Unreal Engine 자동화 브리지. 전체 설계는 `ue_commandlet_ba
 ```
 unreal-harness/
   sample/               UE 샘플 프로젝트 (UECommandForgeSample.uproject + Plugins/)
-  tools/ue/             Shell 래퍼 — LLM이 호출하는 명령 표면
+  tools/ue/             Shell/Batch 래퍼 — LLM이 호출하는 명령 표면
   docs/                 계획서, 메모리, 설계 문서
 ```
 
-## Codex 명령 표면 (Phase 1)
+## Codex 명령 표면 (Phase 7)
 
-| 명령 | 목적 |
-|---|---|
-| `tools/ue/hello.sh` | 헬스체크 — `Hello` commandlet 실행 후 Result JSON 기록. |
+| macOS/Linux/Git Bash | Windows Command Prompt | 목적 |
+|---|---|---|
+| `tools/ue/hello.sh` | `tools\ue\hello.bat` | 헬스체크 — `Hello` commandlet 실행 후 Result JSON 기록 |
+| `tools/ue/create_character_bp.sh <spec.json>` | `tools\ue\create_character_bp.bat <spec.json>` | Character Blueprint 생성 |
+| `tools/ue/create_ai_controller.sh <spec.json>` | `tools\ue\create_ai_controller.bat <spec.json>` | AIController Blueprint 생성 |
+| `tools/ue/compile_blueprints.sh` | `tools\ue\compile_blueprints.bat` | Blueprint 일괄 컴파일 |
+| `tools/ue/create_statetree.sh <spec.json>` | `tools\ue\create_statetree.bat <spec.json>` | StateTree 에셋 생성 |
+| `tools/ue/bind_ai_flow.sh <spec.json>` | `tools\ue\bind_ai_flow.bat <spec.json>` | Character, AIController, StateTree 바인딩 |
+| `tools/ue/validate_ai_flow.sh <spec.json>` | `tools\ue\validate_ai_flow.bat <spec.json>` | AI 플로우 바인딩 CDO 검증 |
+| `tools/ue/place_actor.sh <spec.json>` | `tools\ue\place_actor.bat <spec.json>` | 맵에 Actor 배치 |
+| `tools/ue/create_ai_flow.sh <spec.json>` | `tools\ue\create_ai_flow.bat <spec.json>` | Phase 3~6 전체 워크플로우 실행 |
+| `tools/ue/setup_npc_character.sh` | `tools\ue\setup_npc_character.bat` | NPC Character 기본 프로파일로 워크플로우 실행 |
+| `tools/ue/setup_patrol_ai.sh` | `tools\ue\setup_patrol_ai.bat` | Patrol AI 기본 프로파일로 워크플로우 실행 |
 
-이후 Phase가 추가될수록 명령이 늘어난다. LLM은 이 표 외의 명령을 호출해서는 안 된다.
+LLM은 이 표에 있는 명령만 호출해야 한다.
+
+## 테스트 명령
+
+| macOS/Linux/Git Bash | Windows Command Prompt | 목적 |
+|---|---|---|
+| `tools/test/automation/run.sh` | `tools\test\automation\run.bat` | UECommandForge 자동화 테스트 실행 |
+| `tools/test/smoke/create_ai_flow.sh specs/examples/guard_ai.json` | `tools\test\smoke\create_ai_flow.bat specs\examples\guard_ai.json` | CreateAIFlow Result JSON과 생성 에셋 검증 |
+| `tools/test/smoke/windows_command_wrappers.sh` | 해당 없음 | Windows `.bat` 래퍼 정적 스모크 테스트 |
 
 ## 환경 요구 사항
 
@@ -25,6 +43,7 @@ unreal-harness/
 - 기본 경로가 아닌 경우 `UE_ROOT` 환경변수 설정.
 - macOS 기본값: `/Users/Shared/Epic Games/UE_5.7`
 - Windows 기본값 (Git Bash): `/c/Program Files/Epic Games/UE_5.7`
+- Windows 기본값 (Command Prompt): `C:\Program Files\Epic Games\UE_5.7`
 
 ## 개발용 C++ 정적 분석
 

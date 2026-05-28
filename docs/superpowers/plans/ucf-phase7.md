@@ -20,6 +20,10 @@
 | `tools/ue/create_ai_flow.sh` | 워크플로우 Shell Wrapper |
 | `tools/ue/setup_npc_character.sh` | NPC Character Spec 프로파일 래퍼 |
 | `tools/ue/setup_patrol_ai.sh` | Patrol AI Spec 프로파일 래퍼 |
+| `tools/ue/*.bat` | Windows Command Prompt용 UE Commandlet 래퍼 |
+| `tools/test/automation/run.bat` | Windows Command Prompt용 자동화 테스트 실행 래퍼 |
+| `tools/test/smoke/create_ai_flow.bat` | Windows Command Prompt용 CreateAIFlow 스모크 테스트 |
+| `tools/test/smoke/windows_command_wrappers.sh` | Windows 래퍼 정적 스모크 테스트 |
 | `specs/profiles/npc_character.json` | NPC Character 기본 Spec 프로파일 |
 | `specs/profiles/patrol_ai.json` | Patrol AI 기본 Spec 프로파일 |
 
@@ -457,28 +461,72 @@ git commit -m "feat: 워크플로우 Shell Wrapper 3종 + Spec 프로파일 (npc
 
 ---
 
+## Task 3.5: Windows Command Prompt 래퍼
+
+- [x] **Step 1: `tools/ue/*.bat` 커맨드 표면 추가**
+
+Windows Command Prompt에서도 Phase 1~7 Commandlet 표면을 실행할 수 있도록 `.sh` 래퍼와 같은 역할의 `.bat` 파일을 추가했다.
+
+추가 범위:
+- `tools/ue/ue_env.bat`
+- `tools/ue/run_commandlet.bat`
+- `tools/ue/hello.bat`
+- `tools/ue/create_character_bp.bat`
+- `tools/ue/create_ai_controller.bat`
+- `tools/ue/compile_blueprints.bat`
+- `tools/ue/create_statetree.bat`
+- `tools/ue/bind_ai_flow.bat`
+- `tools/ue/validate_ai_flow.bat`
+- `tools/ue/place_actor.bat`
+- `tools/ue/create_ai_flow.bat`
+- `tools/ue/setup_npc_character.bat`
+- `tools/ue/setup_patrol_ai.bat`
+
+- [x] **Step 2: Windows 테스트 래퍼 추가**
+
+추가 범위:
+- `tools/test/automation/run.bat`
+- `tools/test/smoke/create_ai_flow.bat`
+
+`tools/test/smoke/create_ai_flow.bat`은 Result JSON의 `ok`, `rollback_available`, `steps`, `created_assets`, `modified_assets`, `compile_status`, `actor_placed`를 검증하고, 생성된 `.uasset` 및 수정된 `.umap` 파일 존재도 확인한다.
+
+- [x] **Step 3: 정적 스모크 테스트 추가**
+
+`tools/test/smoke/windows_command_wrappers.sh`로 Windows 래퍼 파일 존재와 핵심 커맨드 문자열을 검증한다.
+
+검증 결과:
+- `./tools/test/smoke/windows_command_wrappers.sh` 통과
+- `bash -n tools/test/smoke/windows_command_wrappers.sh` 통과
+- `git diff --check` 통과
+
+로컬 환경 제한:
+- 현재 작업 환경은 macOS라 `.bat` 실행 검증은 수행하지 않았다.
+- Windows 래퍼는 정적 스모크 테스트로 경로·핵심 문자열·스모크 검증 로직을 확인했다.
+
+---
+
 ## Task 4: README 커맨드 표면 업데이트
 
-- [ ] **Step 1: `README.md` 커맨드 표면 테이블 업데이트**
+- [x] **Step 1: `README.md` 커맨드 표면 테이블 업데이트**
 
 ```markdown
-## Codex 커맨드 표면 (Phase 7 기준)
+## Codex 명령 표면 (Phase 7)
 
-| 커맨드 | 목적 |
-|---|---|
-| `tools/ue/hello.sh` | 헬스체크 — Hello Commandlet 실행 후 Result JSON 작성 |
-| `tools/ue/create_character_bp.sh <spec.json>` | Character Blueprint 생성 |
-| `tools/ue/create_ai_controller.sh <spec.json>` | AIController Blueprint 생성 |
-| `tools/ue/compile_blueprints.sh` | Blueprint 일괄 컴파일 |
-| `tools/ue/create_statetree.sh <spec.json>` | StateTree 에셋 생성 |
-| `tools/ue/bind_ai_flow.sh <spec.json>` | Character↔AIController↔StateTree 바인딩 |
-| `tools/ue/validate_ai_flow.sh <spec.json>` | AI 플로우 바인딩 CDO 검증 |
-| `tools/ue/place_actor.sh <spec.json>` | 맵에 Actor 배치 |
-| `tools/ue/create_ai_flow.sh <spec.json>` | 전체 워크플로우 (Phase 3~6 원스톱) |
-| `tools/ue/setup_npc_character.sh` | NPC Character 기본 프로파일로 워크플로우 실행 |
-| `tools/ue/setup_patrol_ai.sh` | Patrol AI 기본 프로파일로 워크플로우 실행 |
+| macOS/Linux/Git Bash | Windows Command Prompt | 목적 |
+|---|---|---|
+| `tools/ue/hello.sh` | `tools\ue\hello.bat` | 헬스체크 — `Hello` commandlet 실행 후 Result JSON 기록 |
+| `tools/ue/create_character_bp.sh <spec.json>` | `tools\ue\create_character_bp.bat <spec.json>` | Character Blueprint 생성 |
+| `tools/ue/create_ai_controller.sh <spec.json>` | `tools\ue\create_ai_controller.bat <spec.json>` | AIController Blueprint 생성 |
+| `tools/ue/compile_blueprints.sh` | `tools\ue\compile_blueprints.bat` | Blueprint 일괄 컴파일 |
+| `tools/ue/create_statetree.sh <spec.json>` | `tools\ue\create_statetree.bat <spec.json>` | StateTree 에셋 생성 |
+| `tools/ue/bind_ai_flow.sh <spec.json>` | `tools\ue\bind_ai_flow.bat <spec.json>` | Character, AIController, StateTree 바인딩 |
+| `tools/ue/validate_ai_flow.sh <spec.json>` | `tools\ue\validate_ai_flow.bat <spec.json>` | AI 플로우 바인딩 CDO 검증 |
+| `tools/ue/place_actor.sh <spec.json>` | `tools\ue\place_actor.bat <spec.json>` | 맵에 Actor 배치 |
+| `tools/ue/create_ai_flow.sh <spec.json>` | `tools\ue\create_ai_flow.bat <spec.json>` | Phase 3~6 전체 워크플로우 실행 |
+| `tools/ue/setup_npc_character.sh` | `tools\ue\setup_npc_character.bat` | NPC Character 기본 프로파일로 워크플로우 실행 |
+| `tools/ue/setup_patrol_ai.sh` | `tools\ue\setup_patrol_ai.bat` | Patrol AI 기본 프로파일로 워크플로우 실행 |
 
-**LLM은 이 표에 있는 커맨드만 호출해야 한다.**
+LLM은 이 표에 있는 명령만 호출해야 한다.
 ```
 
 - [ ] **Step 2: 커밋**
@@ -487,6 +535,12 @@ git commit -m "feat: 워크플로우 Shell Wrapper 3종 + Spec 프로파일 (npc
 git add README.md
 git commit -m "docs: README 커맨드 표면 업데이트 (Phase 7 전체 반영)"
 ```
+
+문서 업데이트 결과:
+- `README.md`의 Codex 명령 표면을 Phase 7 기준으로 갱신
+- macOS/Linux/Git Bash `.sh`와 Windows Command Prompt `.bat` 커맨드를 함께 표기
+- 자동화 테스트, CreateAIFlow 스모크 테스트, Windows 래퍼 정적 스모크 테스트 명령 추가
+- Windows Command Prompt 기본 `UE_ROOT` 경로 추가
 
 ---
 
