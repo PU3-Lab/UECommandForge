@@ -582,3 +582,6 @@ Phase 7 완료 조건 = 마스터 플랜 완료 조건:
   - `created_assets` 3개
   - `modified_assets` 1개
   - `validation.actor_placed: ok`
+
+리뷰 및 eval 리포트:
+- [ucf-phase7-review-eval-report.md](ucf-phase7-review-eval-report.md)

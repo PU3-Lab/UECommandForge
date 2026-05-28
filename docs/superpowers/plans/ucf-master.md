@@ -101,6 +101,8 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
   - `./tools/test/automation/run.sh` PASS 15 / FAIL 0 / SKIP 0
   - `./tools/ue/create_ai_flow.sh specs/examples/guard_ai.json` 성공
   - `sample/Saved/CodexReports/CreateAIFlow_20260528T003339Z.json` 기준 `ok: true`, `steps` 길이 5, `validation.actor_placed: ok`
+- 리뷰 및 eval 결과: [ucf-phase7-review-eval-report.md](ucf-phase7-review-eval-report.md)
+- 완성도 판단: 단순 뼈대가 아니라 동작하는 MVP/스프린트 완료본이며, 남은 범위는 Windows 실기 검증, rollback 자동화, UE runner 기반 CI, 프로파일 확장 같은 제품화 작업이다.
 
 ---
 
