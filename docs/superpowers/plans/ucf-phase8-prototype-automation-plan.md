@@ -767,7 +767,7 @@ Phase 8 상태, 검증 결과, 남은 리스크를 기록한다.
 
 Phase 8은 내부 개발용 코드만 머지하는 것으로 끝내지 않는다. 사용자가 새 프로젝트에 설치하고 검증할 수 있는 배포 산출물까지 만든다.
 
-- [ ] **Step 1: 배포 채널 정의**
+- [x] **Step 1: 배포 채널 정의**
 
 1차 배포 채널:
 - GitHub Release artifact
@@ -781,7 +781,10 @@ Phase 8은 내부 개발용 코드만 머지하는 것으로 끝내지 않는다
 
 초기 공식 배포 방식은 GitHub Release artifact + 자동 설치 스크립트다. Marketplace는 심사/메타데이터/라이선스 검토가 필요하므로 Phase 8 완료 후 별도 배포 트랙으로 분리한다.
 
-- [ ] **Step 2: 배포 산출물 정의**
+상태:
+- 2026-05-28: 중간 실사용 smoke 결과를 기준으로 GitHub Release artifact + 자동 설치 스크립트를 1차 배포 채널로 확정했다. Marketplace는 별도 후속 트랙으로 유지한다.
+
+- [x] **Step 2: 배포 산출물 정의**
 
 릴리즈마다 아래 산출물을 생성한다.
 
@@ -799,6 +802,9 @@ Phase 8은 내부 개발용 코드만 머지하는 것으로 끝내지 않는다
 | `release-notes.md` | 기능, breaking change, migration, 검증 결과 |
 | `install.md` | 프로젝트 설치 및 wrapper 사용법 |
 | `validation-report.json` | build/test/smoke/eval 결과 |
+
+상태:
+- 2026-05-28: Task 6 산출물 목록을 정의했다. 이번 진행에서는 우선 `UECommandForge-<version>-Tools.zip`, `uecommandforge-manifest.json`, `checksums.txt`, `install.md`, `release-notes.md`를 생성/검증하는 최소 tools package 게이트를 구현했다.
 
 - [ ] **Step 3: 패키징 스크립트 추가**
 
@@ -822,6 +828,23 @@ Phase 8은 내부 개발용 코드만 머지하는 것으로 끝내지 않는다
 - checksum 생성
 - install manifest 생성
 - release notes 초안 생성
+
+진행 상태:
+- 2026-05-28: `tools/release/package_tools.sh`, `tools/release/write_manifest.sh`, `tools/release/write_checksums.sh`, `tools/release/verify_release_package.sh`를 추가했다.
+- 2026-05-28: `tools/test/smoke/release_package_tools.sh`를 추가해 Tools zip에 `tools/ue`, `tools/test`, `tools/release`, `specs`, manifest, install notes, release notes가 포함되는지 검증한다.
+
+검증:
+- RED: `./tools/test/smoke/release_package_tools.sh` 1차 실행은 `tools/release/package_tools.sh`가 없어 실패했다.
+- GREEN: 최소 tools packaging 스크립트 구현 후 `./tools/test/smoke/release_package_tools.sh` 통과.
+- REVIEW-FIX: `unzip -l | grep -q`가 `pipefail` 환경에서 SIGPIPE 141을 낼 수 있어, zip file list를 `unzip -Z1`로 파일에 저장한 뒤 grep하도록 수정했다.
+- REVIEW-FIX: release 입력값 보안 검토 후 `--version`, `--channel`은 안전한 문자만 허용하고, zip 검증은 압축 해제 전에 absolute path와 `..` entry를 차단하도록 보강했다.
+
+남은 항목:
+- `package_plugin.sh/.bat`
+- Windows `.bat` release helper
+- plugin package 검증
+- source package 검증
+- release notes/validation report 정식화
 
 - [ ] **Step 4: 자동 설치 스크립트 추가**
 
@@ -1026,6 +1049,7 @@ git diff --check
 ./tools/test/smoke/cpp_reflection_policy.sh
 ./tools/test/smoke/uht_log_analysis.sh
 ./tools/test/smoke/mid_real_project_flow.sh
+./tools/test/smoke/release_package_tools.sh
 ./tools/test/smoke/data_validation.sh
 ./tools/test/smoke/data_import_rollback.sh
 ./tools/test/smoke/release_package_install.sh
