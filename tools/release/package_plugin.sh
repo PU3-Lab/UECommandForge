@@ -9,6 +9,7 @@ VERSION="$(jq -r '.VersionName' "${PLUGIN_DESCRIPTOR}")"
 CHANNEL="local"
 OUT_DIR="${REPO_ROOT}/sample/Saved/Release"
 SKIP_BUILD=false
+PLATFORM_SET_BY_USER=false
 
 case "$(uname -s)" in
   Darwin) PLATFORM="Mac" ;;
@@ -33,6 +34,7 @@ while [ $# -gt 0 ]; do
       ;;
     --platform)
       PLATFORM="$2"
+      PLATFORM_SET_BY_USER=true
       shift 2
       ;;
     --skip-build)
@@ -74,6 +76,14 @@ case "${PLATFORM}" in
 esac
 
 if [ "${SKIP_BUILD}" != true ]; then
+  case "${BUILD_DIR}" in
+    "${REPO_ROOT}/sample/Saved/PluginBuild") ;;
+    *)
+      echo "[package_plugin] unsafe build dir: ${BUILD_DIR}" >&2
+      exit 2
+      ;;
+  esac
+  rm -rf "${BUILD_DIR}"
   "${REPO_ROOT}/tools/ue/build_plugin.sh"
 fi
 
@@ -82,9 +92,37 @@ if [ ! -f "${BUILD_DIR}/UECommandForge.uplugin" ]; then
   exit 2
 fi
 
+built_platforms="$(
+  if [ -d "${BUILD_DIR}/Binaries" ]; then
+    find "${BUILD_DIR}/Binaries" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort
+  fi
+)"
+platform_count="$(printf '%s\n' "${built_platforms}" | sed '/^$/d' | wc -l | tr -d ' ')"
+if [ "${platform_count}" -eq 0 ]; then
+  echo "[package_plugin] no platform binaries found in ${BUILD_DIR}/Binaries" >&2
+  exit 2
+fi
+if [ "${PLATFORM_SET_BY_USER}" = false ] && [ "${platform_count}" -eq 1 ]; then
+  PLATFORM="${built_platforms}"
+fi
+if [ "${SKIP_BUILD}" = true ] && [ "${platform_count}" -ne 1 ]; then
+  echo "[package_plugin] --skip-build requires exactly one platform output, found: ${built_platforms}" >&2
+  exit 2
+fi
+
 descriptor_version="$(jq -r '.VersionName' "${BUILD_DIR}/UECommandForge.uplugin")"
 if [ -z "${descriptor_version}" ] || [ "${descriptor_version}" = "null" ]; then
   echo "[package_plugin] plugin VersionName is missing" >&2
+  exit 2
+fi
+
+if [ "${descriptor_version}" != "${VERSION}" ]; then
+  echo "[package_plugin] package version must match plugin VersionName: ${VERSION} != ${descriptor_version}" >&2
+  exit 2
+fi
+
+if [ ! -d "${BUILD_DIR}/Binaries/${PLATFORM}" ]; then
+  echo "[package_plugin] build output does not contain Binaries/${PLATFORM}" >&2
   exit 2
 fi
 
@@ -117,11 +155,10 @@ mkdir -p "${PACKAGE_DIR}"
   tar -xf -
 )
 
-"${SCRIPT_DIR}/write_manifest.sh" \
-  --package-root "${PACKAGE_DIR}" \
-  --version "${VERSION}" \
-  --channel "${CHANNEL}" \
-  --output "${PACKAGE_DIR}/uecommandforge-manifest.json"
+if find "${PACKAGE_DIR}" -type l -print -quit | grep -q .; then
+  echo "[package_plugin] symlinks are not allowed in release packages" >&2
+  exit 2
+fi
 
 cat > "${PACKAGE_DIR}/install.md" <<INSTALL
 # UECommandForge Plugin Install
@@ -148,12 +185,18 @@ cat > "${PACKAGE_DIR}/release-notes.md" <<NOTES
 - Source plugin VersionName: ${descriptor_version}
 NOTES
 
+"${SCRIPT_DIR}/write_manifest.sh" \
+  --package-root "${PACKAGE_DIR}" \
+  --version "${VERSION}" \
+  --channel "${CHANNEL}" \
+  --output "${PACKAGE_DIR}/uecommandforge-manifest.json"
+
 (
   cd "${PACKAGE_DIR}"
   zip -qr "${ZIP_PATH}" ./*
 )
 
 "${SCRIPT_DIR}/write_checksums.sh" "${ZIP_PATH}" > "${CHECKSUMS_PATH}"
-"${SCRIPT_DIR}/verify_release_package.sh" "${ZIP_PATH}" >/dev/null
+"${SCRIPT_DIR}/verify_release_package.sh" "${ZIP_PATH}" "${CHECKSUMS_PATH}" >/dev/null
 
 echo "${ZIP_PATH}"

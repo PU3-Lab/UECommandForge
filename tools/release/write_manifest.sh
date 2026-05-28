@@ -69,6 +69,22 @@ plugin_files="$(
 )"
 tool_files="$(files_json "${PACKAGE_ROOT}" tools)"
 spec_files="$(files_json "${PACKAGE_ROOT}" specs)"
+checksums="$(
+  cd "${PACKAGE_ROOT}"
+  find . -type f \
+    ! -name 'uecommandforge-manifest.json' \
+    | sed 's#^\./##' \
+    | sort \
+    | while IFS= read -r path; do
+      printf '%s\t%s\n' "${path}" "$(shasum -a 256 "${path}" | awk '{ print $1 }')"
+    done \
+    | jq -R -s '
+        split("\n")[:-1]
+        | map(split("\t"))
+        | map({key: .[0], value: .[1]})
+        | from_entries
+      '
+)"
 
 jq -n \
   --arg version "${VERSION}" \
@@ -77,6 +93,7 @@ jq -n \
   --argjson plugin_files "${plugin_files}" \
   --argjson tool_files "${tool_files}" \
   --argjson spec_files "${spec_files}" \
+  --argjson checksums "${checksums}" \
   '{
     version: $version,
     engine_version: $engine_version,
@@ -84,18 +101,15 @@ jq -n \
     plugin_files: $plugin_files,
     tool_files: $tool_files,
     spec_files: $spec_files,
-    checksums: {},
-    install_commands: [
-      "install-uecommandforge.sh --project <path-to-uproject>",
-      "tools/release/install_local.sh --project <path-to-uproject>"
-    ],
+    checksums: $checksums,
+    install_commands: [],
     post_install_checks: [
       "Hello commandlet",
       "Codex tools path",
       "project link manifest"
     ],
     known_limits: [
-      "Tools package does not include compiled plugin binaries.",
-      "Install scripts are added in the next Task 6 step."
+      "Install scripts are added in the next Task 6 step.",
+      "Until installers ship, copy plugin files to <Project>/Plugins/UECommandForge and Codex tools/specs to ~/.codex/UECommandForge."
     ]
   }' > "${OUTPUT}"

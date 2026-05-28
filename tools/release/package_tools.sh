@@ -70,11 +70,10 @@ mkdir -p "${PACKAGE_DIR}"
 cp -R "${REPO_ROOT}/tools" "${PACKAGE_DIR}/tools"
 cp -R "${REPO_ROOT}/specs" "${PACKAGE_DIR}/specs"
 
-"${SCRIPT_DIR}/write_manifest.sh" \
-  --package-root "${PACKAGE_DIR}" \
-  --version "${VERSION}" \
-  --channel "${CHANNEL}" \
-  --output "${PACKAGE_DIR}/uecommandforge-manifest.json"
+if find "${PACKAGE_DIR}" -type l -print -quit | grep -q .; then
+  echo "[package_tools] symlinks are not allowed in release packages" >&2
+  exit 2
+fi
 
 cat > "${PACKAGE_DIR}/install.md" <<INSTALL
 # UECommandForge Tools Install
@@ -85,11 +84,10 @@ Install plugin files into the target Unreal project and install Codex tools/spec
 ~/.codex/UECommandForge
 \`\`\`
 
-Default command:
+Installer status:
 
-\`\`\`
-install-uecommandforge.sh --project <path-to-uproject>
-\`\`\`
+Task 6 installer scripts are not shipped yet. Until then, copy this package into
+\`~/.codex/UECommandForge\` and set \`UECF_PROJECT_FILE\` when invoking wrappers.
 INSTALL
 
 cat > "${PACKAGE_DIR}/release-notes.md" <<NOTES
@@ -100,12 +98,18 @@ cat > "${PACKAGE_DIR}/release-notes.md" <<NOTES
 - Target Codex root: ~/.codex/UECommandForge
 NOTES
 
+"${SCRIPT_DIR}/write_manifest.sh" \
+  --package-root "${PACKAGE_DIR}" \
+  --version "${VERSION}" \
+  --channel "${CHANNEL}" \
+  --output "${PACKAGE_DIR}/uecommandforge-manifest.json"
+
 (
   cd "${PACKAGE_DIR}"
   zip -qr "${ZIP_PATH}" tools specs uecommandforge-manifest.json install.md release-notes.md
 )
 
 "${SCRIPT_DIR}/write_checksums.sh" "${ZIP_PATH}" > "${CHECKSUMS_PATH}"
-"${SCRIPT_DIR}/verify_release_package.sh" "${ZIP_PATH}" >/dev/null
+"${SCRIPT_DIR}/verify_release_package.sh" "${ZIP_PATH}" "${CHECKSUMS_PATH}" >/dev/null
 
 echo "${ZIP_PATH}"

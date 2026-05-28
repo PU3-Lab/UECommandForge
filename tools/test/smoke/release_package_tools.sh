@@ -36,10 +36,13 @@ unzip -p "${TOOLS_ZIP}" uecommandforge-manifest.json | jq -e \
    and (.tool_files | index("tools/ue/run_commandlet.sh"))
    and (.tool_files | index("tools/test/smoke/mid_real_project_flow.sh"))
    and (.spec_files | index("specs/policies/assets.policy.json"))
-   and (.install_commands[] | select(. == "install-uecommandforge.sh --project <path-to-uproject>"))
+   and (.install_commands | length == 0)
+   and (.checksums["tools/ue/run_commandlet.sh"] | type == "string")
+   and (.checksums["install.md"] | type == "string")
+   and (.checksums["release-notes.md"] | type == "string")
    and (.post_install_checks[] | select(. == "Hello commandlet"))' >/dev/null
 
-"${REPO_ROOT}/tools/release/verify_release_package.sh" "${TOOLS_ZIP}"
+"${REPO_ROOT}/tools/release/verify_release_package.sh" "${TOOLS_ZIP}" "${CHECKSUMS}"
 
 grep -q "UECommandForge-${VERSION}-Tools.zip" "${CHECKSUMS}"
 
@@ -47,5 +50,122 @@ if "${REPO_ROOT}/tools/release/package_tools.sh" \
   --version '../bad' \
   --out-dir "${WORK_DIR}/bad" >/dev/null 2>&1; then
   echo "unsafe version should fail" >&2
+  exit 1
+fi
+
+BAD_ZIP_DIR="${WORK_DIR}/bad-zip"
+mkdir -p "${BAD_ZIP_DIR}"
+touch "${BAD_ZIP_DIR}/bad\\entry"
+(
+  cd "${BAD_ZIP_DIR}"
+  zip -q bad-entry.zip 'bad\entry'
+)
+if "${REPO_ROOT}/tools/release/verify_release_package.sh" \
+  "${BAD_ZIP_DIR}/bad-entry.zip" >/dev/null 2>&1; then
+  echo "unsafe zip entry should fail" >&2
+  exit 1
+fi
+
+BAD_MANIFEST_DIR="${WORK_DIR}/bad-manifest"
+rm -rf "${BAD_MANIFEST_DIR}"
+mkdir -p "${BAD_MANIFEST_DIR}"
+unzip -q "${TOOLS_ZIP}" -d "${BAD_MANIFEST_DIR}/package"
+jq 'del(.checksums["install.md"])' \
+  "${BAD_MANIFEST_DIR}/package/uecommandforge-manifest.json" \
+  > "${BAD_MANIFEST_DIR}/package/uecommandforge-manifest.json.tmp"
+mv "${BAD_MANIFEST_DIR}/package/uecommandforge-manifest.json.tmp" \
+  "${BAD_MANIFEST_DIR}/package/uecommandforge-manifest.json"
+(
+  cd "${BAD_MANIFEST_DIR}/package"
+  zip -qr "${BAD_MANIFEST_DIR}/missing-checksum.zip" ./*
+)
+if "${REPO_ROOT}/tools/release/verify_release_package.sh" \
+  "${BAD_MANIFEST_DIR}/missing-checksum.zip" >/dev/null 2>&1; then
+  echo "manifest missing required checksum should fail" >&2
+  exit 1
+fi
+
+rm -rf "${BAD_MANIFEST_DIR}/package"
+mkdir -p "${BAD_MANIFEST_DIR}/package"
+unzip -q "${TOOLS_ZIP}" -d "${BAD_MANIFEST_DIR}/package"
+printf 'unexpected\n' > "${BAD_MANIFEST_DIR}/package/extra.sh"
+(
+  cd "${BAD_MANIFEST_DIR}/package"
+  zip -qr "${BAD_MANIFEST_DIR}/unlisted-file.zip" ./*
+)
+if "${REPO_ROOT}/tools/release/verify_release_package.sh" \
+  "${BAD_MANIFEST_DIR}/unlisted-file.zip" >/dev/null 2>&1; then
+  echo "unlisted zip file should fail" >&2
+  exit 1
+fi
+
+rm -rf "${BAD_MANIFEST_DIR}/package"
+mkdir -p "${BAD_MANIFEST_DIR}/package"
+unzip -q "${TOOLS_ZIP}" -d "${BAD_MANIFEST_DIR}/package"
+printf 'unexpected\n' > "${BAD_MANIFEST_DIR}/package/.expected-files.txt"
+(
+  cd "${BAD_MANIFEST_DIR}/package"
+  zip -qr "${BAD_MANIFEST_DIR}/reserved-unlisted-file.zip" .
+)
+if "${REPO_ROOT}/tools/release/verify_release_package.sh" \
+  "${BAD_MANIFEST_DIR}/reserved-unlisted-file.zip" >/dev/null 2>&1; then
+  echo "reserved unlisted zip file should fail" >&2
+  exit 1
+fi
+
+rm -rf "${BAD_MANIFEST_DIR}/package"
+mkdir -p "${BAD_MANIFEST_DIR}/package/tools/extra"
+unzip -q "${TOOLS_ZIP}" -d "${BAD_MANIFEST_DIR}/package"
+printf '{}\n' > "${BAD_MANIFEST_DIR}/package/tools/extra/uecommandforge-manifest.json"
+(
+  cd "${BAD_MANIFEST_DIR}/package"
+  zip -qr "${BAD_MANIFEST_DIR}/nested-manifest-file.zip" ./*
+)
+if "${REPO_ROOT}/tools/release/verify_release_package.sh" \
+  "${BAD_MANIFEST_DIR}/nested-manifest-file.zip" >/dev/null 2>&1; then
+  echo "nested manifest-named unlisted zip file should fail" >&2
+  exit 1
+fi
+
+rm -rf "${BAD_MANIFEST_DIR}/package"
+mkdir -p "${BAD_MANIFEST_DIR}/package"
+printf 'x' > "${BAD_MANIFEST_DIR}/package/install.md"
+printf 'x' > "${BAD_MANIFEST_DIR}/package/release-notes.md"
+jq -n '{
+  version: "bad",
+  engine_version: "UE5.7",
+  release_channel: "local-smoke",
+  plugin_files: [".."],
+  tool_files: [],
+  spec_files: [],
+  checksums: {"..": "0", "install.md": "0", "release-notes.md": "0"},
+  install_commands: [],
+  post_install_checks: ["Hello commandlet"]
+}' > "${BAD_MANIFEST_DIR}/package/uecommandforge-manifest.json"
+(
+  cd "${BAD_MANIFEST_DIR}/package"
+  zip -qr "${BAD_MANIFEST_DIR}/unsafe-manifest-path.zip" ./*
+)
+if "${REPO_ROOT}/tools/release/verify_release_package.sh" \
+  "${BAD_MANIFEST_DIR}/unsafe-manifest-path.zip" >/dev/null 2>&1; then
+  echo "unsafe manifest path should fail" >&2
+  exit 1
+fi
+
+BAD_CHECKSUMS="${WORK_DIR}/bad-checksums.txt"
+printf '%064d  %s\n' 0 "$(basename "${TOOLS_ZIP}")" > "${BAD_CHECKSUMS}"
+if "${REPO_ROOT}/tools/release/verify_release_package.sh" \
+  "${TOOLS_ZIP}" "${BAD_CHECKSUMS}" >/dev/null 2>&1; then
+  echo "bad checksum should fail" >&2
+  exit 1
+fi
+
+SIDE_FILE="${WORK_DIR}/side.txt"
+SIDE_CHECKSUMS="${WORK_DIR}/side-checksums.txt"
+printf 'side\n' > "${SIDE_FILE}"
+"${REPO_ROOT}/tools/release/write_checksums.sh" "${SIDE_FILE}" > "${SIDE_CHECKSUMS}"
+if "${REPO_ROOT}/tools/release/verify_release_package.sh" \
+  "${TOOLS_ZIP}" "${SIDE_CHECKSUMS}" >/dev/null 2>&1; then
+  echo "checksum for a different file should fail" >&2
   exit 1
 fi
