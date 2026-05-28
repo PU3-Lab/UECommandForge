@@ -179,6 +179,22 @@ if "${REPO_ROOT}/tools/release/install_local.sh" \
   exit 1
 fi
 
+MISMATCH_CHANNEL_TOOLS_OUT="${WORK_DIR}/MismatchedChannelToolsPackage"
+mkdir -p "${MISMATCH_CHANNEL_TOOLS_OUT}"
+"${REPO_ROOT}/tools/release/package_tools.sh" \
+  --version "${VERSION}" \
+  --channel different-channel \
+  --out-dir "${MISMATCH_CHANNEL_TOOLS_OUT}"
+if "${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${PROJECT_FILE}" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${MISMATCH_CHANNEL_TOOLS_OUT}/UECommandForge-${VERSION}-Tools.zip" \
+  --codex-home "${WORK_DIR}/MismatchedChannelToolsCodex" \
+  --run-commandlet-check false >/dev/null 2>&1; then
+  echo "mismatched plugin/tools release channels should fail" >&2
+  exit 1
+fi
+
 SYMLINK_PROJECT="${WORK_DIR}/SymlinkProject"
 SYMLINK_TARGET="${WORK_DIR}/SymlinkTarget"
 mkdir -p "${SYMLINK_PROJECT}" "${SYMLINK_TARGET}"
