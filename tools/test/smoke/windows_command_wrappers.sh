@@ -23,6 +23,9 @@ for wrapper in \
     tools/ue/snapshot_assets.bat \
     tools/ue/validate_asset_rules.bat \
     tools/ue/plan_asset_changes.bat \
+    tools/ue/apply_asset_changes.bat \
+    tools/ue/rollback_asset_changes.bat \
+    tools/ue/create_project_folders.bat \
     tools/ue/create_character_bp.bat \
     tools/ue/create_ai_controller.bat \
     tools/ue/compile_blueprints.bat \
@@ -45,6 +48,9 @@ require_contains tools/ue/run_commandlet.bat 'Saved\\CodexReports'
 require_contains tools/ue/snapshot_assets.bat 'AssetSnapshot'
 require_contains tools/ue/validate_asset_rules.bat 'ValidateAssetRules'
 require_contains tools/ue/plan_asset_changes.bat 'PlanAssetChanges'
+require_contains tools/ue/apply_asset_changes.bat 'ApplyAssetChanges'
+require_contains tools/ue/rollback_asset_changes.bat 'RollbackAssetChanges'
+require_contains tools/ue/create_project_folders.bat 'CreateProjectFolders'
 require_contains tools/ue/create_ai_flow.bat 'CreateAIFlow'
 require_contains tools/ue/setup_npc_character.bat 'specs\\profiles\\npc_character.json'
 require_contains tools/ue/setup_patrol_ai.bat 'specs\\profiles\\patrol_ai.json'
