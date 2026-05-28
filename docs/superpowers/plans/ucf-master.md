@@ -31,6 +31,7 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
 | 5 | [ucf-phase5.md](ucf-phase5.md) | AI 플로우 바인딩·검증 | Phase 4 |
 | 6 | [ucf-phase6.md](ucf-phase6.md) | 맵 배치 | Phase 5 |
 | 7 | [ucf-phase7.md](ucf-phase7.md) | 워크플로우 Commandlet (원스톱) | Phase 6 |
+| 8 | [ucf-phase8-prototype-automation-plan.md](ucf-phase8-prototype-automation-plan.md) | prototype 기반 에셋 정책, C++ 생성, 데이터 검증 제품화 및 배포 | Phase 7 |
 
 ---
 
@@ -45,6 +46,7 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
 | 5 | 완료 | `./tools/test/automation/run.sh` PASS 10 / FAIL 0, `./tools/test/smoke/ai_flow_binding.sh specs/examples/guard_ai.json` PASS 8 / FAIL 0 |
 | 6 | 완료 | `PlaceActor` 리포트 `ok: true`, `actor_placed: ok` |
 | 7 | 완료 | `./tools/ue/build_plugin.sh` 통과, `./tools/test/automation/run.sh` PASS 15 / FAIL 0, `CreateAIFlow` 인수 조건 통과 |
+| 8 | 계획 작성 | `docs/superpowers/plans/references/prototype.md` 기준 제품화 구현 및 GitHub Release 배포 계획 작성 |
 
 ### 2026-05-27 Phase 3 마감 노트
 
