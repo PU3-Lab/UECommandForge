@@ -85,6 +85,24 @@ grep -q "^UECF_PROJECT_FILE=${PROJECT_FILE}$" \
 
 "${REPO_ROOT}/tools/release/uninstall.sh" \
   --project "${PROJECT_FILE}" \
+  --codex-home "${CODEX_HOME}"
+
+test ! -e "${PROJECT_DIR}/Plugins/UECommandForge"
+test -e "${CODEX_HOME}/UECommandForge/tools"
+test -e "${CODEX_HOME}/UECommandForge/specs"
+test -f "${CODEX_HOME}/UECommandForge/uecommandforge.env"
+test -f "${CODEX_HOME}/UECommandForge/uecommandforge-installed.json"
+test ! -e "${PROJECT_DIR}/UECommandForge/uecommandforge-project.json"
+
+"${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${PROJECT_FILE}" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${TOOLS_ZIP}" \
+  --codex-home "${CODEX_HOME}" \
+  --run-commandlet-check false
+
+"${REPO_ROOT}/tools/release/uninstall.sh" \
+  --project "${PROJECT_FILE}" \
   --codex-home "${CODEX_HOME}" \
   --remove-codex-tools true \
   --remove-specs true
@@ -108,6 +126,56 @@ if "${REPO_ROOT}/tools/release/install_local.sh" \
   --codex-home "${UNMANAGED_CODEX}" \
   --run-commandlet-check false >/dev/null 2>&1; then
   echo "unmanaged existing plugin should fail" >&2
+  exit 1
+fi
+
+UNMANAGED_PROJECT_META="${WORK_DIR}/UnmanagedProjectMetadata"
+UNMANAGED_PROJECT_META_CODEX="${WORK_DIR}/UnmanagedProjectMetadataCodex"
+mkdir -p "${UNMANAGED_PROJECT_META}/UECommandForge" "${UNMANAGED_PROJECT_META_CODEX}"
+cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" \
+  "${UNMANAGED_PROJECT_META}/UECommandForgeSample.uproject"
+printf '{"unmanaged":true}\n' \
+  > "${UNMANAGED_PROJECT_META}/UECommandForge/uecommandforge-project.json"
+if "${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${UNMANAGED_PROJECT_META}/UECommandForgeSample.uproject" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${TOOLS_ZIP}" \
+  --codex-home "${UNMANAGED_PROJECT_META_CODEX}" \
+  --run-commandlet-check false >/dev/null 2>&1; then
+  echo "unmanaged existing project metadata should fail" >&2
+  exit 1
+fi
+
+UNMANAGED_CODEX_META_PROJECT="${WORK_DIR}/UnmanagedCodexMetadataProject"
+UNMANAGED_CODEX_META="${WORK_DIR}/UnmanagedCodexMetadata"
+mkdir -p "${UNMANAGED_CODEX_META_PROJECT}" "${UNMANAGED_CODEX_META}/UECommandForge"
+cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" \
+  "${UNMANAGED_CODEX_META_PROJECT}/UECommandForgeSample.uproject"
+printf 'UECF_PROJECT_FILE=/tmp/unmanaged.uproject\n' \
+  > "${UNMANAGED_CODEX_META}/UECommandForge/uecommandforge.env"
+if "${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${UNMANAGED_CODEX_META_PROJECT}/UECommandForgeSample.uproject" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${TOOLS_ZIP}" \
+  --codex-home "${UNMANAGED_CODEX_META}" \
+  --run-commandlet-check false >/dev/null 2>&1; then
+  echo "unmanaged existing Codex metadata should fail" >&2
+  exit 1
+fi
+
+MISMATCH_TOOLS_OUT="${WORK_DIR}/MismatchedToolsPackage"
+mkdir -p "${MISMATCH_TOOLS_OUT}"
+"${REPO_ROOT}/tools/release/package_tools.sh" \
+  --version "9.9.9-review" \
+  --channel install-smoke \
+  --out-dir "${MISMATCH_TOOLS_OUT}"
+if "${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${PROJECT_FILE}" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${MISMATCH_TOOLS_OUT}/UECommandForge-9.9.9-review-Tools.zip" \
+  --codex-home "${WORK_DIR}/MismatchedToolsCodex" \
+  --run-commandlet-check false >/dev/null 2>&1; then
+  echo "mismatched plugin/tools release versions should fail" >&2
   exit 1
 fi
 

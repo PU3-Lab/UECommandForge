@@ -61,6 +61,10 @@ if grep -q '^docs/memory/' "${ZIP_LIST}"; then
   echo "source package must not include internal memory docs" >&2
   exit 1
 fi
+if grep -q '^docs/superpowers/plans/' "${ZIP_LIST}"; then
+  echo "source package must not include internal planning docs" >&2
+  exit 1
+fi
 
 unzip -p "${SOURCE_ZIP}" uecommandforge-manifest.json | jq -e \
   --arg version "${VERSION}" \
