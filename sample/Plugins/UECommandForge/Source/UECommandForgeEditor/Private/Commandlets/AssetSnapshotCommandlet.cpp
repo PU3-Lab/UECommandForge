@@ -42,6 +42,13 @@ namespace
         }
         return Out;
     }
+
+    FString PackageExtensionForAsset(const FAssetData& AssetData)
+    {
+        return AssetData.AssetClassPath.GetAssetName() == FName(TEXT("World"))
+            ? FPackageName::GetMapPackageExtension()
+            : FPackageName::GetAssetPackageExtension();
+    }
 }
 
 int32 UAssetSnapshotCommandlet::Main(const FString& Params)
@@ -85,19 +92,30 @@ int32 UAssetSnapshotCommandlet::Main(const FString& Params)
 
     AllAssets.Sort([](const FAssetData& A, const FAssetData& B)
     {
+        if (A.PackageName == B.PackageName)
+        {
+            return A.AssetName.LexicalLess(B.AssetName);
+        }
         return A.PackageName.LexicalLess(B.PackageName);
     });
 
+    TSet<FName> SeenPackages;
     for (const FAssetData& AssetData : AllAssets)
     {
+        if (SeenPackages.Contains(AssetData.PackageName))
+        {
+            continue;
+        }
+        SeenPackages.Add(AssetData.PackageName);
+
         FCommandForgeAssetSnapshotRecord Record;
         Record.AssetName = AssetData.AssetName.ToString();
         Record.PackagePath = AssetData.PackagePath.ToString();
         Record.ObjectPath = AssetData.GetObjectPathString();
         Record.AssetClass = AssetData.AssetClassPath.ToString();
         Record.PackageName = AssetData.PackageName.ToString();
-        Record.DiskPath = FPackageName::LongPackageNameToFilename(
-            Record.PackageName, FPackageName::GetAssetPackageExtension());
+        Record.DiskPath = FPackageName::LongPackageNameToFilename(Record.PackageName,
+            PackageExtensionForAsset(AssetData));
         Record.bIsRedirector = Record.AssetClass.Contains(TEXT("ObjectRedirector"));
 
         UPackage* Package = FindPackage(nullptr, *Record.PackageName);

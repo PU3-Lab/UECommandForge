@@ -1,8 +1,11 @@
 #include "Misc/AutomationTest.h"
 #include "Commandlets/AssetSnapshotCommandlet.h"
 #include "CommandForgeTypes.h"
+#include "Dom/JsonObject.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "Serialization/JsonReader.h"
+#include "Serialization/JsonSerializer.h"
 #include "UObject/UObjectGlobals.h"
 
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
@@ -38,5 +41,48 @@ bool FAssetSnapshotCommandletTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("package_dirty 포함"), Content.Contains(TEXT("\"package_dirty\"")));
     TestTrue(TEXT("dependencies 포함"), Content.Contains(TEXT("\"dependencies\"")));
     TestTrue(TEXT("referencers 포함"), Content.Contains(TEXT("\"referencers\"")));
+
+    TSharedPtr<FJsonObject> RootObject;
+    const TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(Content);
+    if (!TestTrue(TEXT("snapshot report JSON 파싱"), FJsonSerializer::Deserialize(Reader, RootObject)) ||
+        !TestTrue(TEXT("snapshot report root object"), RootObject.IsValid()))
+    {
+        return false;
+    }
+
+    const TArray<TSharedPtr<FJsonValue>>* Assets = nullptr;
+    if (!TestTrue(TEXT("assets 배열 파싱"), RootObject->TryGetArrayField(TEXT("assets"), Assets)) ||
+        !TestTrue(TEXT("asset snapshot 결과 존재"), Assets != nullptr && Assets->Num() > 0))
+    {
+        return false;
+    }
+
+    TSet<FString> PackageNames;
+    bool bFoundMapWithUmapDiskPath = false;
+    for (const TSharedPtr<FJsonValue>& AssetValue : *Assets)
+    {
+        const TSharedPtr<FJsonObject>* AssetObject = nullptr;
+        if (!TestTrue(TEXT("asset object 파싱"), AssetValue->TryGetObject(AssetObject)) ||
+            !TestTrue(TEXT("asset object 유효"), AssetObject != nullptr && AssetObject->IsValid()))
+        {
+            return false;
+        }
+
+        FString PackageName;
+        TestTrue(TEXT("package_name field"), (*AssetObject)->TryGetStringField(TEXT("package_name"), PackageName));
+        TestFalse(TEXT("package snapshot 중복 없음"), PackageNames.Contains(PackageName));
+        PackageNames.Add(PackageName);
+
+        FString AssetClass;
+        FString DiskPath;
+        (*AssetObject)->TryGetStringField(TEXT("asset_class"), AssetClass);
+        (*AssetObject)->TryGetStringField(TEXT("disk_path"), DiskPath);
+        if (AssetClass == TEXT("/Script/Engine.World") && DiskPath.EndsWith(TEXT(".umap")))
+        {
+            bFoundMapWithUmapDiskPath = true;
+        }
+    }
+
+    TestTrue(TEXT("map asset disk_path는 .umap"), bFoundMapWithUmapDiskPath);
     return true;
 }
