@@ -254,7 +254,7 @@ rename/move/delete/fixup 작업을 실제 적용 전 preflight한다.
 - GREEN: secret pattern scan 통과. 기존 문서의 설명성 `secret/API key` 문자열만 매칭됐다.
 - BLOCKED: `UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/asset_change_plan.sh`는 `UnrealEditor-Cmd`가 macOS LaunchServices 경고 직후 UE 로그 없이 멈춰 timeout 124로 실패했다. 동일 시점 `UE_COMMANDLET_TIMEOUT=0 ./tools/ue/hello.sh`와 직접 `UnrealEditor-Cmd -run=Hello`도 같은 증상으로 멈춰 코드 경로가 아닌 로컬 UE commandlet launch 환경 문제로 분리했고, 리뷰 수정 후 재실행해도 동일 timeout 124가 재현됐다.
 
-- [ ] **Step 4: `ApplyAssetChangesCommandlet` 작성**
+- [x] **Step 4: `ApplyAssetChangesCommandlet` 작성**
 
 승인된 plan을 실제 적용한다.
 
@@ -266,7 +266,27 @@ rename/move/delete/fixup 작업을 실제 적용 전 preflight한다.
 - rollback plan 저장
 - Result JSON에 changed assets 기록
 
-- [ ] **Step 5: `RollbackAssetChangesCommandlet` 작성**
+진행 상태:
+
+- 2026-05-28: `ApplyAssetChangesCommandlet` 추가. `-Plan=<asset_change_plan.json>`와 `-Output=<report.json>`를 받아 승인된 plan을 실제 적용한다.
+- 2026-05-28: apply 전 `Saved/CodexReports/snapshot_<transaction_id>.json`에 작업 대상 package의 존재 여부와 disk path snapshot을 저장한다.
+- 2026-05-28: create folder는 long package name을 검증한 뒤 Content 디렉터리를 생성하고, rename/move는 `AssetTools.RenameAssets`를 사용한다.
+- 2026-05-28: delete는 `allow_delete=true`, `delete_assets` 명시 목록, wildcard 금지, referencer 없음 조건을 만족할 때만 `ObjectTools::ForceDeleteObjects`로 적용한다.
+- 2026-05-28: `fix_redirector`는 AssetRegistry에서 `ObjectRedirector`를 수집해 `AssetTools.FixupReferencers`를 실행한다.
+- 2026-05-28: 작업 후 AssetRegistry를 재스캔하고, 생성 폴더 존재 여부, rename/move target 존재 여부, delete 대상 제거 여부를 post validation으로 확인한다.
+- 2026-05-28: rollback plan을 저장하고 Result JSON에 `dry_run=false`, `applied`, `rollback_available`, `changed_assets`, `changed_files`, `post_validation`을 기록한다.
+- 2026-05-28 리뷰 반영: Unity build에서 테스트 helper명이 충돌하지 않도록 `PlanAssetChangesCommandletTest`와 `ValidateAssetRulesCommandletTest`의 JSON loader명을 고유화했다.
+- 2026-05-28 리뷰 반영: 부분 적용 실패 시에도 `applied=true`를 유지하고, 실제 적용된 변경이 있으면 실패 report에서도 rollback plan을 저장하도록 수정했다.
+
+검증:
+- RED: `ApplyAssetChangesCommandletTest`를 먼저 추가했고, 구현 전 `./tools/ue/build_plugin.sh`가 누락된 `ApplyAssetChangesCommandlet.h`로 실패했다.
+- GREEN: `./tools/ue/build_plugin.sh` 통과.
+- GREEN: sample `UnrealEditor` 타깃 빌드 통과. 테스트 helper명 Unity build 충돌 수정 후 재통과했다.
+- GREEN: `./tools/test/automation/run.sh` 통과, PASS 24 / FAIL 0 / SKIP 0. `CreatesFolderAndRollbackPlan`, `RejectsUnsafeDelete`가 새로 포함됐다.
+- GREEN: `git diff --check` 통과.
+- GREEN: secret pattern scan 통과. 기존 문서의 설명성 `secret/API key` 문자열만 매칭됐다.
+
+- [x] **Step 5: `RollbackAssetChangesCommandlet` 작성**
 
 rollback plan을 읽어 가능한 작업을 되돌린다.
 
@@ -275,6 +295,25 @@ rollback plan을 읽어 가능한 작업을 되돌린다.
 - path collision 검사
 - rollback 후 post validation
 - rollback 실패 시 수동 복구 지침 기록
+
+진행 상태:
+
+- 2026-05-28: `RollbackAssetChangesCommandlet` 추가. `-RollbackPlan=<rollback.json>`와 `-Output=<report.json>`를 받아 rollback plan을 JSON으로 파싱한다.
+- 2026-05-28: plan operations를 역순으로 실행해 apply 순서와 반대로 되돌리도록 구현했다.
+- 2026-05-28: `rename_asset`/`move_asset` rollback은 현재 asset 존재 여부와 복구 경로 충돌을 검사한 뒤 `AssetTools.RenameAssets`로 원래 path로 복구한다.
+- 2026-05-28: `delete_folder` rollback은 생성된 빈 폴더만 삭제한다. 리뷰 중 비어 있지 않은 폴더 재귀 삭제 위험을 발견해 `ROLLBACK_FOLDER_NOT_EMPTY`로 중단하고 수동 복구 지침을 남기도록 보강했다.
+- 2026-05-28: `fix_redirector` rollback 항목은 `ObjectRedirector`를 수집해 `AssetTools.FixupReferencers`를 실행한다.
+- 2026-05-28: 삭제된 asset 자동 복원은 source control/backup 의존 작업이므로 `MANUAL_RESTORE_REQUIRED` issue와 수동 복구 지침을 남긴다.
+- 2026-05-28: 허용 mount path 판정이 `/GameFoo` 같은 유사 prefix를 통과시키지 않도록 `/Game/` 및 `/UECommandForge/` 기준으로 엄격화했다.
+- 2026-05-28: rollback 후 AssetRegistry를 재스캔하고, 복구 asset 존재 여부와 삭제 폴더 제거 여부를 post validation으로 확인한다.
+
+검증:
+- RED: `RollbackAssetChangesCommandletTest`를 먼저 추가했고, 구현 전 `./tools/ue/build_plugin.sh`가 누락된 `RollbackAssetChangesCommandlet.h`로 실패했다.
+- GREEN: `./tools/ue/build_plugin.sh` 통과. 리뷰 수정 후 재실행해 `RollbackAssetChangesCommandlet.cpp`와 `RollbackAssetChangesCommandletTest.cpp` 재컴파일 포함 확인.
+- GREEN: sample `UnrealEditor` 타깃 빌드 통과.
+- GREEN: `./tools/test/automation/run.sh` 통과, PASS 27 / FAIL 0 / SKIP 0. `DeletesCreatedFolder`, `RejectsPathCollision`, `RejectsNonEmptyFolderDelete`가 새로 포함됐다.
+- GREEN: `git diff --check` 통과.
+- GREEN: secret pattern scan 통과. 기존 문서의 설명성 `secret/API key` 문자열과 코드의 `Tokens` 변수명만 매칭됐다.
 
 - [ ] **Step 6: wrapper와 테스트 추가**
 

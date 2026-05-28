@@ -14,7 +14,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 namespace
 {
-    bool LoadJsonObject(const FString& Path, TSharedPtr<FJsonObject>& OutObject)
+    bool LoadValidateAssetRulesJsonObject(const FString& Path, TSharedPtr<FJsonObject>& OutObject)
     {
         FString Content;
         if (!FFileHelper::LoadFileToString(Content, *Path))
@@ -74,7 +74,7 @@ bool FValidateAssetRulesCommandletTest::RunTest(const FString& Parameters)
         static_cast<int32>(ECommandForgeExitCode::ValidationFailed));
 
     TSharedPtr<FJsonObject> RootObject;
-    TestTrue(TEXT("asset rules report JSON 파싱"), LoadJsonObject(ReportPath, RootObject));
+    TestTrue(TEXT("asset rules report JSON 파싱"), LoadValidateAssetRulesJsonObject(ReportPath, RootObject));
     TestFalse(TEXT("policy report ok false"), RootObject->GetBoolField(TEXT("ok")));
     TestEqual(TEXT("commandlet 이름"), RootObject->GetStringField(TEXT("commandlet")),
         TEXT("ValidateAssetRules"));

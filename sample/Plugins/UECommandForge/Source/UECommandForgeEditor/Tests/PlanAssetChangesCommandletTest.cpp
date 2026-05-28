@@ -24,7 +24,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 
 namespace
 {
-    bool LoadJsonObject(const FString& Path, TSharedPtr<FJsonObject>& OutObject)
+    bool LoadPlanAssetChangesJsonObject(const FString& Path, TSharedPtr<FJsonObject>& OutObject)
     {
         FString Content;
         if (!FFileHelper::LoadFileToString(Content, *Path))
@@ -82,7 +82,7 @@ bool FPlanAssetChangesCommandletTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("preflight success exit code"), ExitCode, 0);
 
     TSharedPtr<FJsonObject> RootObject;
-    TestTrue(TEXT("asset change report JSON 파싱"), LoadJsonObject(ReportPath, RootObject));
+    TestTrue(TEXT("asset change report JSON 파싱"), LoadPlanAssetChangesJsonObject(ReportPath, RootObject));
     TestTrue(TEXT("preflight ok true"), RootObject->GetBoolField(TEXT("ok")));
     TestEqual(TEXT("commandlet 이름"), RootObject->GetStringField(TEXT("commandlet")),
         TEXT("PlanAssetChanges"));
@@ -134,7 +134,7 @@ bool FPlanAssetChangesDeleteGuardTest::RunTest(const FString& Parameters)
         static_cast<int32>(ECommandForgeExitCode::ValidationFailed));
 
     TSharedPtr<FJsonObject> RootObject;
-    TestTrue(TEXT("delete guard report JSON 파싱"), LoadJsonObject(ReportPath, RootObject));
+    TestTrue(TEXT("delete guard report JSON 파싱"), LoadPlanAssetChangesJsonObject(ReportPath, RootObject));
     TestFalse(TEXT("delete guard ok false"), RootObject->GetBoolField(TEXT("ok")));
 
     const TArray<TSharedPtr<FJsonValue>>* Issues = nullptr;
@@ -194,7 +194,7 @@ bool FPlanAssetChangesRollbackPathGuardTest::RunTest(const FString& Parameters)
     TestFalse(TEXT("unsafe rollback file 미생성"), FPaths::FileExists(UnsafeRollbackPath));
 
     TSharedPtr<FJsonObject> RootObject;
-    TestTrue(TEXT("unsafe rollback path report JSON 파싱"), LoadJsonObject(ReportPath, RootObject));
+    TestTrue(TEXT("unsafe rollback path report JSON 파싱"), LoadPlanAssetChangesJsonObject(ReportPath, RootObject));
     TestFalse(TEXT("unsafe rollback path ok false"), RootObject->GetBoolField(TEXT("ok")));
 
     const TArray<TSharedPtr<FJsonValue>>* Errors = nullptr;
