@@ -157,7 +157,7 @@ namespace UECommandForge::ValidateBuildCsPrivate
 
 int32 UValidateBuildCsCommandlet::Main(const FString& Params)
 {
-    using namespace UECommandForge::ValidateBuildCsPrivate;
+    namespace BuildCsPrivate = UECommandForge::ValidateBuildCsPrivate;
 
     TArray<FString> Tokens;
     TArray<FString> Switches;
@@ -174,13 +174,13 @@ int32 UValidateBuildCsCommandlet::Main(const FString& Params)
 
     if (OutPath.IsEmpty())
     {
-        AddError(Report, TEXT("MISSING_ARG"), TEXT("-Output 인자가 없습니다."), TEXT("Output"));
+        BuildCsPrivate::AddError(Report, TEXT("MISSING_ARG"), TEXT("-Output 인자가 없습니다."), TEXT("Output"));
         Report.bOk = false;
         return static_cast<int32>(ECommandForgeExitCode::SpecParseFailed);
     }
     if (PolicyPath.IsEmpty())
     {
-        AddError(Report, TEXT("MISSING_ARG"), TEXT("-Policy 인자가 없습니다."), TEXT("Policy"));
+        BuildCsPrivate::AddError(Report, TEXT("MISSING_ARG"), TEXT("-Policy 인자가 없습니다."), TEXT("Policy"));
         Report.bOk = false;
         UECommandForge::FJsonReportWriter::Write(OutPath, Report);
         return static_cast<int32>(ECommandForgeExitCode::SpecParseFailed);
@@ -189,7 +189,7 @@ int32 UValidateBuildCsCommandlet::Main(const FString& Params)
     FString PolicyJson;
     if (!FFileHelper::LoadFileToString(PolicyJson, *PolicyPath))
     {
-        AddError(Report, TEXT("POLICY_READ_FAILED"), TEXT("Build.cs policy 파일을 읽을 수 없습니다."), TEXT("Policy"));
+        BuildCsPrivate::AddError(Report, TEXT("POLICY_READ_FAILED"), TEXT("Build.cs policy 파일을 읽을 수 없습니다."), TEXT("Policy"));
         Report.bOk = false;
         UECommandForge::FJsonReportWriter::Write(OutPath, Report);
         return static_cast<int32>(ECommandForgeExitCode::SpecParseFailed);
@@ -205,8 +205,8 @@ int32 UValidateBuildCsCommandlet::Main(const FString& Params)
         return static_cast<int32>(ECommandForgeExitCode::SpecParseFailed);
     }
 
-    TArray<FBuildCsPolicyModule> Modules;
-    if (!ParsePolicy(Document, Modules, Report))
+    TArray<BuildCsPrivate::FBuildCsPolicyModule> Modules;
+    if (!BuildCsPrivate::ParsePolicy(Document, Modules, Report))
     {
         Report.bOk = false;
         UECommandForge::FJsonReportWriter::Write(OutPath, Report);
@@ -214,11 +214,11 @@ int32 UValidateBuildCsCommandlet::Main(const FString& Params)
     }
 
     int32 CheckedModuleCount = 0;
-    for (const FBuildCsPolicyModule& Module : Modules)
+    for (const BuildCsPrivate::FBuildCsPolicyModule& Module : Modules)
     {
         if (!UECommandForge::BuildCs::IsSafeModuleName(Module.Name))
         {
-            AddIssue(Report, TEXT("INVALID_MODULE_NAME"),
+            BuildCsPrivate::AddIssue(Report, TEXT("INVALID_MODULE_NAME"),
                 TEXT("module name은 C++ identifier여야 합니다."),
                 TEXT("modules.name"), Module.Name, TEXT("예: UECommandForgeRuntime"));
             continue;
@@ -237,7 +237,7 @@ int32 UValidateBuildCsCommandlet::Main(const FString& Params)
 
         if (!Check.bBuildCsExists)
         {
-            AddIssue(Report, TEXT("BUILDCS_NOT_FOUND"),
+            BuildCsPrivate::AddIssue(Report, TEXT("BUILDCS_NOT_FOUND"),
                 TEXT("module Build.cs 파일을 찾을 수 없습니다."),
                 TEXT("modules.name"), Check.BuildCsPath,
                 TEXT("module 이름과 plugin/project Source 경로를 확인하세요."));
@@ -246,14 +246,14 @@ int32 UValidateBuildCsCommandlet::Main(const FString& Params)
 
         for (const FString& Dependency : Check.MissingPublicDependencies)
         {
-            AddIssue(Report, TEXT("BUILDCS_PUBLIC_DEPENDENCY_MISSING"),
+            BuildCsPrivate::AddIssue(Report, TEXT("BUILDCS_PUBLIC_DEPENDENCY_MISSING"),
                 TEXT("PublicDependencyModuleNames에 필요한 module dependency가 없습니다."),
                 TEXT("required_public"), Check.BuildCsPath,
                 FString::Printf(TEXT("PublicDependencyModuleNames에 \"%s\"를 추가하세요."), *Dependency));
         }
         for (const FString& Dependency : Check.MissingPrivateDependencies)
         {
-            AddIssue(Report, TEXT("BUILDCS_PRIVATE_DEPENDENCY_MISSING"),
+            BuildCsPrivate::AddIssue(Report, TEXT("BUILDCS_PRIVATE_DEPENDENCY_MISSING"),
                 TEXT("PrivateDependencyModuleNames에 필요한 module dependency가 없습니다."),
                 TEXT("required_private"), Check.BuildCsPath,
                 FString::Printf(TEXT("PrivateDependencyModuleNames에 \"%s\"를 추가하세요."), *Dependency));
@@ -262,7 +262,7 @@ int32 UValidateBuildCsCommandlet::Main(const FString& Params)
 
     Report.Validation.Add(TEXT("checked_module_count"), FString::FromInt(CheckedModuleCount));
     Report.Validation.Add(TEXT("issue_count"), FString::FromInt(Report.ValidationIssues.Num()));
-    Report.bOk = Report.Errors.IsEmpty() && !HasErrorIssue(Report.ValidationIssues);
+    Report.bOk = Report.Errors.IsEmpty() && !BuildCsPrivate::HasErrorIssue(Report.ValidationIssues);
     const bool bWrote = UECommandForge::FJsonReportWriter::Write(OutPath, Report);
     if (!bWrote)
     {

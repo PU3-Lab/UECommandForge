@@ -27,6 +27,7 @@ for wrapper in \
     tools/ue/rollback_asset_changes.bat \
     tools/ue/create_project_folders.bat \
     tools/ue/generate_cpp_class.bat \
+    tools/ue/validate_cpp_reflection.bat \
     tools/ue/validate_buildcs.bat \
     tools/ue/create_character_bp.bat \
     tools/ue/create_ai_controller.bat \
@@ -54,6 +55,7 @@ require_contains tools/ue/apply_asset_changes.bat 'ApplyAssetChanges'
 require_contains tools/ue/rollback_asset_changes.bat 'RollbackAssetChanges'
 require_contains tools/ue/create_project_folders.bat 'CreateProjectFolders'
 require_contains tools/ue/generate_cpp_class.bat 'GenerateCppClass'
+require_contains tools/ue/validate_cpp_reflection.bat 'ValidateCppReflection'
 require_contains tools/ue/validate_buildcs.bat 'ValidateBuildCs'
 require_contains tools/ue/create_ai_flow.bat 'CreateAIFlow'
 require_contains tools/ue/setup_npc_character.bat 'specs\\profiles\\npc_character.json'

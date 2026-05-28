@@ -481,7 +481,7 @@ Spec 필드:
 - GREEN: `git check-ignore` 기준 `Private/BuildCs/BuildCsDependencyUtils.*`는 ignore되지 않는다.
 - 참고: 첫 `validate_buildcs.sh` 실행은 상대 정책 경로가 UE commandlet cwd 기준으로 해석되어 `POLICY_READ_FAILED`가 발생했다. wrapper에서 파일 인자를 절대 경로로 정규화해 수정했다.
 
-- [ ] **Step 4: Reflection 정책 검증 구현**
+- [x] **Step 4: Reflection 정책 검증 구현**
 
 `ValidateCppReflectionCommandlet` 검증 항목:
 - `UPROPERTY` Category 누락
@@ -490,6 +490,25 @@ Spec 필드:
 - component property의 `VisibleAnywhere` 권장 위반
 - `Config` property의 config class 위치 위반
 - `UFUNCTION`/`UPROPERTY` macro와 선언 연결 오류
+
+구현 상태:
+- 2026-05-28: `ValidateCppReflectionCommandlet` 추가. `kind=cpp_reflection_policy` 정책을 읽어 `files[]` 직접 지정과 `modules[]` 기반 header scan을 모두 지원한다.
+- 2026-05-28: Build.cs module root resolver를 재사용해 module `Public`/`Private` header를 재귀적으로 수집한다.
+- 2026-05-28: Result JSON에 `checked_file_count`, `issue_count`, 파일별 `property_count`, `function_count`를 기록하고, 정책 위반이 있으면 `ValidationFailed`로 종료한다.
+- 2026-05-28: automation test `ValidateCppReflection.PassesCleanHeader`, `ValidateCppReflection.ReportsPolicyIssues` 추가.
+- 2026-05-28: 리뷰 반영으로 `modules[].include_paths`는 module root 안의 안전한 상대 경로만 허용하도록 보강하고, `ValidateCppReflection.RejectsUnsafeIncludePath`를 추가했다.
+- 2026-05-28: unity build에서 anonymous namespace helper명이 충돌하지 않도록 `ValidateBuildCsCommandlet.cpp`의 helper 호출을 namespace-qualified 형태로 정리했다.
+
+검증:
+- RED: commandlet 구현 전 `./tools/ue/build_plugin.sh`가 `ValidateCppReflectionCommandlet.h` 누락으로 실패했다.
+- GREEN: 구현 후 `./tools/ue/build_plugin.sh` 통과.
+- GREEN: sample `UnrealEditor` 타깃 빌드 통과.
+- GREEN: `./tools/test/automation/run.sh` 통과, PASS 43 / FAIL 0 / SKIP 0. Reflection policy automation 2건을 포함한다.
+- GREEN: 리뷰 정리 후 sample `UnrealEditor` 타깃 빌드 재통과.
+- GREEN: include path 보강 후 `./tools/ue/build_plugin.sh` 재통과.
+- GREEN: include path 보강 후 sample `UnrealEditor` 타깃 빌드 재통과.
+- GREEN: include path 보강 후 `./tools/test/automation/run.sh` 재통과, PASS 44 / FAIL 0 / SKIP 0. Reflection policy automation 3건을 포함한다.
+- BLOCKED: `UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/cpp_reflection_policy.sh`와 직접 `validate_cpp_reflection.sh` 실행은 Result JSON 생성 전에 timeout됐다. sample `UnrealEditor` 타깃 재빌드 후에도 같은 timeout이 재현됐고, 기존 `UE_COMMANDLET_TIMEOUT=30 ./tools/ue/hello.sh`도 같은 timeout이 발생하므로 Reflection 로직 한정 문제가 아니라 현재 macOS 환경의 공통 `UnrealEditor-Cmd -run` commandlet launch 문제로 본다.
 
 - [ ] **Step 5: UHT 로그 분석 구현**
 
@@ -520,6 +539,9 @@ Spec 필드:
 - 2026-05-28: `windows_command_wrappers.sh`에 `generate_cpp_class.bat` 정적 검증 추가.
 - 2026-05-28: `tools/ue/validate_buildcs.sh`, `tools/ue/validate_buildcs.bat` 추가.
 - 2026-05-28: `windows_command_wrappers.sh`에 `validate_buildcs.bat` 정적 검증 추가.
+- 2026-05-28: `tools/ue/validate_cpp_reflection.sh`, `tools/ue/validate_cpp_reflection.bat` 추가.
+- 2026-05-28: `tools/test/smoke/cpp_reflection_policy.sh` 추가. 위반 header fixture로 reflection issue code 6종을 검증하도록 구성했다.
+- 2026-05-28: `windows_command_wrappers.sh`에 `validate_cpp_reflection.bat` 정적 검증 추가.
 
 검증:
 - GREEN: `./tools/test/smoke/windows_command_wrappers.sh` 통과.
@@ -527,10 +549,13 @@ Spec 필드:
 - GREEN: 리뷰 수정 후 `./tools/test/smoke/windows_command_wrappers.sh` 재실행 통과.
 - GREEN: 리뷰 수정 후 `UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/cpp_generation.sh` 재실행 통과.
 - GREEN: `UE_COMMANDLET_TIMEOUT=90 ./tools/ue/validate_buildcs.sh specs/policies/buildcs.policy.json` 통과.
+- GREEN: `./tools/test/smoke/windows_command_wrappers.sh` 재실행 통과. `validate_cpp_reflection.bat` 정적 검증을 포함한다.
+- BLOCKED: `UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/cpp_reflection_policy.sh`는 공통 `UnrealEditor-Cmd -run` launch timeout 때문에 런타임 검증이 차단됐다. 같은 환경에서 `hello.sh`도 timeout되므로 wrapper launch 문제를 먼저 분리해야 한다.
 
 남은 항목:
-- `validate_cpp_reflection.sh/.bat`, `analyze_uht_log.sh/.bat`
-- reflection 정책 검증, UHT 로그 분석 commandlet
+- `analyze_uht_log.sh/.bat`
+- UHT 로그 분석 commandlet
+- 공통 `run_commandlet.sh` launch timeout 원인 분리 후 `cpp_reflection_policy.sh` runtime smoke 재검증
 - apply 생성 후 실제 빌드까지 잇는 `cpp_generation.sh` 확장
 
 ## Task 3: DataAsset / DataTable / Config 관리 제품화
