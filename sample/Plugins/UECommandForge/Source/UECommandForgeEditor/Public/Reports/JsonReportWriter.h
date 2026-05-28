@@ -7,13 +7,21 @@ struct FCommandForgeReport
 {
     bool bOk = false;
     FString Commandlet;
+    FString TransactionId;
+    bool bDryRun = false;
+    bool bApplied = false;
     TArray<FString> CreatedAssets;
     TArray<FString> ModifiedAssets;
+    TArray<FString> ChangedAssets;
+    TArray<FString> ChangedFiles;
     TMap<FString, FString> Validation;
+    TMap<FString, FString> PostValidation;
+    TArray<FCommandForgeValidationIssue> ValidationIssues;
     TArray<FCommandForgeError> Errors;
     TArray<FString> NextSuggestions;
     TArray<FCommandForgeStepResult> Steps;
     bool bRollbackAvailable = false;
+    FString RollbackPlanPath;
 };
 
 namespace UECommandForge

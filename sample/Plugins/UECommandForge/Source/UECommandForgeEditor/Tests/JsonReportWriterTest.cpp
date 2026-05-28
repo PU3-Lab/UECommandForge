@@ -18,6 +18,23 @@ bool FUECommandForgeJsonReportWriterTest::RunTest(const FString& Parameters)
     Report.bOk = true;
     Report.Commandlet = TEXT("Hello");
     Report.bRollbackAvailable = true;
+    Report.TransactionId = TEXT("tx-123");
+    Report.bDryRun = true;
+    Report.bApplied = false;
+    Report.ChangedAssets.Add(TEXT("/Game/BP_Guard"));
+    Report.ChangedFiles.Add(TEXT("Content/AI/GuardAI.json"));
+    Report.RollbackPlanPath = TEXT("Saved/CodexReports/rollback_tx-123.json");
+    Report.PostValidation.Add(TEXT("asset_registry"), TEXT("passed"));
+
+    FCommandForgeValidationIssue Issue;
+    Issue.Severity = TEXT("warning");
+    Issue.Code = TEXT("UCF_PATH_HINT");
+    Issue.Message = TEXT("Blueprint should be created under /Game/AI.");
+    Issue.Field = TEXT("asset_path");
+    Issue.AssetPath = TEXT("/Game/BP_Guard");
+    Issue.FilePath = TEXT("Content/AI/GuardAI.json");
+    Issue.SuggestedFix = TEXT("Move asset to /Game/AI");
+    Report.ValidationIssues.Add(Issue);
 
     FCommandForgeStepResult Step;
     Step.Step = TEXT("CreateCharacterBlueprint");
@@ -35,6 +52,24 @@ bool FUECommandForgeJsonReportWriterTest::RunTest(const FString& Parameters)
         Content.Contains(TEXT("\"commandlet\": \"Hello\"")));
     TestTrue(TEXT("rollback_available 포함"),
         Content.Contains(TEXT("\"rollback_available\": true")));
+    TestTrue(TEXT("transaction_id 포함"),
+        Content.Contains(TEXT("\"transaction_id\": \"tx-123\"")));
+    TestTrue(TEXT("dry_run 포함"),
+        Content.Contains(TEXT("\"dry_run\": true")));
+    TestTrue(TEXT("applied 포함"),
+        Content.Contains(TEXT("\"applied\": false")));
+    TestTrue(TEXT("changed_assets 포함"),
+        Content.Contains(TEXT("\"changed_assets\"")) && Content.Contains(TEXT("\"/Game/BP_Guard\"")));
+    TestTrue(TEXT("changed_files 포함"),
+        Content.Contains(TEXT("\"changed_files\"")) && Content.Contains(TEXT("\"Content/AI/GuardAI.json\"")));
+    TestTrue(TEXT("rollback_plan_path 포함"),
+        Content.Contains(TEXT("\"rollback_plan_path\": \"Saved/CodexReports/rollback_tx-123.json\"")));
+    TestTrue(TEXT("post_validation 포함"),
+        Content.Contains(TEXT("\"post_validation\"")) && Content.Contains(TEXT("\"asset_registry\": \"passed\"")));
+    TestTrue(TEXT("issues 포함"),
+        Content.Contains(TEXT("\"issues\"")) &&
+        Content.Contains(TEXT("\"code\": \"UCF_PATH_HINT\"")) &&
+        Content.Contains(TEXT("\"suggested_fix\": \"Move asset to /Game/AI\"")));
     TestTrue(TEXT("steps 포함"), Content.Contains(TEXT("\"steps\"")));
     TestTrue(TEXT("step 이름 포함"),
         Content.Contains(TEXT("\"step\": \"CreateCharacterBlueprint\"")));
