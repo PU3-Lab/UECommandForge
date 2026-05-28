@@ -529,12 +529,16 @@ Windows Command Prompt에서도 Phase 1~7 Commandlet 표면을 실행할 수 있
 LLM은 이 표에 있는 명령만 호출해야 한다.
 ```
 
-- [ ] **Step 2: 커밋**
+- [x] **Step 2: 커밋**
 
 ```bash
 git add README.md
 git commit -m "docs: README 커맨드 표면 업데이트 (Phase 7 전체 반영)"
 ```
+
+완료 커밋:
+- `4c78748 feat: add windows command wrappers`
+- `3fd722a test: record phase 7 acceptance artifacts`
 
 문서 업데이트 결과:
 - `README.md`의 Codex 명령 표면을 Phase 7 기준으로 갱신

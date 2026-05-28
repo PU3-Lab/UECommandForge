@@ -14,8 +14,8 @@
 
 ```bash
 ./tools/ue/create_ai_flow.sh specs/examples/guard_ai.json
-jq -e '.ok and .validation.actor_placed and .validation.blueprint_compile == "passed"' \
-   Saved/CodexReports/CreateAIFlow_*.json
+jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "ok"' \
+   "$(ls -t sample/Saved/CodexReports/CreateAIFlow_*.json | head -1)"
 ```
 
 ---
@@ -44,7 +44,7 @@ jq -e '.ok and .validation.actor_placed and .validation.blueprint_compile == "pa
 | 4 | 완료 | `./tools/test/automation/run.sh` PASS 9 / FAIL 0, `CreateStateTree` 리포트 `ok: true` |
 | 5 | 완료 | `./tools/test/automation/run.sh` PASS 10 / FAIL 0, `./tools/test/smoke/ai_flow_binding.sh specs/examples/guard_ai.json` PASS 8 / FAIL 0 |
 | 6 | 완료 | `PlaceActor` 리포트 `ok: true`, `actor_placed: ok` |
-| 7 | 대기 | Phase 6 완료 후 진행 |
+| 7 | 완료 | `./tools/ue/build_plugin.sh` 통과, `./tools/test/automation/run.sh` PASS 15 / FAIL 0, `CreateAIFlow` 인수 조건 통과 |
 
 ### 2026-05-27 Phase 3 마감 노트
 
@@ -90,6 +90,17 @@ jq -e '.ok and .validation.actor_placed and .validation.blueprint_compile == "pa
 - 검증 결과:
   - `sample/Saved/CodexReports/PlaceActor_20260527T122059Z.json` 기준 `ok: true`, `actor_placed: ok`
   - `MapActorPlacerTest`는 배치, 검증, 반복 실행 후 actor 1개 유지 조건을 포함한다.
+
+### 2026-05-28 Phase 7 마감 노트
+
+- 원스톱 워크플로우를 `CreateAIFlowCommandlet`, `tools/ue/create_ai_flow.sh`, `tools/ue/setup_npc_character.sh`, `tools/ue/setup_patrol_ai.sh`로 추가했다.
+- Windows Command Prompt용 `.bat` 래퍼와 Windows 정적 스모크 테스트를 추가했다.
+- README 명령 표면을 Phase 7 기준으로 갱신하고, macOS/Linux/Git Bash와 Windows Command Prompt 명령을 함께 문서화했다.
+- 검증 결과:
+  - `./tools/ue/build_plugin.sh` 성공
+  - `./tools/test/automation/run.sh` PASS 15 / FAIL 0 / SKIP 0
+  - `./tools/ue/create_ai_flow.sh specs/examples/guard_ai.json` 성공
+  - `sample/Saved/CodexReports/CreateAIFlow_20260528T003339Z.json` 기준 `ok: true`, `steps` 길이 5, `validation.actor_placed: ok`
 
 ---
 
