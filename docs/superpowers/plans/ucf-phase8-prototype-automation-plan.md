@@ -254,6 +254,8 @@ rename/move/delete/fixup 작업을 실제 적용 전 preflight한다.
 - GREEN: `git diff --check` 통과.
 - GREEN: secret pattern scan 통과. 기존 문서의 설명성 `secret/API key` 문자열만 매칭됐다.
 - BLOCKED: `UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/asset_change_plan.sh`는 `UnrealEditor-Cmd`가 macOS LaunchServices 경고 직후 UE 로그 없이 멈춰 timeout 124로 실패했다. 동일 시점 `UE_COMMANDLET_TIMEOUT=0 ./tools/ue/hello.sh`와 직접 `UnrealEditor-Cmd -run=Hello`도 같은 증상으로 멈춰 코드 경로가 아닌 로컬 UE commandlet launch 환경 문제로 분리했고, 리뷰 수정 후 재실행해도 동일 timeout 124가 재현됐다.
+- RESOLVED: 2026-05-28 재검증에서 원인은 Codex 샌드박스 내부 실행으로 분리됐다. 승인된 샌드박스 외부 실행에서는 `UE_COMMANDLET_TIMEOUT=90 ./tools/ue/hello.sh`와 `UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/asset_change_plan.sh`가 정상 통과했다.
+- GREEN: `UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/asset_change_plan.sh` 승인된 외부 실행 통과. `PlanAssetChanges_20260528T075210Z.json` 기준 `ok=true`, `operation_count=3`, `planned_change_count=3`, `rollback_available=true`.
 
 - [x] **Step 4: `ApplyAssetChangesCommandlet` 작성**
 
@@ -316,7 +318,7 @@ rollback plan을 읽어 가능한 작업을 되돌린다.
 - GREEN: `git diff --check` 통과.
 - GREEN: secret pattern scan 통과. 기존 문서의 설명성 `secret/API key` 문자열과 코드의 `Tokens` 변수명만 매칭됐다.
 
-- [ ] **Step 6: wrapper와 테스트 추가**
+- [x] **Step 6: wrapper와 테스트 추가**
 
 추가 파일:
 - `tools/ue/snapshot_assets.sh/.bat`
@@ -359,11 +361,14 @@ rollback plan을 읽어 가능한 작업을 되돌린다.
 - GREEN: `tools/ue/rollback_asset_changes.sh` 인자 누락 시 사용법과 exit 2 반환 확인.
 - GREEN: `tools/ue/create_project_folders.sh` 인자 누락 시 사용법과 exit 2 반환 확인.
 - BLOCKED: `UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/asset_change_apply_rollback.sh`는 `PlanAssetChanges` 시작 직후 macOS LaunchServices/hiservices 경고 뒤 UE 로그 없이 멈춰 timeout 124로 실패했다. 이는 Step 3에서 기록한 직접 `UnrealEditor-Cmd -run=Hello` hang과 같은 로컬 commandlet launch 문제이며, apply/rollback wrapper 로직 전 단계에서 재현된다.
-- 남은 항목: 전체 apply/rollback smoke GREEN 검증.
+- RESOLVED: 2026-05-28 재검증에서 원인은 Codex 샌드박스 내부 실행으로 분리됐다. 승인된 샌드박스 외부 실행에서는 `UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/asset_change_apply_rollback.sh`가 정상 통과했다.
+- GREEN: `UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/asset_change_apply_rollback.sh` 승인된 외부 실행 통과. `ApplyAssetChanges_20260528T075217Z.json` 기준 `ok=true`, `applied=true`, `applied_change_count=3`, `rollback_available=true`. `RollbackAssetChanges_20260528T075224Z.json` 기준 `ok=true`, `applied=true`, `applied_rollback_count=5`.
+- GREEN: `./tools/test/smoke/windows_command_wrappers.sh` 재실행 통과.
+- 참고: apply/rollback smoke는 rollback 후 원래 path와 폴더 상태를 복구했지만, UE가 `sample/Content/Tests/BP_TestCharacter.uasset`, `sample/Content/Tests/BP_TestController.uasset`를 다시 저장해 binary dirty 상태를 남겼다. `.uasset` 변경은 커밋 지시가 있을 때 함께 포함한다.
 
 ## Task 2: C++ 클래스 생성 반복 제품화
 
-- [ ] **Step 1: `CppClassSpec` 정의**
+- [x] **Step 1: `CppClassSpec` 정의**
 
 지원 타입:
 - `Actor`
@@ -388,7 +393,13 @@ Spec 필드:
 - Build.cs dependencies
 - reflection metadata
 
-- [ ] **Step 2: `GenerateCppClassCommandlet` 작성**
+진행 상태:
+
+- 2026-05-28: `FCommandForgeCppClassSpec`, class info, property/function/param metadata, Build.cs dependency spec 타입 추가.
+- 2026-05-28: canonical JSON 입력은 `kind=cpp_class`로 받으며, `class`, `includes`, `properties`, `functions`, `build_dependencies`를 파싱한다.
+- 2026-05-28: 샘플 spec `specs/examples/cpp_health_component.json` 추가. `UCFHealthComponent` ActorComponent dry-run 생성 preview를 검증하는 기준 spec이다.
+
+- [x] **Step 2: `GenerateCppClassCommandlet` 작성**
 
 스펙 기반으로 `.h`/`.cpp`를 생성한다.
 
@@ -400,7 +411,31 @@ Spec 필드:
 - 생성 파일 목록과 checksum 기록
 - Build.cs dependency plan 생성
 
-- [ ] **Step 3: Build.cs 적용/검증 구현**
+진행 상태:
+
+- 2026-05-28: `GenerateCppClassCommandlet` 추가. `-Spec=<cpp-class.json>`와 `-Output=<report.json>`를 받아 dry-run preview를 만들고, `-Apply`가 있을 때만 `.h/.cpp`를 생성한다.
+- 2026-05-28: module root는 sample `Source/<Module>` 또는 plugin `Source/<Module>` 아래에서 찾고, 생성 대상은 `Public/<output_path>/<Class>.h`, `Private/<output_path>/<Class>.cpp`로 제한한다.
+- 2026-05-28: `output_path`가 절대 경로, `..`, wildcard를 포함하거나 module root 밖으로 나가면 `OUTPUT_PATH_OUTSIDE_MODULE` issue로 실패한다.
+- 2026-05-28: 기존 파일이 있으면 `CPP_CLASS_FILE_EXISTS`로 실패한다.
+- 2026-05-28: header/source preview, 생성 경로, class symbol, SHA1 checksum, dependency plan을 Result JSON `validation`에 기록한다.
+- 2026-05-28: ActorComponent 템플릿은 `UCLASS(BlueprintType, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent))`, `UPROPERTY`, `UFUNCTION`, constructor tick 설정, property default 값을 생성한다.
+- 2026-05-28 리뷰 반영: include와 metadata macro 출력 순서를 결정적으로 고정해 같은 spec이 항상 같은 preview/checksum을 만들도록 수정했다.
+- 2026-05-28 리뷰 반영: include path, module/build dependency, base/property/function/param type, metadata key/value, property default의 안전 토큰 검증을 추가했다. 따옴표/개행/상위 경로 등 C++ 코드 생성 경계에서 위험한 입력은 `INVALID_INCLUDE` 등 validation issue로 거부한다.
+- 2026-05-28 리뷰 반영: automation apply 테스트는 class별 `GeneratedTests/<Class>` 하위만 생성/삭제하고, 테스트 후 빈 `GeneratedTests` 루트 폴더도 정리하도록 보강했다.
+
+검증:
+- RED: `GenerateCppClassCommandletTest`를 먼저 추가했고, 구현 전 `./tools/ue/build_plugin.sh`가 누락된 `GenerateCppClassCommandlet.h`로 실패했다.
+- GREEN: `./tools/ue/build_plugin.sh` 통과.
+- GREEN: sample `UnrealEditor` 타깃 빌드 통과. `build_plugin.sh`는 패키징용 HostProject를 빌드하므로 automation 실행 바이너리에 새 테스트를 링크하려면 sample 프로젝트의 `UnrealEditor` 타깃 빌드가 별도로 필요했다.
+- GREEN: `./tools/test/automation/run.sh` 통과, PASS 33 / FAIL 0 / SKIP 0. `DryRunReportsPreview`, `ApplyWritesFilesAndChecksums`, `RejectsOutputOutsideModule`가 새로 포함됐다.
+- GREEN: 리뷰 수정 후 `./tools/ue/build_plugin.sh` 재실행 통과.
+- GREEN: 리뷰 수정 후 sample `UnrealEditor` 타깃 빌드 통과.
+- GREEN: 리뷰 수정 후 `./tools/test/automation/run.sh` 통과, PASS 34 / FAIL 0 / SKIP 0. `RejectsInvalidCppTokens`가 추가되어 code-generation token validation을 검증한다.
+- GREEN: `git diff --check` 통과.
+- GREEN: secret pattern scan 통과. 기존 문서의 설명성 `secret/API key` 문자열과 테스트명의 `invalid token` 문자열만 매칭됐다.
+- GREEN: `find sample/Plugins/UECommandForge/Source/UECommandForgeRuntime -path '*GeneratedTests*' -print` 결과 없음. GenerateCppClass automation이 임시 생성 파일/폴더를 남기지 않는다.
+
+- [x] **Step 3: Build.cs 적용/검증 구현**
 
 `ValidateBuildCsCommandlet`은 아래를 검증한다.
 
@@ -410,6 +445,41 @@ Spec 필드:
 - include path 정책
 
 `GenerateCppClassCommandlet`은 `-ApplyBuildCs=true`일 때만 Build.cs를 수정한다.
+
+진행 상태:
+
+- 2026-05-28: `BuildCsDependencyUtils`를 추가해 module root 탐색, `*.Build.cs` 위치 확인, Public/Private dependency 누락 검출, dependency 삽입을 공통화했다.
+- 2026-05-28: `ValidateBuildCsCommandlet` 추가. `kind=buildcs_policy` JSON의 `modules[].required_public`, `modules[].required_private`를 검증하고 module별 Build.cs path, missing dependency, issue count를 Result JSON에 기록한다.
+- 2026-05-28: `GenerateCppClassCommandlet`에 `-ApplyBuildCs=true`를 추가했다. `-Apply`와 함께 요청된 경우에만 생성 spec의 Build.cs dependency plan을 실제 Build.cs에 적용하고, `buildcs_changed`, `buildcs_missing_public`, `buildcs_missing_private`, `changed_files`를 리포트한다.
+- 2026-05-28: 정책 예제 `specs/policies/buildcs.policy.json` 추가. Runtime/Editor module의 필수 dependency를 commandlet smoke 기준으로 검증한다.
+- 2026-05-28: `tools/ue/validate_buildcs.sh`, `tools/ue/validate_buildcs.bat` 추가. macOS/Linux wrapper는 파일 인자를 절대 경로로 정규화해 UE commandlet cwd 차이와 무관하게 정책 파일을 읽는다.
+- 2026-05-28 리뷰 반영: 처음 추가한 helper 경로 `Private/Build/`가 `.gitignore`의 `Build/` 규칙에 걸려 커밋 누락 위험이 있어 `Private/BuildCs/`로 이동했다. `git check-ignore`로 추적 가능 상태를 확인했다.
+- 2026-05-28 리뷰 반영: `required_public`/`required_private`가 문자열 배열이 아니거나 dependency token이 C++/Build.cs 식별자로 안전하지 않으면 `INVALID_DEPENDENCY_ARRAY`, `INVALID_BUILD_DEPENDENCY`로 실패하도록 보강했다.
+- 2026-05-28 리뷰 반영: `ValidateBuildCsCommandletTest`에 `RejectsInvalidDependencyName`를 추가했고, sample 타깃을 다시 빌드해 automation discovery에 새 테스트가 포함되는 것을 확인했다.
+- 2026-05-28 수정 리뷰 반복 반영: `BuildCsDependencyUtils`의 dependency 존재 검사를 첫 `AddRange` 블록에만 한정하지 않고 동일 list의 모든 `AddRange` 블록을 순회하도록 수정했다.
+- 2026-05-28 수정 리뷰 반복 반영: `GenerateCppClassCommandlet`의 `build_dependencies.public/private` 파싱에서 JSON number가 문자열로 변환 통과되지 않도록 `EJson::String` 타입을 명시 검증한다.
+- 2026-05-28 수정 리뷰 반복 반영: `GenerateCppClassCommandlet -ApplyBuildCs=true`는 Build.cs 누락을 C++ 파일 쓰기 전에 실패 처리하고, Build.cs 적용 후 class 파일 저장 실패 시 생성 파일 삭제와 Build.cs 원복을 수행한다.
+- 2026-05-28 테스트 보강: `ValidateBuildCs.AcceptsDependencyInLaterAddRangeBlock`, `GenerateCppClass.RejectsInvalidBuildDependencyArray`, `GenerateCppClass.MissingBuildCsDoesNotWriteClassFiles` automation test를 추가했다.
+
+검증:
+- RED: 수정 전 `./tools/test/automation/run.sh`에서 41개 테스트 중 `ValidateBuildCs.AcceptsDependencyInLaterAddRangeBlock`가 실패했다. 첫 `AddRange`만 검색해 두 번째 `PublicDependencyModuleNames.AddRange`의 `AIModule`을 누락으로 오판한 것을 확인했다.
+- RED: 1차 수정 후 `./tools/test/automation/run.sh`에서 `GenerateCppClass.RejectsInvalidBuildDependencyArray`가 실패했다. Unreal JSON의 `TryGetString()` 경로가 number를 문자열로 변환해 `SpecParseFailed` 대신 `ValidationFailed`가 반환되는 것을 확인했다.
+- GREEN: `./tools/ue/build_plugin.sh` 통과.
+- GREEN: sample `UnrealEditor` 타깃 빌드 통과.
+- GREEN: `./tools/test/automation/run.sh` 통과, PASS 38 / FAIL 0 / SKIP 0. `ValidateBuildCs.PassesSatisfiedPolicy`, `ValidateBuildCs.ReportsMissingDependency`, `ValidateBuildCs.RejectsInvalidDependencyName`, `GenerateCppClass.ApplyBuildCsDependencies`가 포함됐다.
+- GREEN: 수정 리뷰 반복 후 `./tools/ue/build_plugin.sh` 재통과.
+- GREEN: 수정 리뷰 반복 후 sample `UnrealEditor` 타깃 빌드 재통과.
+- GREEN: 수정 리뷰 반복 후 `./tools/test/automation/run.sh` 재통과, PASS 41 / FAIL 0 / SKIP 0.
+- GREEN: `UE_COMMANDLET_TIMEOUT=90 ./tools/ue/validate_buildcs.sh specs/policies/buildcs.policy.json` 승인된 샌드박스 외부 실행 통과. `ValidateBuildCs_20260528T083437Z.json` 기준 `ok=true`, `checked_module_count=2`, `issue_count=0`.
+- GREEN: 수정 리뷰 반복 후 `UE_COMMANDLET_TIMEOUT=90 ./tools/ue/validate_buildcs.sh specs/policies/buildcs.policy.json` 재통과.
+- GREEN: `UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/cpp_generation.sh` 승인된 샌드박스 외부 실행 재통과.
+- GREEN: `./tools/test/smoke/windows_command_wrappers.sh` 통과. `generate_cpp_class.bat`, `validate_buildcs.bat` 정적 검증을 포함한다.
+- GREEN: `git diff --check` 통과.
+- GREEN: secret pattern scan 통과. 기존 문서의 설명성 `secret/API key` 문자열과 테스트명의 `invalid token` 문자열만 매칭됐다.
+- GREEN: `find sample/Plugins/UECommandForge/Source -maxdepth 1 -type d -name 'CodexBuildCsTestModule' -print` 결과 없음. Build.cs apply automation이 임시 module을 남기지 않는다.
+- GREEN: 수정 리뷰 반복 후 `CodexBuildCsTestModule`, `CodexValidateBuildCsTestModule`, `CodexMissingBuildCsTestModule`, Runtime `GeneratedTests` 잔여 경로 없음.
+- GREEN: `git check-ignore` 기준 `Private/BuildCs/BuildCsDependencyUtils.*`는 ignore되지 않는다.
+- 참고: 첫 `validate_buildcs.sh` 실행은 상대 정책 경로가 UE commandlet cwd 기준으로 해석되어 `POLICY_READ_FAILED`가 발생했다. wrapper에서 파일 인자를 절대 경로로 정규화해 수정했다.
 
 - [ ] **Step 4: Reflection 정책 검증 구현**
 
@@ -442,6 +512,26 @@ Spec 필드:
 - Build.cs 검증 리포트 생성
 - reflection policy 위반 샘플 검출
 - UHT 오류 샘플 분석 리포트 생성
+
+진행 상태:
+
+- 2026-05-28: `tools/ue/generate_cpp_class.sh`, `tools/ue/generate_cpp_class.bat` 추가.
+- 2026-05-28: dry-run smoke `tools/test/smoke/cpp_generation.sh` 추가. 샘플 spec을 실행해 `ok=true`, `dry_run=true`, `applied=false`, `class_symbol`, `header_preview`, `header_sha1`, `changed_files=[]`를 검증한다.
+- 2026-05-28: `windows_command_wrappers.sh`에 `generate_cpp_class.bat` 정적 검증 추가.
+- 2026-05-28: `tools/ue/validate_buildcs.sh`, `tools/ue/validate_buildcs.bat` 추가.
+- 2026-05-28: `windows_command_wrappers.sh`에 `validate_buildcs.bat` 정적 검증 추가.
+
+검증:
+- GREEN: `./tools/test/smoke/windows_command_wrappers.sh` 통과.
+- GREEN: `UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/cpp_generation.sh` 승인된 샌드박스 외부 실행 통과.
+- GREEN: 리뷰 수정 후 `./tools/test/smoke/windows_command_wrappers.sh` 재실행 통과.
+- GREEN: 리뷰 수정 후 `UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/cpp_generation.sh` 재실행 통과.
+- GREEN: `UE_COMMANDLET_TIMEOUT=90 ./tools/ue/validate_buildcs.sh specs/policies/buildcs.policy.json` 통과.
+
+남은 항목:
+- `validate_cpp_reflection.sh/.bat`, `analyze_uht_log.sh/.bat`
+- reflection 정책 검증, UHT 로그 분석 commandlet
+- apply 생성 후 실제 빌드까지 잇는 `cpp_generation.sh` 확장
 
 ## Task 3: DataAsset / DataTable / Config 관리 제품화
 

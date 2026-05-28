@@ -1,0 +1,54 @@
+{
+  "version": "1",
+  "kind": "cpp_class",
+  "transaction_id": "tx-sample-cpp-health-component",
+  "class": {
+    "name": "UCFHealthComponent",
+    "type": "ActorComponent",
+    "module": "UECommandForgeRuntime",
+    "output_path": "Generated/Components",
+    "base_class": "UActorComponent",
+    "blueprint_type": true,
+    "tick": false
+  },
+  "includes": [
+    "CoreMinimal.h",
+    "Components/ActorComponent.h"
+  ],
+  "build_dependencies": {
+    "public": [
+      "Core",
+      "CoreUObject",
+      "Engine"
+    ],
+    "private": []
+  },
+  "properties": [
+    {
+      "name": "MaxHealth",
+      "type": "float",
+      "default": "100.0f",
+      "metadata": {
+        "EditAnywhere": true,
+        "BlueprintReadOnly": true,
+        "Category": "Health"
+      }
+    }
+  ],
+  "functions": [
+    {
+      "name": "ApplyDamage",
+      "return_type": "void",
+      "metadata": {
+        "BlueprintCallable": true,
+        "Category": "Health"
+      },
+      "params": [
+        {
+          "name": "DamageAmount",
+          "type": "float"
+        }
+      ]
+    }
+  ]
+}

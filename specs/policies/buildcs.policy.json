@@ -1,0 +1,42 @@
+{
+  "version": "1",
+  "kind": "buildcs_policy",
+  "modules": [
+    {
+      "name": "UECommandForgeRuntime",
+      "required_public": [
+        "Core",
+        "CoreUObject",
+        "Engine"
+      ],
+      "required_private": []
+    },
+    {
+      "name": "UECommandForgeEditor",
+      "required_public": [
+        "Core",
+        "CoreUObject",
+        "Engine",
+        "UECommandForgeRuntime"
+      ],
+      "required_private": [
+        "UnrealEd",
+        "Json",
+        "JsonUtilities",
+        "AssetTools",
+        "AssetRegistry",
+        "BlueprintGraph",
+        "KismetCompiler",
+        "Kismet",
+        "EditorScriptingUtilities",
+        "AIModule",
+        "GameplayTasks",
+        "NavigationSystem",
+        "StateTreeModule",
+        "StateTreeEditorModule",
+        "GameplayStateTreeModule",
+        "PropertyBindingUtils"
+      ]
+    }
+  ]
+}
