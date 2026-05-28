@@ -186,7 +186,7 @@ AssetRegistry에서 `/Game`과 project plugin content를 수집한다.
 - GREEN: `./tools/test/smoke/windows_command_wrappers.sh` 통과.
 - GREEN: `UE_COMMANDLET_TIMEOUT=90 ./tools/ue/snapshot_assets.sh -RootPaths=/Game/Tests` 외부 실행 통과. 생성 리포트 `sample/Saved/CodexReports/AssetSnapshot_20260528T023445Z.json`의 `asset_count`는 package dedupe 후 `11`, map asset 2개는 `.umap`, duplicate package count는 `0`.
 
-- [ ] **Step 2: `ValidateAssetRulesCommandlet` 작성**
+- [x] **Step 2: `ValidateAssetRulesCommandlet` 작성**
 
 정책 기반으로 prefix/path/redirector/broken reference/unused candidate를 검증한다.
 
@@ -198,6 +198,23 @@ AssetRegistry에서 `/Game`과 project plugin content를 수집한다.
 - dependency 누락
 - 참조 없는 에셋 후보
 - policy exception 적용
+
+진행 상태:
+
+- 2026-05-28: `FCommandForgeAssetPolicySpec`와 asset policy rule/exception/redirector/unused candidate 타입 추가.
+- 2026-05-28: `ValidateAssetRulesCommandlet` 구현 완료. `-Policy=<asset.policy.json>`와 `-RootPaths=/Game/Tests`를 받아 AssetRegistry 기반으로 prefix, suffix, allowed path, redirector, missing dependency, unused candidate를 `issues[]`에 기록한다.
+- 2026-05-28: 기본 정책 `specs/policies/assets.policy.json` 추가. `/Script/Engine.Blueprint`는 `BP_`, `/Script/StateTreeModule.StateTree`는 `ST_`, `/Script/Engine.World`는 `/Game` 경로를 기본 허용한다.
+- 2026-05-28: macOS/Linux/Git Bash wrapper `tools/ue/validate_asset_rules.sh`, Windows wrapper `tools/ue/validate_asset_rules.bat`, smoke `tools/test/smoke/asset_policy.sh` 추가.
+- 2026-05-28: `ValidateAssetRulesCommandletTest`가 의도적 위반 policy로 `ASSET_PREFIX_MISMATCH`, `ASSET_PATH_NOT_ALLOWED`, `UNUSED_ASSET_CANDIDATE` 이슈와 `ValidationFailed` exit code를 검증한다.
+- 2026-05-28 리뷰 반영: policy exception 적용 전에 package dedupe/count를 확정해 `asset_count` 의미를 유지하고, Windows wrapper의 추가 인자 수집 방식을 기존 wrapper 패턴과 맞췄다.
+
+검증:
+- RED: `ValidateAssetRulesCommandletTest`를 먼저 추가했고, 구현 전 `./tools/ue/build_plugin.sh`가 누락된 `ValidateAssetRulesCommandlet.h`로 실패했다.
+- GREEN: `./tools/ue/build_plugin.sh` 통과.
+- GREEN: sample `UnrealEditor` 타깃 빌드 통과.
+- GREEN: `./tools/test/automation/run.sh` 통과, PASS 19 / FAIL 0 / SKIP 0.
+- GREEN: `./tools/test/smoke/windows_command_wrappers.sh` 통과.
+- GREEN: `UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/asset_policy.sh` 외부 실행 통과. 생성 리포트 `ValidateAssetRules_20260528T030803Z.json`의 `ok=true`, `asset_count=11`, `issue_count=0`.
 
 - [ ] **Step 3: `PlanAssetChangesCommandlet` 작성**
 

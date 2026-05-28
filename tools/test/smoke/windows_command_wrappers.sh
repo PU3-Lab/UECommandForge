@@ -21,6 +21,7 @@ for wrapper in \
     tools/ue/run_commandlet.bat \
     tools/ue/hello.bat \
     tools/ue/snapshot_assets.bat \
+    tools/ue/validate_asset_rules.bat \
     tools/ue/create_character_bp.bat \
     tools/ue/create_ai_controller.bat \
     tools/ue/compile_blueprints.bat \
@@ -41,6 +42,7 @@ done
 require_contains tools/ue/ue_env.bat 'UnrealEditor-Cmd.exe'
 require_contains tools/ue/run_commandlet.bat 'Saved\\CodexReports'
 require_contains tools/ue/snapshot_assets.bat 'AssetSnapshot'
+require_contains tools/ue/validate_asset_rules.bat 'ValidateAssetRules'
 require_contains tools/ue/create_ai_flow.bat 'CreateAIFlow'
 require_contains tools/ue/setup_npc_character.bat 'specs\\profiles\\npc_character.json'
 require_contains tools/ue/setup_patrol_ai.bat 'specs\\profiles\\patrol_ai.json'
