@@ -29,6 +29,7 @@ for wrapper in \
     tools/ue/generate_cpp_class.bat \
     tools/ue/validate_cpp_reflection.bat \
     tools/ue/validate_buildcs.bat \
+    tools/ue/analyze_uht_log.bat \
     tools/ue/create_character_bp.bat \
     tools/ue/create_ai_controller.bat \
     tools/ue/compile_blueprints.bat \
@@ -57,6 +58,7 @@ require_contains tools/ue/create_project_folders.bat 'CreateProjectFolders'
 require_contains tools/ue/generate_cpp_class.bat 'GenerateCppClass'
 require_contains tools/ue/validate_cpp_reflection.bat 'ValidateCppReflection'
 require_contains tools/ue/validate_buildcs.bat 'ValidateBuildCs'
+require_contains tools/ue/analyze_uht_log.bat 'AnalyzeUhtLog'
 require_contains tools/ue/create_ai_flow.bat 'CreateAIFlow'
 require_contains tools/ue/setup_npc_character.bat 'specs\\profiles\\npc_character.json'
 require_contains tools/ue/setup_patrol_ai.bat 'specs\\profiles\\patrol_ai.json'

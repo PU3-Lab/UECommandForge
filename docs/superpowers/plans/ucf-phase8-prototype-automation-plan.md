@@ -508,13 +508,27 @@ Spec 필드:
 - GREEN: include path 보강 후 `./tools/ue/build_plugin.sh` 재통과.
 - GREEN: include path 보강 후 sample `UnrealEditor` 타깃 빌드 재통과.
 - GREEN: include path 보강 후 `./tools/test/automation/run.sh` 재통과, PASS 44 / FAIL 0 / SKIP 0. Reflection policy automation 3건을 포함한다.
-- BLOCKED: `UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/cpp_reflection_policy.sh`와 직접 `validate_cpp_reflection.sh` 실행은 Result JSON 생성 전에 timeout됐다. sample `UnrealEditor` 타깃 재빌드 후에도 같은 timeout이 재현됐고, 기존 `UE_COMMANDLET_TIMEOUT=30 ./tools/ue/hello.sh`도 같은 timeout이 발생하므로 Reflection 로직 한정 문제가 아니라 현재 macOS 환경의 공통 `UnrealEditor-Cmd -run` commandlet launch 문제로 본다.
+- GREEN: `UE_COMMANDLET_TIMEOUT=30 ./tools/ue/hello.sh`는 Codex 샌드박스 내부에서 macOS LaunchServices/hiservices 경고 후 timeout됐지만, 승인된 샌드박스 외부 실행 `/bin/zsh -lc "UE_COMMANDLET_TIMEOUT=90 ./tools/ue/hello.sh"`는 통과했다. 공통 `UnrealEditor-Cmd -run` launch timeout은 wrapper나 Reflection 로직 문제가 아니라 샌드박스 실행 제약으로 분리했다.
+- GREEN: `/bin/zsh -lc "UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/cpp_reflection_policy.sh"` 승인된 샌드박스 외부 실행 통과. 위반 header fixture 기반 reflection issue code 6종 런타임 검증까지 완료했다.
 
-- [ ] **Step 5: UHT 로그 분석 구현**
+- [x] **Step 5: UHT 로그 분석 구현**
 
 `AnalyzeUhtLogCommandlet`은 build log에서 UHT 오류를 추출하고 원인/수정 후보를 Result JSON과 Markdown으로 기록한다.
 
-- [ ] **Step 6: wrapper와 테스트 추가**
+구현 상태:
+- 2026-05-28: `AnalyzeUhtLogCommandlet` 추가. `-Log`, `-Output`, 선택 `-Markdown` 인자를 받아 UHT error/warning line을 추출한다.
+- 2026-05-28: 대표 UHT 원인 분류를 `UHT_UNKNOWN_REFLECTED_TYPE`, `UHT_PRIVATE_BLUEPRINT_ACCESS`, `UHT_GENERATED_HEADER_ORDER`, `UHT_MISSING_CATEGORY`, `UHT_ERROR`, `UHT_WARNING` issue code로 기록한다.
+- 2026-05-28: Result JSON의 `validation`에 `log_path`, `markdown_path`, `line_count`, `error_count`, `warning_count`, `issue_count`를 기록하고, Markdown 표 형태의 원인/수정 후보 리포트를 생성한다.
+- 2026-05-28: automation test `AnalyzeUhtLog.ReportsErrorsAndMarkdown`, `AnalyzeUhtLog.PassesCleanLog` 추가.
+
+검증:
+- RED: `AnalyzeUhtLogCommandletTest.cpp`를 먼저 추가했고, 구현 전 `./tools/ue/build_plugin.sh`가 누락된 `AnalyzeUhtLogCommandlet.h`로 실패했다.
+- GREEN: `./tools/ue/build_plugin.sh` 통과. 중간에 Unreal 전역 `LogPath` 로그 카테고리와 지역 변수명 shadow를 발견해 `UhtLogPath`로 정리 후 재통과했다.
+- GREEN: sample `UnrealEditor` 타깃 빌드 통과. 샌드박스 내부 UBT 로그 파일 접근은 `UnauthorizedAccessException`으로 실패해 승인된 샌드박스 외부 실행으로 검증했다.
+- GREEN: `./tools/test/automation/run.sh` 통과, PASS 46 / FAIL 0 / SKIP 0. UHT 로그 분석 automation 2건을 포함한다.
+- GREEN: 리뷰 수정 후 파일 라인이 없는 diagnostic의 Markdown location 표기를 `log line` 기반으로 보강했고, `./tools/ue/build_plugin.sh`, sample `UnrealEditor` 타깃 빌드, `./tools/test/automation/run.sh`를 재실행해 PASS 46 / FAIL 0 / SKIP 0을 확인했다.
+
+- [x] **Step 6: wrapper와 테스트 추가**
 
 추가 파일:
 - `tools/ue/generate_cpp_class.sh/.bat`
@@ -523,6 +537,7 @@ Spec 필드:
 - `tools/ue/analyze_uht_log.sh/.bat`
 - `tools/test/smoke/cpp_generation.sh`
 - `tools/test/smoke/cpp_reflection_policy.sh`
+- `tools/test/smoke/uht_log_analysis.sh`
 
 인수 조건:
 - dry-run이 생성 preview와 Build.cs plan을 기록
@@ -542,6 +557,10 @@ Spec 필드:
 - 2026-05-28: `tools/ue/validate_cpp_reflection.sh`, `tools/ue/validate_cpp_reflection.bat` 추가.
 - 2026-05-28: `tools/test/smoke/cpp_reflection_policy.sh` 추가. 위반 header fixture로 reflection issue code 6종을 검증하도록 구성했다.
 - 2026-05-28: `windows_command_wrappers.sh`에 `validate_cpp_reflection.bat` 정적 검증 추가.
+- 2026-05-28: `tools/ue/analyze_uht_log.sh`, `tools/ue/analyze_uht_log.bat` 추가.
+- 2026-05-28: `tools/test/smoke/uht_log_analysis.sh` 추가. 샘플 UHT log fixture로 JSON error/warning count, issue code, Markdown 수정 제안을 검증한다.
+- 2026-05-28: `windows_command_wrappers.sh`에 `analyze_uht_log.bat` 정적 검증 추가.
+- 2026-05-28: `tools/test/smoke/cpp_generation.sh`를 dry-run 전용에서 apply + 실제 plugin build 검증까지 확장했다. 생성된 `UCFHealthComponent.h/.cpp`는 smoke 종료 시 cleanup된다.
 
 검증:
 - GREEN: `./tools/test/smoke/windows_command_wrappers.sh` 통과.
@@ -550,13 +569,16 @@ Spec 필드:
 - GREEN: 리뷰 수정 후 `UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/cpp_generation.sh` 재실행 통과.
 - GREEN: `UE_COMMANDLET_TIMEOUT=90 ./tools/ue/validate_buildcs.sh specs/policies/buildcs.policy.json` 통과.
 - GREEN: `./tools/test/smoke/windows_command_wrappers.sh` 재실행 통과. `validate_cpp_reflection.bat` 정적 검증을 포함한다.
-- BLOCKED: `UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/cpp_reflection_policy.sh`는 공통 `UnrealEditor-Cmd -run` launch timeout 때문에 런타임 검증이 차단됐다. 같은 환경에서 `hello.sh`도 timeout되므로 wrapper launch 문제를 먼저 분리해야 한다.
+- GREEN: `UE_COMMANDLET_TIMEOUT=30 ./tools/ue/hello.sh`는 Codex 샌드박스 내부에서 timeout됐고, `/bin/zsh -lc "UE_COMMANDLET_TIMEOUT=90 ./tools/ue/hello.sh"` 승인된 샌드박스 외부 실행은 통과했다. 공통 launch timeout은 샌드박스 실행 제약으로 분리했다.
+- GREEN: `/bin/zsh -lc "UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/cpp_reflection_policy.sh"` 승인된 샌드박스 외부 실행 통과. `validate_cpp_reflection.sh` wrapper와 `cpp_reflection_policy.sh` fixture 기반 issue 검출 경로가 검증됐다.
+- GREEN: `./tools/test/smoke/windows_command_wrappers.sh` 재실행 통과. `analyze_uht_log.bat` 정적 검증을 포함한다.
+- GREEN: `/bin/zsh -lc "UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/uht_log_analysis.sh"` 승인된 샌드박스 외부 실행 통과. `AnalyzeUhtLog` JSON/Markdown smoke가 검증됐다.
+- GREEN: 리뷰 수정 후 `./tools/test/smoke/windows_command_wrappers.sh`와 `/bin/zsh -lc "UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/uht_log_analysis.sh"`를 재실행해 통과했다.
+- RED: `cpp_generation.sh` apply 확장 1차 실행은 header 검증 grep이 실제 생성 형태 `UCLASS(BlueprintType, ClassGroup=...)`와 맞지 않아 실패했다.
+- GREEN: grep 조건을 `UCLASS(BlueprintType`로 수정 후 `/bin/zsh -lc "UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/cpp_generation.sh"` 승인된 샌드박스 외부 실행 통과. `build_plugin.log`에서 `UCFHealthComponent.cpp`가 Mac Development/Shipping 빌드에 포함되어 컴파일됐고, smoke 종료 후 `Generated/Components` 잔여 파일 없음도 확인했다.
 
 남은 항목:
-- `analyze_uht_log.sh/.bat`
-- UHT 로그 분석 commandlet
-- 공통 `run_commandlet.sh` launch timeout 원인 분리 후 `cpp_reflection_policy.sh` runtime smoke 재검증
-- apply 생성 후 실제 빌드까지 잇는 `cpp_generation.sh` 확장
+- 없음
 
 ## Task 3: DataAsset / DataTable / Config 관리 제품화
 
@@ -942,6 +964,7 @@ git diff --check
 ./tools/test/smoke/asset_change_apply_rollback.sh
 ./tools/test/smoke/cpp_generation.sh
 ./tools/test/smoke/cpp_reflection_policy.sh
+./tools/test/smoke/uht_log_analysis.sh
 ./tools/test/smoke/data_validation.sh
 ./tools/test/smoke/data_import_rollback.sh
 ./tools/test/smoke/release_package_install.sh
