@@ -623,7 +623,24 @@ Spec 필드:
 - PASS: project fixture 기반 reflection policy violation 리포트 생성
 - PASS: UHT log analysis JSON/Markdown 리포트 생성
 
+## 진행 순서 변경: 배포/설치 게이트 우선
+
+2026-05-28 결정: Task 3 DataAsset/DataTable/Config 제품화는 뒤로 미룬다. 중간 실사용 smoke로 repo-root 분리 실행 가능성은 확인했지만, 아직 실제 배포 산출물과 자동 설치 흐름이 고정되지 않았다.
+
+다음 우선순위:
+1. Task 6 배포 및 릴리즈 계획
+2. Task 6의 패키징/자동 설치/설치 검증 smoke
+3. Task 3 DataAsset/DataTable/Config 관리 제품화
+4. Task 4 통합 워크플로우
+
+이유:
+- Codex 도구는 `~/.codex/UECommandForge`에 설치되고, UE plugin은 대상 프로젝트에 설치되는 구조가 먼저 안정되어야 한다.
+- 이후 DataAsset/DataTable/Config commandlet도 같은 설치/검증 경로에서 바로 테스트할 수 있어야 한다.
+- repo-local 기능 추가를 더 진행하면 배포 전환 시 wrapper, spec path, report path 검증을 반복 수정할 가능성이 높다.
+
 ## Task 3: DataAsset / DataTable / Config 관리 제품화
+
+상태: 후순위로 이동. Task 6의 배포 산출물, 자동 설치 스크립트, 설치 검증 smoke를 먼저 완료한 뒤 진행한다.
 
 - [ ] **Step 1: `DataSchemaSpec` 정의**
 
