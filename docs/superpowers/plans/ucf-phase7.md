@@ -449,7 +449,11 @@ git commit -m "feat: 워크플로우 Shell Wrapper 3종 + Spec 프로파일 (npc
 - `jq empty specs/profiles/npc_character.json specs/profiles/patrol_ai.json` 통과
 - `git diff --check` 통과
 - `./tools/test/automation/run.sh` PASS 15 / FAIL 0
-- direct wrapper smoke: `./tools/ue/create_ai_flow.sh specs/examples/guard_ai.json` 및 `-nullrhi` 재시도 모두 리포트 생성 전 UE 프로세스 무출력 대기 상태로 중단
+- direct wrapper smoke: `./tools/test/smoke/create_ai_flow.sh specs/examples/guard_ai.json` PASS 12 / FAIL 0, `CreateAIFlow_20260528T000727Z.json` 생성
+
+리뷰 수정 결과:
+- `tools/ue/run_commandlet.sh`에 `UE_COMMANDLET_TIMEOUT` 기반 무한 대기 방지 가드 추가
+- `tools/test/smoke/create_ai_flow.sh` 추가로 `CreateAIFlow` Result JSON, 5단계 성공, 생성 `.uasset`, 수정 `.umap` 검증
 
 ---
 

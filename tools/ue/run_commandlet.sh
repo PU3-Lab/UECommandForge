@@ -19,14 +19,51 @@ REPORT_DIR="${REPO_ROOT}/sample/Saved/CodexReports"
 mkdir -p "${REPORT_DIR}"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 OUTPUT_JSON="${REPORT_DIR}/${COMMANDLET}_${STAMP}.json"
+TIMEOUT_SEC="${UE_COMMANDLET_TIMEOUT:-300}"
 
-"${UNREAL_EDITOR_CMD}" "${PROJECT_FILE}" \
-  -run="${COMMANDLET}" \
-  -Output="${OUTPUT_JSON}" \
-  -unattended -nop4 -nosplash -log -stdout -FullStdOutLogOutput \
-  "$@"
+case "${TIMEOUT_SEC}" in
+  ''|*[!0-9]*)
+    echo "[run_commandlet] UE_COMMANDLET_TIMEOUT은 초 단위 정수여야 합니다: ${TIMEOUT_SEC}" >&2
+    exit 2
+    ;;
+esac
 
-UE_EXIT=$?
+run_unreal_commandlet() {
+  "${UNREAL_EDITOR_CMD}" "${PROJECT_FILE}" \
+    -run="${COMMANDLET}" \
+    -Output="${OUTPUT_JSON}" \
+    -unattended -nop4 -nosplash -log -stdout -FullStdOutLogOutput \
+    "$@"
+}
+
+set +e
+if [ "${TIMEOUT_SEC}" -eq 0 ]; then
+  run_unreal_commandlet "$@"
+  UE_EXIT=$?
+else
+  echo "[run_commandlet] ${COMMANDLET} 시작 (timeout: ${TIMEOUT_SEC}s)" >&2
+  run_unreal_commandlet "$@" &
+  UE_PID=$!
+  ELAPSED=0
+
+  while kill -0 "${UE_PID}" 2>/dev/null; do
+    if [ "${ELAPSED}" -ge "${TIMEOUT_SEC}" ]; then
+      echo "[run_commandlet] FAIL: ${COMMANDLET}가 ${TIMEOUT_SEC}초를 초과했습니다." >&2
+      kill "${UE_PID}" 2>/dev/null || true
+      sleep 5
+      kill -0 "${UE_PID}" 2>/dev/null && kill -KILL "${UE_PID}" 2>/dev/null
+      wait "${UE_PID}" 2>/dev/null
+      exit 124
+    fi
+
+    sleep 1
+    ELAPSED=$((ELAPSED + 1))
+  done
+
+  wait "${UE_PID}"
+  UE_EXIT=$?
+fi
+set -e
 
 if [ ! -f "${OUTPUT_JSON}" ]; then
   echo "[run_commandlet] Result JSON이 없습니다: ${OUTPUT_JSON}" >&2
