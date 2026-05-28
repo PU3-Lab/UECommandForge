@@ -13,7 +13,11 @@ namespace UECommandForge
         TSharedRef<FJsonObject> Root = MakeShared<FJsonObject>();
         Root->SetBoolField(TEXT("ok"), Report.bOk);
         Root->SetStringField(TEXT("commandlet"), Report.Commandlet);
+        Root->SetStringField(TEXT("transaction_id"), Report.TransactionId);
+        Root->SetBoolField(TEXT("dry_run"), Report.bDryRun);
+        Root->SetBoolField(TEXT("applied"), Report.bApplied);
         Root->SetBoolField(TEXT("rollback_available"), Report.bRollbackAvailable);
+        Root->SetStringField(TEXT("rollback_plan_path"), Report.RollbackPlanPath);
 
         auto ToArray = [](const TArray<FString>& In)
         {
@@ -23,14 +27,54 @@ namespace UECommandForge
         };
         Root->SetArrayField(TEXT("created_assets"),  ToArray(Report.CreatedAssets));
         Root->SetArrayField(TEXT("modified_assets"), ToArray(Report.ModifiedAssets));
+        Root->SetArrayField(TEXT("changed_assets"),  ToArray(Report.ChangedAssets));
+        Root->SetArrayField(TEXT("changed_files"),   ToArray(Report.ChangedFiles));
         Root->SetArrayField(TEXT("next_suggestions"), ToArray(Report.NextSuggestions));
 
-        TSharedRef<FJsonObject> Validation = MakeShared<FJsonObject>();
-        for (const auto& Kv : Report.Validation)
+        TArray<TSharedPtr<FJsonValue>> AssetValues;
+        for (const FCommandForgeAssetSnapshotRecord& Asset : Report.Assets)
         {
-            Validation->SetStringField(Kv.Key, Kv.Value);
+            TSharedRef<FJsonObject> O = MakeShared<FJsonObject>();
+            O->SetStringField(TEXT("asset_name"), Asset.AssetName);
+            O->SetStringField(TEXT("package_path"), Asset.PackagePath);
+            O->SetStringField(TEXT("object_path"), Asset.ObjectPath);
+            O->SetStringField(TEXT("asset_class"), Asset.AssetClass);
+            O->SetStringField(TEXT("package_name"), Asset.PackageName);
+            O->SetStringField(TEXT("disk_path"), Asset.DiskPath);
+            O->SetBoolField(TEXT("is_redirector"), Asset.bIsRedirector);
+            O->SetBoolField(TEXT("package_dirty"), Asset.bPackageDirty);
+            O->SetArrayField(TEXT("dependencies"), ToArray(Asset.Dependencies));
+            O->SetArrayField(TEXT("referencers"), ToArray(Asset.Referencers));
+            AssetValues.Add(MakeShared<FJsonValueObject>(O));
         }
-        Root->SetObjectField(TEXT("validation"), Validation);
+        Root->SetArrayField(TEXT("assets"), AssetValues);
+
+        auto ToObject = [](const TMap<FString, FString>& In)
+        {
+            TSharedRef<FJsonObject> Out = MakeShared<FJsonObject>();
+            for (const auto& Kv : In)
+            {
+                Out->SetStringField(Kv.Key, Kv.Value);
+            }
+            return Out;
+        };
+        Root->SetObjectField(TEXT("validation"), ToObject(Report.Validation));
+        Root->SetObjectField(TEXT("post_validation"), ToObject(Report.PostValidation));
+
+        TArray<TSharedPtr<FJsonValue>> IssueValues;
+        for (const FCommandForgeValidationIssue& Issue : Report.ValidationIssues)
+        {
+            TSharedRef<FJsonObject> O = MakeShared<FJsonObject>();
+            O->SetStringField(TEXT("severity"), Issue.Severity);
+            O->SetStringField(TEXT("code"), Issue.Code);
+            O->SetStringField(TEXT("message"), Issue.Message);
+            O->SetStringField(TEXT("field"), Issue.Field);
+            O->SetStringField(TEXT("asset_path"), Issue.AssetPath);
+            O->SetStringField(TEXT("file_path"), Issue.FilePath);
+            O->SetStringField(TEXT("suggested_fix"), Issue.SuggestedFix);
+            IssueValues.Add(MakeShared<FJsonValueObject>(O));
+        }
+        Root->SetArrayField(TEXT("issues"), IssueValues);
 
         TArray<TSharedPtr<FJsonValue>> ErrorValues;
         for (const FCommandForgeError& E : Report.Errors)

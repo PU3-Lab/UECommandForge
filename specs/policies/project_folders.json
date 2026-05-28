@@ -1,0 +1,21 @@
+{
+  "version": "1",
+  "kind": "project_folders",
+  "transaction_id": "tx-sample-project-folders",
+  "folders": [
+    "/Game/Characters/Hero/Blueprints",
+    "/Game/Characters/Hero/Meshes",
+    "/Game/Characters/Hero/Animations",
+    "/Game/Characters/Hero/Materials",
+    "/Game/AI/BehaviorTrees",
+    "/Game/AI/Blackboards",
+    "/Game/AI/StateTrees",
+    "/Game/UI/Widgets",
+    "/Game/UI/ViewModels",
+    "/Game/UI/Styles",
+    "/Game/Data/DataAssets",
+    "/Game/Data/DataTables",
+    "/Game/Maps",
+    "/Game/Systems"
+  ]
+}

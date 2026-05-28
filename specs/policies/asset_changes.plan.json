@@ -1,0 +1,23 @@
+{
+  "version": "1",
+  "kind": "asset_change_plan",
+  "transaction_id": "tx-sample-asset-change-plan",
+  "allow_delete": false,
+  "delete_assets": [],
+  "operations": [
+    {
+      "operation": "create_folder",
+      "path": "/Game/Tests/Planned"
+    },
+    {
+      "operation": "rename_asset",
+      "source": "/Game/Tests/BP_TestCharacter",
+      "target": "/Game/Tests/BP_TestCharacter_Renamed"
+    },
+    {
+      "operation": "move_asset",
+      "source": "/Game/Tests/BP_TestController",
+      "target": "/Game/Tests/Planned/BP_TestController"
+    }
+  ]
+}

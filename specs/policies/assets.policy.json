@@ -1,0 +1,29 @@
+{
+  "version": "1",
+  "kind": "asset_policy",
+  "rules": [
+    {
+      "asset_class": "/Script/Engine.Blueprint",
+      "prefix": "BP_",
+      "allowed_paths": ["/Game", "/UECommandForge"]
+    },
+    {
+      "asset_class": "/Script/StateTreeModule.StateTree",
+      "prefix": "ST_",
+      "allowed_paths": ["/Game", "/UECommandForge"]
+    },
+    {
+      "asset_class": "/Script/Engine.World",
+      "allowed_paths": ["/Game"]
+    }
+  ],
+  "redirectors": {
+    "allowed": false,
+    "severity": "error"
+  },
+  "unused_asset_candidates": {
+    "enabled": false,
+    "severity": "warning"
+  },
+  "exceptions": []
+}
