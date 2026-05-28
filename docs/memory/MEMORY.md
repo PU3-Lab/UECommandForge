@@ -11,5 +11,6 @@
 - [Code Review Agent](feedback_code_review_agent.md) — 코드 품질 리뷰는 codex:codex-rescue + ecc:cpp-reviewer 스킬 사용, 직접 ecc:cpp-reviewer 호출 금지
 - [Reporting Language](feedback_reporting_language.md) — 사용자에게 진행/리뷰/검증/완료 보고 시 반드시 한글로 작성
 - [Post-Work Documentation](feedback_post_work_documentation.md) — 작업 완료 후 관련 문서와 진행 상태를 항상 업데이트
+- [Post-Commit Next Task](feedback_post_commit_next_task.md) — 커밋 직후 커밋 결과와 다음 작업을 반드시 함께 보고
 - [Session 2026-05-25](session-2026-05-25.md) — Phase 1 완료 검증, DefaultInput.ini gitignore 처리, 체크박스 완료 커밋
 - [Session 2026-05-26](session-2026-05-26.md) — run_automation_tests.sh 수정, Phase 3 Blueprint Builder·Commandlet·Shell Wrapper 3종 구현
