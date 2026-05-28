@@ -16,7 +16,7 @@ UValidateAssetRulesCommandlet::UValidateAssetRulesCommandlet()
 
 namespace
 {
-    TArray<FString> ParseRootPaths(const FString& RootPathsArg)
+    TArray<FString> ParseValidateAssetRulesRootPaths(const FString& RootPathsArg)
     {
         TArray<FString> RootPaths;
         if (RootPathsArg.IsEmpty())
@@ -293,7 +293,7 @@ int32 UValidateAssetRulesCommandlet::Main(const FString& Params)
     IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
 
     TArray<FAssetData> AllAssets;
-    const TArray<FString> RootPaths = ParseRootPaths(ParamsMap.FindRef(TEXT("RootPaths")));
+    const TArray<FString> RootPaths = ParseValidateAssetRulesRootPaths(ParamsMap.FindRef(TEXT("RootPaths")));
     for (const FString& RootPath : RootPaths)
     {
         if (!RootPath.IsEmpty())

@@ -216,7 +216,7 @@ AssetRegistry에서 `/Game`과 project plugin content를 수집한다.
 - GREEN: `./tools/test/smoke/windows_command_wrappers.sh` 통과.
 - GREEN: `UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/asset_policy.sh` 외부 실행 통과. 생성 리포트 `ValidateAssetRules_20260528T030803Z.json`의 `ok=true`, `asset_count=11`, `issue_count=0`.
 
-- [ ] **Step 3: `PlanAssetChangesCommandlet` 작성**
+- [x] **Step 3: `PlanAssetChangesCommandlet` 작성**
 
 rename/move/delete/fixup 작업을 실제 적용 전 preflight한다.
 
@@ -232,6 +232,27 @@ rename/move/delete/fixup 작업을 실제 적용 전 preflight한다.
 - wildcard delete 금지
 - referencer가 있는 delete는 실패
 - move/rename은 redirector fixup plan을 함께 생성
+
+진행 상태:
+
+- 2026-05-28: `FCommandForgeAssetChangePlanSpec`와 operation 타입 추가.
+- 2026-05-28: `PlanAssetChangesCommandlet` 구현 완료. `-Plan=<asset_change_plan.json>`를 받아 create folder, rename asset, move asset, fix redirector, delete unused asset candidate 작업을 실제 적용 없이 preflight한다.
+- 2026-05-28: move/rename 요청은 source 존재, target 충돌, package path 유효성을 검증하고 rollback plan에 원 작업과 redirector fixup 작업을 함께 기록한다.
+- 2026-05-28: delete 요청은 wildcard 금지, `allow_delete=true`, `delete_assets` 명시 목록, referencer 없음 조건을 검증한다.
+- 2026-05-28: sample plan `specs/policies/asset_changes.plan.json`, macOS/Linux/Git Bash wrapper `tools/ue/plan_asset_changes.sh`, Windows wrapper `tools/ue/plan_asset_changes.bat`, smoke `tools/test/smoke/asset_change_plan.sh` 추가.
+- 2026-05-28 리뷰 반영: Unity build에서 익명 namespace helper명이 충돌하지 않도록 `ValidateAssetRules` root path helper명을 고유화하고, `PlanAssetChanges` helper를 고유 namespace로 분리했다.
+- 2026-05-28 리뷰 반영: sample plan의 rollback path 상대 경로 의존을 제거하고, 기본 `Saved/CodexReports/rollback_<transaction>.json` 경로를 smoke가 Result JSON에서 읽도록 변경했다.
+- 2026-05-28 리뷰 반영: plan JSON의 `rollback_plan`이 임의 파일 경로로 쓰이지 않도록 상대 경로는 `Saved/CodexReports` 아래로 해석하고, 절대 경로나 `..`로 report 디렉터리를 벗어나는 경로는 `ROLLBACK_PATH_OUTSIDE_REPORT_DIR`로 거부한다.
+
+검증:
+- RED: `PlanAssetChangesCommandletTest`를 먼저 추가했고, 구현 전 `./tools/ue/build_plugin.sh`가 누락된 `PlanAssetChangesCommandlet.h`로 실패했다.
+- GREEN: `./tools/ue/build_plugin.sh` 통과. 리뷰 수정 후 재실행해 `PlanAssetChangesCommandlet.cpp`와 `PlanAssetChangesCommandletTest.cpp` 재컴파일 포함 확인.
+- GREEN: sample `UnrealEditor` 타깃 빌드 통과. 이 과정에서 Unity build helper명 충돌을 발견해 수정 후 재통과했다.
+- GREEN: `./tools/test/automation/run.sh` 통과, PASS 22 / FAIL 0 / SKIP 0. `RejectsRollbackPathOutsideReports`가 `rollback_plan` 경로 탈출 방지를 검증한다.
+- GREEN: `./tools/test/smoke/windows_command_wrappers.sh` 통과.
+- GREEN: `git diff --check` 통과.
+- GREEN: secret pattern scan 통과. 기존 문서의 설명성 `secret/API key` 문자열만 매칭됐다.
+- BLOCKED: `UE_COMMANDLET_TIMEOUT=90 ./tools/test/smoke/asset_change_plan.sh`는 `UnrealEditor-Cmd`가 macOS LaunchServices 경고 직후 UE 로그 없이 멈춰 timeout 124로 실패했다. 동일 시점 `UE_COMMANDLET_TIMEOUT=0 ./tools/ue/hello.sh`와 직접 `UnrealEditor-Cmd -run=Hello`도 같은 증상으로 멈춰 코드 경로가 아닌 로컬 UE commandlet launch 환경 문제로 분리했고, 리뷰 수정 후 재실행해도 동일 timeout 124가 재현됐다.
 
 - [ ] **Step 4: `ApplyAssetChangesCommandlet` 작성**
 
