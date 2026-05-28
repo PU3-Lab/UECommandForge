@@ -102,7 +102,9 @@ fi
 if [ "${REMOVE_SPECS}" = true ]; then
   rm -rf "${INSTALL_ROOT}/specs"
 fi
-rm -f "${INSTALL_ROOT}/uecommandforge.env" "${INSTALLED_MANIFEST}"
+if [ "${REMOVE_CODEX_TOOLS}" = true ] && [ "${REMOVE_SPECS}" = true ]; then
+  rm -f "${INSTALL_ROOT}/uecommandforge.env" "${INSTALLED_MANIFEST}"
+fi
 
 {
   echo "uninstalled_at=${STAMP}"

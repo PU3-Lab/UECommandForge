@@ -90,6 +90,7 @@ mkdir -p "${PACKAGE_DIR}"
     sample/Plugins/UECommandForge/Config \
     sample/Plugins/UECommandForge/Source \
     | grep -v '^docs/memory/' \
+    | grep -v '^docs/superpowers/' \
     | while IFS= read -r path; do
       mkdir -p "${PACKAGE_DIR}/$(dirname "${path}")"
       cp "${path}" "${PACKAGE_DIR}/${path}"

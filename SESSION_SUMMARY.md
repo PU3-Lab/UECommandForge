@@ -62,6 +62,7 @@
 | 5차 | nested `uecommandforge-manifest.json` basename 제외 우회 | 수정 완료 |
 | 최종 | `code-reviewer`, `security-reviewer` 모두 CRITICAL/HIGH/MEDIUM findings 없음 | 승인 |
 | source package 서브에이전트 리뷰 | source package version mismatch, `docs/memory` 포함, generated output 제외 smoke 부족 | 수정 완료 |
+| installer 서브에이전트 리뷰 | default uninstall 후 재설치 실패, plugin/tools version mismatch 허용, source zip 내부 계획 문서 포함, unmanaged metadata overwrite | 수정 완료 |
 
 ## 검증 결과
 
@@ -77,6 +78,11 @@
 | `./tools/test/smoke/installer_install_update_uninstall.sh` | 통과 |
 | `./tools/test/smoke/windows_release_validation_report.sh` | 통과 |
 | `./tools/test/smoke/release_package_source.sh` | 통과 |
+| `./tools/test/smoke/release_package_install.sh` 리뷰 regression 보강 후 | 통과 |
+| `./tools/test/smoke/installer_install_update_uninstall.sh` 리뷰 수정 후 | 통과 |
+| `./tools/test/smoke/release_package_tools.sh` 리뷰 수정 후 | 통과 |
+| `./tools/test/smoke/windows_command_wrappers.sh` 리뷰 수정 후 | 통과 |
+| `./tools/test/smoke/windows_release_validation_report.sh` 리뷰 수정 후 | 통과 |
 | `UECF_RELEASE_PLUGIN_SKIP_BUILD=1 ./tools/test/smoke/release_package_plugin.sh` | 통과 |
 | source zip internal/generated output scan | `docs/memory`, plugin `Binaries`, `Intermediate`, `Saved`, `DerivedDataCache` 매치 없음 |
 | `git diff --check` | 통과 |
@@ -87,8 +93,8 @@
 
 - **브랜치:** `main`
 - **워킹 트리:** clean
-- **최신 커밋:** `d9db79b feat: add release installer smoke`
-- **origin 대비:** 5 commits ahead
+- **최근 커밋 흐름:** release installer review regression/fix sequence
+- **origin 대비:** local commits ahead
 - **푸시:** 아직 요청되지 않았으므로 실행하지 않음
 
 ## 다음 작업

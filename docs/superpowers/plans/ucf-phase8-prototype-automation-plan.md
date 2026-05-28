@@ -969,6 +969,8 @@ Windows 설치 동작:
 - SUBAGENT-REVIEW: `reviewer`와 `security_reviewer` 서브에이전트 리뷰에서 symlink target overwrite/delete, unmanaged target overwrite/delete, external checksum downgrade, specs backup 누락, tools package installer 미포함, update backup 강제 실패, stale metadata, Windows root wrapper 누락이 지적됐다.
 - REVIEW-FIX: install/uninstall은 symlink target을 거부하고 managed manifest가 없는 기존 target overwrite/delete를 거부한다. release installer는 sibling `checksums.txt`가 없거나 현재 package를 참조하지 않으면 실패한다. update는 `--backup true`를 마지막 인자로 강제하고 plugin/tools/specs를 모두 backup한다. uninstall은 env/installed manifest를 제거한다. Tools package는 root installer entrypoint를 포함하고 manifest `install_commands`에 기록한다.
 - GREEN: fresh verification으로 `release_package_install.sh`, `installer_install_update_uninstall.sh`, `windows_command_wrappers.sh`, `windows_release_validation_report.sh`, `release_package_source.sh`, `release_package_plugin.sh` skip-build smoke, `bash -n`, `git diff --check`, secret pattern scan을 통과했다.
+- SUBAGENT-REVIEW-2: `reviewer`와 `security_reviewer` 재리뷰에서 default uninstall 후 재설치 실패, plugin/tools release version mismatch 허용, source zip 내부 planning docs 포함, unmanaged metadata overwrite가 지적됐다.
+- REVIEW-FIX-2: default uninstall은 tools/specs를 보존할 때 Codex env/installed manifest도 유지한다. install은 project/Codex metadata만 남아 있어도 managed 상태를 검증하고 unmanaged overwrite를 거부한다. plugin/tools manifest version과 release channel 불일치는 설치 전에 실패한다. Source.zip은 `docs/superpowers/` 내부 계획 문서를 제외한다.
 
 - [x] **Step 5: 설치 검증 스크립트 추가**
 
@@ -994,6 +996,7 @@ Windows 설치 동작:
 - 2026-05-28: 파일 시스템 설치/삭제 smoke `tools/test/smoke/release_package_install.sh`를 추가했다. UE commandlet 검증은 `--run-commandlet-check true` 옵션으로 분리했으며, 기본 smoke에서는 로컬 UE 실행 의존성을 피한다.
 - 2026-05-28: `tools/test/smoke/installer_install_update_uninstall.sh`와 `.bat` wrapper를 추가해 install, update backup 강제, uninstall 제거 흐름을 검증한다.
 - 2026-05-28: macOS 호스트에서 Windows `.bat` 실기 실행은 불가능하므로 `tools/release/write_windows_validation_report.sh`와 `tools/test/smoke/windows_release_validation_report.sh`가 `status: "blocked"`, `reason: "windows_host_required"` 리포트를 생성한다.
+- 2026-05-28: review regression smoke가 default uninstall 후 재설치, unmanaged project/Codex metadata 거부, mismatched plugin/tools release 거부를 검증한다.
 
 - [x] **Step 6: 설치 manifest 스키마 정의**
 

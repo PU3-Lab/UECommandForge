@@ -83,32 +83,51 @@ reject_symlink_path() {
 }
 
 require_managed_existing_targets() {
-  if [ ! -e "${PLUGIN_DIR}" ] && [ ! -e "${INSTALL_ROOT}/tools" ] && [ ! -e "${INSTALL_ROOT}/specs" ]; then
+  local project_manifest="${PROJECT_LINK_DIR}/uecommandforge-project.json"
+  local installed_manifest="${INSTALL_ROOT}/uecommandforge-installed.json"
+  local has_project_state=false
+  local has_codex_state=false
+
+  if [ -e "${PLUGIN_DIR}" ] || [ -e "${PROJECT_LINK_DIR}" ] || [ -e "${project_manifest}" ]; then
+    has_project_state=true
+  fi
+  if [ -e "${INSTALL_ROOT}/tools" ] || [ -e "${INSTALL_ROOT}/specs" ] \
+    || [ -e "${INSTALL_ROOT}/uecommandforge.env" ] || [ -e "${installed_manifest}" ]; then
+    has_codex_state=true
+  fi
+
+  if [ "${has_project_state}" = false ] && [ "${has_codex_state}" = false ]; then
     return 0
   fi
 
-  local project_manifest="${PROJECT_LINK_DIR}/uecommandforge-project.json"
-  local installed_manifest="${INSTALL_ROOT}/uecommandforge-installed.json"
-  if [ ! -f "${project_manifest}" ] || [ ! -f "${installed_manifest}" ]; then
-    echo "[install_local] existing install targets are unmanaged; refusing to overwrite" >&2
-    exit 2
+  if [ "${has_project_state}" = true ]; then
+    if [ ! -f "${project_manifest}" ]; then
+      echo "[install_local] existing project install targets are unmanaged; refusing to overwrite" >&2
+      exit 2
+    fi
+    jq -e \
+      --arg project_file "${PROJECT_FILE}" \
+      --arg plugin_path "${PLUGIN_DIR}" \
+      '.project_file == $project_file and .plugin_path == $plugin_path' \
+      "${project_manifest}" >/dev/null
   fi
 
-  jq -e \
-    --arg project_file "${PROJECT_FILE}" \
-    --arg plugin_path "${PLUGIN_DIR}" \
-    '.project_file == $project_file and .plugin_path == $plugin_path' \
-    "${project_manifest}" >/dev/null
-  jq -e \
-    --arg project_file "${PROJECT_FILE}" \
-    --arg plugin_path "${PLUGIN_DIR}" \
-    --arg tools_path "${INSTALL_ROOT}/tools" \
-    --arg specs_path "${INSTALL_ROOT}/specs" \
-    '.project_file == $project_file
-     and .plugin_path == $plugin_path
-     and .tools_path == $tools_path
-     and .specs_path == $specs_path' \
-    "${installed_manifest}" >/dev/null
+  if [ "${has_codex_state}" = true ]; then
+    if [ ! -f "${installed_manifest}" ]; then
+      echo "[install_local] existing Codex install targets are unmanaged; refusing to overwrite" >&2
+      exit 2
+    fi
+    jq -e \
+      --arg project_file "${PROJECT_FILE}" \
+      --arg plugin_path "${PLUGIN_DIR}" \
+      --arg tools_path "${INSTALL_ROOT}/tools" \
+      --arg specs_path "${INSTALL_ROOT}/specs" \
+      '.project_file == $project_file
+       and .plugin_path == $plugin_path
+       and .tools_path == $tools_path
+       and .specs_path == $specs_path' \
+      "${installed_manifest}" >/dev/null
+  fi
 }
 
 reject_symlink_path "${PROJECT_DIR}/Plugins"
@@ -173,6 +192,19 @@ fi
 VERSION="$(jq -r '.VersionName' "${PLUGIN_ROOT}/UECommandForge.uplugin")"
 PLUGIN_MANIFEST="${PLUGIN_ROOT}/uecommandforge-manifest.json"
 TOOLS_MANIFEST="${TOOLS_ROOT}/uecommandforge-manifest.json"
+
+jq -e \
+  --arg version "${VERSION}" \
+  '.version == $version' \
+  "${PLUGIN_MANIFEST}" >/dev/null
+jq -e \
+  --arg version "${VERSION}" \
+  '.version == $version' \
+  "${TOOLS_MANIFEST}" >/dev/null
+jq -e \
+  --slurpfile plugin_manifest "${PLUGIN_MANIFEST}" \
+  '.release_channel == $plugin_manifest[0].release_channel' \
+  "${TOOLS_MANIFEST}" >/dev/null
 
 if [ "${BACKUP}" = true ]; then
   mkdir -p "${BACKUP_ROOT}"
