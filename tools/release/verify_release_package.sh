@@ -52,7 +52,7 @@ jq -e '
   and (.spec_files | type == "array")
   and ((.plugin_files | length) + (.tool_files | length) + (.spec_files | length) > 0)
   and (.checksums | type == "object")
-  and ([.plugin_files[], .tool_files[], .spec_files[], "install.md", "release-notes.md"] | all(. as $path | ($manifest.checksums[$path] | type == "string")))
+  and ([.plugin_files[], .tool_files[], .spec_files[], "install.md", "release-notes.md", "validation-report.json"] | all(. as $path | ($manifest.checksums[$path] | type == "string")))
   and (.install_commands | type == "array" and length == 0)
   and (.post_install_checks | type == "array" and length > 0)
 ' "${MANIFEST}" >/dev/null
@@ -91,7 +91,7 @@ EXPECTED_FILES="${LIST_DIR}/expected-files.txt"
 ACTUAL_FILES="${LIST_DIR}/actual-files.txt"
 CHECKSUM_FILES="${LIST_DIR}/checksum-files.txt"
 
-jq -r '.plugin_files[], .tool_files[], .spec_files[], "install.md", "release-notes.md"' "${MANIFEST}" \
+jq -r '.plugin_files[], .tool_files[], .spec_files[], "install.md", "release-notes.md", "validation-report.json"' "${MANIFEST}" \
   | sort > "${EXPECTED_FILES}"
 
 (
@@ -170,3 +170,4 @@ fi
 
 test -f "${WORK_DIR}/install.md"
 test -f "${WORK_DIR}/release-notes.md"
+test -f "${WORK_DIR}/validation-report.json"

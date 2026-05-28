@@ -58,6 +58,7 @@ grep -q '^Source/UECommandForgeEditor/UECommandForgeEditor.Build.cs$' "${ZIP_LIS
 grep -q '^uecommandforge-manifest.json$' "${ZIP_LIST}"
 grep -q '^install.md$' "${ZIP_LIST}"
 grep -q '^release-notes.md$' "${ZIP_LIST}"
+grep -q '^validation-report.json$' "${ZIP_LIST}"
 
 unzip -p "${PLUGIN_ZIP}" uecommandforge-manifest.json | jq -e \
   --arg version "${VERSION}" \
@@ -73,9 +74,19 @@ unzip -p "${PLUGIN_ZIP}" uecommandforge-manifest.json | jq -e \
    and (.checksums[$runtime_binary] | type == "string")
    and (.checksums["install.md"] | type == "string")
    and (.checksums["release-notes.md"] | type == "string")
+   and (.checksums["validation-report.json"] | type == "string")
    and (.post_install_checks[] | select(. == "Hello commandlet"))' >/dev/null
 jq -e --arg version "${VERSION}" '.VersionName == $version' \
   <(unzip -p "${PLUGIN_ZIP}" UECommandForge.uplugin) >/dev/null
+
+unzip -p "${PLUGIN_ZIP}" validation-report.json | jq -e \
+  --arg version "${VERSION}" \
+  --arg platform "${PLATFORM}" \
+  '.version == $version
+   and .package_type == "plugin"
+   and .platform == $platform
+   and .status == "pass"
+   and (.checks[] | select(.name == "generated plugin package"))' >/dev/null
 
 "${REPO_ROOT}/tools/release/verify_release_package.sh" "${PLUGIN_ZIP}" "${CHECKSUMS}"
 

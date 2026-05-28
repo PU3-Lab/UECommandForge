@@ -41,6 +41,7 @@ for wrapper in \
     tools/ue/setup_npc_character.bat \
     tools/ue/setup_patrol_ai.bat \
     tools/release/package_plugin.bat \
+    tools/release/package_source.bat \
     tools/release/package_tools.bat \
     tools/release/verify_release_package.bat \
     tools/release/write_checksums.bat \
@@ -71,6 +72,7 @@ require_contains tools/ue/create_ai_flow.bat 'CreateAIFlow'
 require_contains tools/ue/setup_npc_character.bat 'specs\\profiles\\npc_character.json'
 require_contains tools/ue/setup_patrol_ai.bat 'specs\\profiles\\patrol_ai.json'
 require_contains tools/release/package_plugin.bat 'package_plugin.sh'
+require_contains tools/release/package_source.bat 'package_source.sh'
 require_contains tools/release/package_tools.bat 'package_tools.sh'
 require_contains tools/release/verify_release_package.bat 'verify_release_package.sh'
 require_contains tools/release/write_checksums.bat 'write_checksums.sh'

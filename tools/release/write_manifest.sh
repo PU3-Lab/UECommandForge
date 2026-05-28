@@ -6,6 +6,7 @@ VERSION=""
 CHANNEL="local"
 OUTPUT=""
 ENGINE_VERSION="UE5.7"
+PACKAGE_TYPE="generic"
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -23,6 +24,10 @@ while [ $# -gt 0 ]; do
       ;;
     --output)
       OUTPUT="$2"
+      shift 2
+      ;;
+    --package-type)
+      PACKAGE_TYPE="$2"
       shift 2
       ;;
     *)
@@ -60,9 +65,10 @@ plugin_files="$(
   find . -type f \
     ! -path './tools/*' \
     ! -path './specs/*' \
-    ! -name 'uecommandforge-manifest.json' \
-    ! -name 'install.md' \
-    ! -name 'release-notes.md' \
+    ! -path './uecommandforge-manifest.json' \
+    ! -path './install.md' \
+    ! -path './release-notes.md' \
+    ! -path './validation-report.json' \
     | sed 's#^\./##' \
     | sort \
     | jq -R -s 'split("\n")[:-1]'
@@ -72,7 +78,7 @@ spec_files="$(files_json "${PACKAGE_ROOT}" specs)"
 checksums="$(
   cd "${PACKAGE_ROOT}"
   find . -type f \
-    ! -name 'uecommandforge-manifest.json' \
+    ! -path './uecommandforge-manifest.json' \
     | sed 's#^\./##' \
     | sort \
     | while IFS= read -r path; do
@@ -90,6 +96,7 @@ jq -n \
   --arg version "${VERSION}" \
   --arg engine_version "${ENGINE_VERSION}" \
   --arg release_channel "${CHANNEL}" \
+  --arg package_type "${PACKAGE_TYPE}" \
   --argjson plugin_files "${plugin_files}" \
   --argjson tool_files "${tool_files}" \
   --argjson spec_files "${spec_files}" \
@@ -98,16 +105,19 @@ jq -n \
     version: $version,
     engine_version: $engine_version,
     release_channel: $release_channel,
+    package_type: $package_type,
     plugin_files: $plugin_files,
     tool_files: $tool_files,
     spec_files: $spec_files,
     checksums: $checksums,
     install_commands: [],
-    post_install_checks: [
-      "Hello commandlet",
-      "Codex tools path",
-      "project link manifest"
-    ],
+    post_install_checks: (
+      if $package_type == "source" then
+        ["source package file list", "source package checksum"]
+      else
+        ["Hello commandlet", "Codex tools path", "project link manifest"]
+      end
+    ),
     known_limits: [
       "Install scripts are added in the next Task 6 step.",
       "Until installers ship, copy plugin files to <Project>/Plugins/UECommandForge and Codex tools/specs to ~/.codex/UECommandForge."

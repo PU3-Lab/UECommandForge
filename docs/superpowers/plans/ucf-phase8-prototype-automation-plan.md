@@ -811,6 +811,8 @@ Phase 8은 내부 개발용 코드만 머지하는 것으로 끝내지 않는다
 추가 파일:
 - `tools/release/package_plugin.sh`
 - `tools/release/package_plugin.bat`
+- `tools/release/package_source.sh`
+- `tools/release/package_source.bat`
 - `tools/release/package_tools.sh`
 - `tools/release/package_tools.bat`
 - `tools/release/write_checksums.sh`
@@ -870,10 +872,11 @@ Phase 8은 내부 개발용 코드만 머지하는 것으로 끝내지 않는다
 - REVIEW-FIX-5: actual file list 생성 시 root `./uecommandforge-manifest.json`만 제외하도록 `! -path './uecommandforge-manifest.json'`로 수정하고, `tools/extra/uecommandforge-manifest.json` 변조 ZIP smoke를 추가했다.
 - GREEN: REVIEW-FIX-5 후 `bash -n tools/release/verify_release_package.sh tools/test/smoke/release_package_tools.sh`, `./tools/test/smoke/release_package_tools.sh`, `UECF_RELEASE_PLUGIN_SKIP_BUILD=1 ./tools/test/smoke/release_package_plugin.sh` 통과.
 - INDEPENDENT-REVIEW-FINAL: `code-reviewer`와 `security-reviewer` 재확인 결과 CRITICAL/HIGH/MEDIUM findings 없음. LIST_DIR 분리, root manifest만 제외, nested manifest-named unlisted file 차단, root dotfile unlisted file 차단, 외부 checksum basename/hash 직접 검증이 확인됐다.
+- RED: `./tools/test/smoke/release_package_source.sh` 1차 실행은 `tools/release/package_source.sh`가 없어 실패했다.
+- GREEN: source package 스크립트 구현 후 `./tools/test/smoke/release_package_source.sh` 통과. `UECommandForge-0.8.0-test-Source.zip`에 README, docs, sample plugin source, tools, specs, manifest, install notes, release notes, validation report가 포함되고 `.git`, `sample/Saved`, plugin binaries는 제외됨을 확인했다.
+- GREEN: `validation-report.json`을 plugin/tools/source package의 필수 checksum payload로 정식화하고, `./tools/test/smoke/release_package_tools.sh`, `UECF_RELEASE_PLUGIN_SKIP_BUILD=1 ./tools/test/smoke/release_package_plugin.sh`, `./tools/test/smoke/windows_command_wrappers.sh` 통과를 확인했다.
 
 남은 항목:
-- source package 검증
-- release notes/validation report 정식화
 - Windows 실기 package wrapper 검증
 
 - [ ] **Step 4: 자동 설치 스크립트 추가**
@@ -1079,6 +1082,7 @@ git diff --check
 ./tools/test/smoke/cpp_reflection_policy.sh
 ./tools/test/smoke/uht_log_analysis.sh
 ./tools/test/smoke/mid_real_project_flow.sh
+./tools/test/smoke/release_package_source.sh
 ./tools/test/smoke/release_package_tools.sh
 ./tools/test/smoke/release_package_plugin.sh
 ./tools/test/smoke/data_validation.sh

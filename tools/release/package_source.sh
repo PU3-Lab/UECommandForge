@@ -1,0 +1,204 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+
+PLUGIN_DESCRIPTOR="${REPO_ROOT}/sample/Plugins/UECommandForge/UECommandForge.uplugin"
+VERSION="$(jq -r '.VersionName' "${PLUGIN_DESCRIPTOR}")"
+CHANNEL="local"
+OUT_DIR="${REPO_ROOT}/sample/Saved/Release"
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --version)
+      VERSION="$2"
+      shift 2
+      ;;
+    --channel)
+      CHANNEL="$2"
+      shift 2
+      ;;
+    --out-dir)
+      OUT_DIR="$2"
+      shift 2
+      ;;
+    *)
+      echo "[package_source] Unknown argument: $1" >&2
+      exit 2
+      ;;
+  esac
+done
+
+if [ -z "${VERSION}" ]; then
+  echo "[package_source] version is required" >&2
+  exit 2
+fi
+
+case "${VERSION}" in
+  *[!A-Za-z0-9._-]*)
+    echo "[package_source] version contains unsafe characters: ${VERSION}" >&2
+    exit 2
+    ;;
+esac
+
+case "${CHANNEL}" in
+  *[!A-Za-z0-9._-]*)
+    echo "[package_source] channel contains unsafe characters: ${CHANNEL}" >&2
+    exit 2
+    ;;
+esac
+
+mkdir -p "${OUT_DIR}"
+OUT_DIR="$(cd "${OUT_DIR}" && pwd)"
+PACKAGE_NAME="UECommandForge-${VERSION}-Source"
+PACKAGE_DIR="${OUT_DIR}/${PACKAGE_NAME}"
+ZIP_PATH="${OUT_DIR}/${PACKAGE_NAME}.zip"
+CHECKSUMS_PATH="${OUT_DIR}/checksums.txt"
+
+case "${PACKAGE_DIR}" in
+  "${OUT_DIR}/UECommandForge-"*"-Source") ;;
+  *)
+    echo "[package_source] unsafe package dir: ${PACKAGE_DIR}" >&2
+    exit 2
+    ;;
+esac
+
+rm -rf "${PACKAGE_DIR}" "${ZIP_PATH}"
+mkdir -p \
+  "${PACKAGE_DIR}/sample/Plugins/UECommandForge"
+
+cp "${REPO_ROOT}/README.md" "${PACKAGE_DIR}/README.md"
+cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" "${PACKAGE_DIR}/sample/UECommandForgeSample.uproject"
+cp "${PLUGIN_DESCRIPTOR}" "${PACKAGE_DIR}/sample/Plugins/UECommandForge/UECommandForge.uplugin"
+
+if [ -d "${REPO_ROOT}/docs" ]; then
+  cp -R "${REPO_ROOT}/docs" "${PACKAGE_DIR}/docs"
+fi
+if [ -d "${REPO_ROOT}/specs" ]; then
+  cp -R "${REPO_ROOT}/specs" "${PACKAGE_DIR}/specs"
+fi
+if [ -d "${REPO_ROOT}/tools" ]; then
+  cp -R "${REPO_ROOT}/tools" "${PACKAGE_DIR}/tools"
+fi
+if [ -d "${REPO_ROOT}/sample/Plugins/UECommandForge/Config" ]; then
+  cp -R "${REPO_ROOT}/sample/Plugins/UECommandForge/Config" \
+    "${PACKAGE_DIR}/sample/Plugins/UECommandForge/Config"
+fi
+if [ -d "${REPO_ROOT}/sample/Plugins/UECommandForge/Source" ]; then
+  cp -R "${REPO_ROOT}/sample/Plugins/UECommandForge/Source" \
+    "${PACKAGE_DIR}/sample/Plugins/UECommandForge/Source"
+fi
+
+(
+  cd "${PACKAGE_DIR}"
+  find . \
+    \( -path './.git' \
+      -o -path './.git/*' \
+      -o -path './sample/Saved' \
+      -o -path './sample/Saved/*' \
+      -o -path './sample/Plugins/UECommandForge/Binaries' \
+      -o -path './sample/Plugins/UECommandForge/Binaries/*' \
+      -o -path './sample/Plugins/UECommandForge/Intermediate' \
+      -o -path './sample/Plugins/UECommandForge/Intermediate/*' \
+      -o -path './sample/Plugins/UECommandForge/Saved' \
+      -o -path './sample/Plugins/UECommandForge/Saved/*' \
+      -o -path './sample/Plugins/UECommandForge/DerivedDataCache' \
+      -o -path './sample/Plugins/UECommandForge/DerivedDataCache/*' \) \
+    -prune -exec rm -rf {} +
+)
+
+if find "${PACKAGE_DIR}" -type l -print -quit | grep -q .; then
+  echo "[package_source] symlinks are not allowed in release packages" >&2
+  exit 2
+fi
+
+cat > "${PACKAGE_DIR}/install.md" <<INSTALL
+# UECommandForge Source Install
+
+Use this source package to inspect, build, or repack UECommandForge locally.
+
+Plugin source is located at:
+
+\`\`\`
+sample/Plugins/UECommandForge
+\`\`\`
+
+Codex-side tools and specs are located at:
+
+\`\`\`
+tools
+specs
+\`\`\`
+
+Installer status:
+
+Task 6 installer scripts are not shipped yet. Until then, copy plugin files to
+\`<Project>/Plugins/UECommandForge\` and Codex tools/specs to
+\`~/.codex/UECommandForge\`.
+INSTALL
+
+cat > "${PACKAGE_DIR}/release-notes.md" <<NOTES
+# UECommandForge ${VERSION} Source
+
+## Package
+
+- Type: Source package
+- Release channel: ${CHANNEL}
+- Engine: UE5.7
+
+## Validation
+
+- Generated source package excludes \`.git\`, generated build output, and \`sample/Saved\`.
+- Manifest file list and checksum verification are required.
+
+## Known Limits
+
+- This package is source-only and does not include prebuilt plugin binaries.
+- Windows \`.bat\` package wrappers still require Windows host verification.
+NOTES
+
+cat > "${PACKAGE_DIR}/validation-report.json" <<REPORT
+{
+  "version": "${VERSION}",
+  "release_channel": "${CHANNEL}",
+  "package_type": "source",
+  "engine_version": "UE5.7",
+  "status": "pass",
+  "checks": [
+    {
+      "name": "generated source package",
+      "status": "pass"
+    },
+    {
+      "name": "excluded generated build output",
+      "status": "pass"
+    },
+    {
+      "name": "manifest checksum coverage",
+      "status": "pass"
+    }
+  ],
+  "known_limits": [
+    "Source package does not include prebuilt plugin binaries.",
+    "Windows wrapper execution requires verification on a Windows host."
+  ]
+}
+REPORT
+
+"${SCRIPT_DIR}/write_manifest.sh" \
+  --package-root "${PACKAGE_DIR}" \
+  --version "${VERSION}" \
+  --channel "${CHANNEL}" \
+  --package-type source \
+  --output "${PACKAGE_DIR}/uecommandforge-manifest.json"
+
+(
+  cd "${PACKAGE_DIR}"
+  zip -qr "${ZIP_PATH}" ./*
+)
+
+"${SCRIPT_DIR}/write_checksums.sh" "${ZIP_PATH}" > "${CHECKSUMS_PATH}"
+"${SCRIPT_DIR}/verify_release_package.sh" "${ZIP_PATH}" "${CHECKSUMS_PATH}" >/dev/null
+
+echo "${ZIP_PATH}"

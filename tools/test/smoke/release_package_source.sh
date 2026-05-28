@@ -73,6 +73,7 @@ grep -q "UECommandForge-${VERSION}-Source.zip" "${CHECKSUMS}"
 BAD_SOURCE_DIR="${WORK_DIR}/bad-source"
 mkdir -p "${BAD_SOURCE_DIR}"
 unzip -q "${SOURCE_ZIP}" -d "${BAD_SOURCE_DIR}/package"
+mkdir -p "${BAD_SOURCE_DIR}/package/sample/Saved"
 printf 'unexpected\n' > "${BAD_SOURCE_DIR}/package/sample/Saved/leak.txt"
 (
   cd "${BAD_SOURCE_DIR}/package"

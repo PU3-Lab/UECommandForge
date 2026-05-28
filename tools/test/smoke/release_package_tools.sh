@@ -27,6 +27,7 @@ grep -q '^tools/test/smoke/mid_real_project_flow.sh$' "${ZIP_LIST}"
 grep -q '^tools/release/package_tools.sh$' "${ZIP_LIST}"
 grep -q '^specs/policies/assets.policy.json$' "${ZIP_LIST}"
 grep -q '^uecommandforge-manifest.json$' "${ZIP_LIST}"
+grep -q '^validation-report.json$' "${ZIP_LIST}"
 
 unzip -p "${TOOLS_ZIP}" uecommandforge-manifest.json | jq -e \
   --arg version "${VERSION}" \
@@ -40,7 +41,15 @@ unzip -p "${TOOLS_ZIP}" uecommandforge-manifest.json | jq -e \
    and (.checksums["tools/ue/run_commandlet.sh"] | type == "string")
    and (.checksums["install.md"] | type == "string")
    and (.checksums["release-notes.md"] | type == "string")
+   and (.checksums["validation-report.json"] | type == "string")
    and (.post_install_checks[] | select(. == "Hello commandlet"))' >/dev/null
+
+unzip -p "${TOOLS_ZIP}" validation-report.json | jq -e \
+  --arg version "${VERSION}" \
+  '.version == $version
+   and .package_type == "tools"
+   and .status == "pass"
+   and (.checks[] | select(.name == "generated tools package"))' >/dev/null
 
 "${REPO_ROOT}/tools/release/verify_release_package.sh" "${TOOLS_ZIP}" "${CHECKSUMS}"
 
@@ -131,6 +140,7 @@ rm -rf "${BAD_MANIFEST_DIR}/package"
 mkdir -p "${BAD_MANIFEST_DIR}/package"
 printf 'x' > "${BAD_MANIFEST_DIR}/package/install.md"
 printf 'x' > "${BAD_MANIFEST_DIR}/package/release-notes.md"
+printf 'x' > "${BAD_MANIFEST_DIR}/package/validation-report.json"
 jq -n '{
   version: "bad",
   engine_version: "UE5.7",
@@ -138,7 +148,7 @@ jq -n '{
   plugin_files: [".."],
   tool_files: [],
   spec_files: [],
-  checksums: {"..": "0", "install.md": "0", "release-notes.md": "0"},
+  checksums: {"..": "0", "install.md": "0", "release-notes.md": "0", "validation-report.json": "0"},
   install_commands: [],
   post_install_checks: ["Hello commandlet"]
 }' > "${BAD_MANIFEST_DIR}/package/uecommandforge-manifest.json"
