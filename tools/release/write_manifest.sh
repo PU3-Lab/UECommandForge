@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/common.sh"
+
 PACKAGE_ROOT=""
 VERSION=""
 CHANNEL="local"
@@ -54,6 +58,12 @@ if [ ! -d "${PACKAGE_ROOT}" ]; then
   exit 2
 fi
 
+TMP_DIR="$(mktemp -d)"
+cleanup() {
+  rm -rf "${TMP_DIR}"
+}
+trap cleanup EXIT
+
 files_json() {
   local root="$1"
   local dir="$2"
@@ -67,7 +77,13 @@ files_json() {
   fi
 }
 
-plugin_files="$(
+plugin_files_path="${TMP_DIR}/plugin_files.json"
+tool_files_path="${TMP_DIR}/tool_files.json"
+spec_files_path="${TMP_DIR}/spec_files.json"
+checksums_path="${TMP_DIR}/checksums.json"
+install_commands_path="${TMP_DIR}/install_commands.json"
+
+(
   cd "${PACKAGE_ROOT}"
   find . -type f \
     ! -path './tools/*' \
@@ -79,17 +95,19 @@ plugin_files="$(
     | sed 's#^\./##' \
     | sort \
     | jq -R -s 'split("\n")[:-1]'
-)"
-tool_files="$(files_json "${PACKAGE_ROOT}" tools)"
-spec_files="$(files_json "${PACKAGE_ROOT}" specs)"
-checksums="$(
+) > "${plugin_files_path}"
+files_json "${PACKAGE_ROOT}" tools > "${tool_files_path}"
+files_json "${PACKAGE_ROOT}" specs > "${spec_files_path}"
+printf '%s\n' "${INSTALL_COMMANDS}" > "${install_commands_path}"
+(
   cd "${PACKAGE_ROOT}"
   find . -type f \
     ! -path './uecommandforge-manifest.json' \
     | sed 's#^\./##' \
     | sort \
     | while IFS= read -r path; do
-      printf '%s\t%s\n' "${path}" "$(shasum -a 256 "${path}" | awk '{ print $1 }')"
+      hash="$(uecf_sha256 "${path}")" || exit 2
+      printf '%s\t%s\n' "${path}" "${hash}"
     done \
     | jq -R -s '
         split("\n")[:-1]
@@ -97,28 +115,28 @@ checksums="$(
         | map({key: .[0], value: .[1]})
         | from_entries
       '
-)"
+) > "${checksums_path}"
 
 jq -n \
   --arg version "${VERSION}" \
   --arg engine_version "${ENGINE_VERSION}" \
   --arg release_channel "${CHANNEL}" \
   --arg package_type "${PACKAGE_TYPE}" \
-  --argjson plugin_files "${plugin_files}" \
-  --argjson tool_files "${tool_files}" \
-  --argjson spec_files "${spec_files}" \
-  --argjson checksums "${checksums}" \
-  --argjson install_commands "${INSTALL_COMMANDS}" \
+  --slurpfile plugin_files "${plugin_files_path}" \
+  --slurpfile tool_files "${tool_files_path}" \
+  --slurpfile spec_files "${spec_files_path}" \
+  --slurpfile checksums "${checksums_path}" \
+  --slurpfile install_commands "${install_commands_path}" \
   '{
     version: $version,
     engine_version: $engine_version,
     release_channel: $release_channel,
     package_type: $package_type,
-    plugin_files: $plugin_files,
-    tool_files: $tool_files,
-    spec_files: $spec_files,
-    checksums: $checksums,
-    install_commands: $install_commands,
+    plugin_files: $plugin_files[0],
+    tool_files: $tool_files[0],
+    spec_files: $spec_files[0],
+    checksums: $checksums[0],
+    install_commands: $install_commands[0],
     post_install_checks: (
       if $package_type == "source" then
         ["source package file list", "source package checksum"]

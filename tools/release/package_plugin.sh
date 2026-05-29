@@ -3,6 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/common.sh"
 PLUGIN_DESCRIPTOR="${REPO_ROOT}/sample/Plugins/UECommandForge/UECommandForge.uplugin"
 BUILD_DIR="${REPO_ROOT}/sample/Saved/PluginBuild"
 VERSION="$(jq -r '.VersionName' "${PLUGIN_DESCRIPTOR}")"
@@ -236,7 +238,7 @@ REPORT
 
 (
   cd "${PACKAGE_DIR}"
-  zip -qr "${ZIP_PATH}" ./*
+  uecf_create_zip "${ZIP_PATH}" ./*
 )
 
 "${SCRIPT_DIR}/write_checksums.sh" "${ZIP_PATH}" > "${CHECKSUMS_PATH}"

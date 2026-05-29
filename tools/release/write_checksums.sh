@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/common.sh"
+
 if [ $# -lt 1 ]; then
   echo "Usage: $0 <file> [file...]" >&2
   exit 2
@@ -11,6 +15,6 @@ for path in "$@"; do
     echo "[write_checksums] file not found: ${path}" >&2
     exit 2
   fi
-  hash="$(shasum -a 256 "${path}" | awk '{ print $1 }')"
+  hash="$(uecf_sha256 "${path}")" || exit 2
   printf '%s  %s\n' "${hash}" "$(basename "${path}")"
 done

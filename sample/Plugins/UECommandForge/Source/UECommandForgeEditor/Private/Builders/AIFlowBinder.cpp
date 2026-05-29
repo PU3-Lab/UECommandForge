@@ -14,8 +14,6 @@
 #include "UObject/UnrealType.h"
 #include "Validators/AIFlowValidator.h"
 
-#include <algorithm>
-
 namespace UECommandForge
 {
     namespace
@@ -70,13 +68,14 @@ namespace UECommandForge
 
             USimpleConstructionScript* SCS = CharacterBlueprint->SimpleConstructionScript;
             const TArray<USCS_Node*>& Nodes = SCS->GetAllNodes();
-            const auto ExistingNode = std::find_if(Nodes.begin(), Nodes.end(), [](const USCS_Node* Node)
-                {
-                    return Node && Node->GetVariableName() == StateTreeComponentName;
-                });
-            if (ExistingNode != Nodes.end())
+            for (const USCS_Node* Node : Nodes)
             {
-                UStateTreeComponent* ExistingComponent = Cast<UStateTreeComponent>((*ExistingNode)->ComponentTemplate);
+                if (!Node || Node->GetVariableName() != StateTreeComponentName)
+                {
+                    continue;
+                }
+
+                UStateTreeComponent* ExistingComponent = Cast<UStateTreeComponent>(Node->ComponentTemplate);
                 if (!ExistingComponent)
                 {
                     AddBinderError(OutErrors, TEXT("STATETREE_COMPONENT_TYPE_MISMATCH"),

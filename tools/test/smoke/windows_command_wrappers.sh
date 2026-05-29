@@ -16,6 +16,58 @@ require_contains() {
     grep -q -- "${pattern}" "${REPO_ROOT}/${path}"
 }
 
+require_not_contains() {
+    local path="$1"
+    local pattern="$2"
+    ! grep -q -- "${pattern}" "${REPO_ROOT}/${path}"
+}
+
+require_windows_bootstrap_contains() {
+    local expected_status="$1"
+    local expected_pattern="$2"
+    shift 2
+
+    local output
+    output="$(mktemp)"
+    local command='$env:Path = "C:\Windows\System32"; $env:ProgramFiles = "Z:\uecf-missing"; $env:LocalAppData = "Z:\uecf-missing"; $env:UECF_AUTO_INSTALL_DEPS = $null; $env:UECF_SKIP_DEP_INSTALL = $null;'
+    local assignment
+    for assignment in "$@"; do
+        command="${command} \$env:${assignment%%=*} = \"${assignment#*=}\";"
+    done
+    command="${command} cmd /c \"tools\\windows\\bootstrap_dependencies.bat jq\"; exit \$LASTEXITCODE"
+
+    set +e
+    (
+        cd "${REPO_ROOT}"
+        "${POWERSHELL_EXE}" -NoProfile -Command "${command}"
+    ) >"${output}" 2>&1
+    local status=$?
+    set -e
+
+    test "${status}" -eq "${expected_status}"
+    grep -q -- "${expected_pattern}" "${output}"
+    rm -f "${output}"
+}
+
+require_windows_command_succeeds() {
+    local expected_pattern="$1"
+    shift
+
+    local output
+    output="$(mktemp)"
+    set +e
+    (
+        cd "${REPO_ROOT}"
+        "$@"
+    ) >"${output}" 2>&1
+    local status=$?
+    set -e
+
+    test "${status}" -eq 0
+    grep -q -- "${expected_pattern}" "${output}"
+    rm -f "${output}"
+}
+
 for wrapper in \
     install-uecommandforge.bat \
     tools/lint/cpp_static_analysis.bat \
@@ -74,15 +126,24 @@ require_contains tools/windows/bootstrap_dependencies.bat 'LLVM.LLVM'
 require_contains tools/windows/bootstrap_dependencies.bat 'Cppcheck.Cppcheck'
 require_contains tools/windows/bootstrap_dependencies.bat 'UECF_SKIP_DEP_INSTALL'
 require_contains tools/windows/bootstrap_dependencies.bat 'UECF_AUTO_INSTALL_DEPS'
+require_contains tools/windows/bootstrap_dependencies.bat 'UECF_AUTO_INSTALL_DEPS=0'
 require_contains tools/windows/bootstrap_dependencies.bat '--source winget'
 require_contains tools/windows/bootstrap_dependencies.bat '--disable-interactivity'
+require_contains tools/windows/bootstrap_dependencies.bat 'findstr.exe'
+require_not_contains tools/windows/bootstrap_dependencies.bat '| find /i'
 require_contains tools/windows/bootstrap_dependencies.bat 'cppcheck'
 require_contains tools/windows/bootstrap_dependencies.bat 'clang-tidy'
 
 require_file install-uecommandforge.ps1
+require_contains install-uecommandforge.sh 'package_plugin.sh'
+require_contains install-uecommandforge.sh 'package_tools.sh'
+require_contains install-uecommandforge.sh 'UECF_INSTALL_SKIP_PLUGIN_BUILD'
 require_contains install-uecommandforge.bat 'install-uecommandforge.sh'
+require_contains install-uecommandforge.bat '-l'
 require_contains install-uecommandforge.bat 'bootstrap_dependencies.bat'
 require_contains install-uecommandforge.bat 'UECF_BASH_EXE'
+require_contains install-uecommandforge.ps1 'Git\\bin\\bash.exe'
+require_contains install-uecommandforge.ps1 'Microsoft\\WindowsApps\\bash.exe'
 require_contains install-uecommandforge.ps1 'install-uecommandforge.sh'
 require_contains tools/lint/cpp_static_analysis.bat 'bootstrap_dependencies.bat'
 require_contains tools/lint/cpp_static_analysis.bat 'cppcheck'
@@ -143,3 +204,25 @@ require_contains tools/test/smoke/create_ai_flow.bat 'created_assets'
 require_contains tools/test/smoke/create_ai_flow.bat 'bootstrap_dependencies.bat'
 require_contains tools/test/smoke/create_ai_flow.bat 'jq'
 require_contains tools/test/smoke/create_ai_flow.bat 'Missing asset'
+
+if command -v powershell.exe >/dev/null 2>&1; then
+    POWERSHELL_EXE="$(command -v powershell.exe)"
+elif command -v pwsh.exe >/dev/null 2>&1; then
+    POWERSHELL_EXE="$(command -v pwsh.exe)"
+else
+    POWERSHELL_EXE=""
+fi
+
+if [[ -n "${POWERSHELL_EXE}" ]]; then
+    require_windows_bootstrap_contains 2 'winget not found'
+    require_windows_bootstrap_contains 2 'UECF_AUTO_INSTALL_DEPS=0 is set' UECF_AUTO_INSTALL_DEPS=0
+    require_windows_bootstrap_contains 2 'UECF_SKIP_DEP_INSTALL=1 is set' UECF_SKIP_DEP_INSTALL=1
+fi
+
+if command -v cmd.exe >/dev/null 2>&1; then
+    require_windows_command_succeeds 'Usage:' cmd.exe /c install-uecommandforge.bat --help
+fi
+
+if [[ -n "${POWERSHELL_EXE}" ]]; then
+    require_windows_command_succeeds 'Usage:' "${POWERSHELL_EXE}" -NoProfile -ExecutionPolicy Bypass -File install-uecommandforge.ps1 --help
+fi

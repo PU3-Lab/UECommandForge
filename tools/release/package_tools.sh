@@ -3,6 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/common.sh"
 
 PLUGIN_DESCRIPTOR="${REPO_ROOT}/sample/Plugins/UECommandForge/UECommandForge.uplugin"
 VERSION="$(jq -r '.VersionName' "${PLUGIN_DESCRIPTOR}")"
@@ -147,7 +149,7 @@ REPORT
 
 (
   cd "${PACKAGE_DIR}"
-  zip -qr "${ZIP_PATH}" \
+  uecf_create_zip "${ZIP_PATH}" \
     tools specs \
     install-uecommandforge.sh install-uecommandforge.bat install-uecommandforge.ps1 \
     uecommandforge-manifest.json install.md release-notes.md validation-report.json

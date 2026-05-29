@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/common.sh"
+
 if [ $# -lt 1 ] || [ $# -gt 2 ]; then
   echo "Usage: $0 <release-zip> [checksums.txt]" >&2
   exit 2
@@ -14,7 +18,7 @@ fi
 
 unzip -Z1 "${ZIP_PATH}" | while IFS= read -r entry; do
   case "${entry}" in
-    ''|..|*/..|/*|../*|*/../*|*\\*|[A-Za-z]:*|//*)
+    ''|..|*/..|/*|../*|*/../*|*\\*|*:*|//*)
       echo "[verify_release_package] unsafe zip entry: ${entry}" >&2
       exit 2
       ;;
@@ -57,9 +61,9 @@ jq -e '
   and (.post_install_checks | type == "array" and length > 0)
 ' "${MANIFEST}" >/dev/null
 
-jq -r '.plugin_files[]' "${MANIFEST}" | while IFS= read -r path; do
+jq -r '.plugin_files[]' "${MANIFEST}" | tr -d '\r' | while IFS= read -r path; do
   case "${path}" in
-    ''|..|*/..|/*|../*|*/../*|*\\*|[A-Za-z]:*|//*)
+    ''|..|*/..|/*|../*|*/../*|*\\*|*:*|//*)
       echo "[verify_release_package] unsafe manifest path: ${path}" >&2
       exit 2
       ;;
@@ -67,9 +71,9 @@ jq -r '.plugin_files[]' "${MANIFEST}" | while IFS= read -r path; do
   test -f "${WORK_DIR}/${path}"
 done
 
-jq -r '.tool_files[]' "${MANIFEST}" | while IFS= read -r path; do
+jq -r '.tool_files[]' "${MANIFEST}" | tr -d '\r' | while IFS= read -r path; do
   case "${path}" in
-    ''|..|*/..|/*|../*|*/../*|*\\*|[A-Za-z]:*|//*)
+    ''|..|*/..|/*|../*|*/../*|*\\*|*:*|//*)
       echo "[verify_release_package] unsafe manifest path: ${path}" >&2
       exit 2
       ;;
@@ -77,9 +81,9 @@ jq -r '.tool_files[]' "${MANIFEST}" | while IFS= read -r path; do
   test -f "${WORK_DIR}/${path}"
 done
 
-jq -r '.spec_files[]' "${MANIFEST}" | while IFS= read -r path; do
+jq -r '.spec_files[]' "${MANIFEST}" | tr -d '\r' | while IFS= read -r path; do
   case "${path}" in
-    ''|..|*/..|/*|../*|*/../*|*\\*|[A-Za-z]:*|//*)
+    ''|..|*/..|/*|../*|*/../*|*\\*|*:*|//*)
       echo "[verify_release_package] unsafe manifest path: ${path}" >&2
       exit 2
       ;;
@@ -92,6 +96,7 @@ ACTUAL_FILES="${LIST_DIR}/actual-files.txt"
 CHECKSUM_FILES="${LIST_DIR}/checksum-files.txt"
 
 jq -r '.plugin_files[], .tool_files[], .spec_files[], "install.md", "release-notes.md", "validation-report.json"' "${MANIFEST}" \
+  | tr -d '\r' \
   | sort > "${EXPECTED_FILES}"
 
 (
@@ -102,7 +107,7 @@ jq -r '.plugin_files[], .tool_files[], .spec_files[], "install.md", "release-not
     | sort
 ) > "${ACTUAL_FILES}"
 
-jq -r '.checksums | keys[]' "${MANIFEST}" | sort > "${CHECKSUM_FILES}"
+jq -r '.checksums | keys[]' "${MANIFEST}" | tr -d '\r' | sort > "${CHECKSUM_FILES}"
 
 if ! cmp -s "${EXPECTED_FILES}" "${ACTUAL_FILES}"; then
   echo "[verify_release_package] manifest file list does not match zip contents" >&2
@@ -116,14 +121,14 @@ if ! cmp -s "${EXPECTED_FILES}" "${CHECKSUM_FILES}"; then
   exit 2
 fi
 
-jq -r '.checksums | to_entries[] | [.key, .value] | @tsv' "${MANIFEST}" | while IFS=$'\t' read -r path expected; do
+jq -r '.checksums | to_entries[] | [.key, .value] | @tsv' "${MANIFEST}" | tr -d '\r' | while IFS=$'\t' read -r path expected; do
   case "${path}" in
-    ''|..|*/..|/*|../*|*/../*|*\\*|[A-Za-z]:*|//*)
+    ''|..|*/..|/*|../*|*/../*|*\\*|*:*|//*)
       echo "[verify_release_package] unsafe checksum path: ${path}" >&2
       exit 2
       ;;
   esac
-  actual="$(shasum -a 256 "${WORK_DIR}/${path}" | awk '{ print $1 }')"
+  actual="$(uecf_sha256 "${WORK_DIR}/${path}")"
   test "${actual}" = "${expected}"
 done
 
@@ -146,7 +151,7 @@ if [ $# -eq 2 ]; then
   fi
   checksum_name="${checksum_name#\*}"
   case "${checksum_name}" in
-    ''|..|*/..|/*|../*|*/../*|*/*|*\\*|[A-Za-z]:*|//*)
+    ''|..|*/..|/*|../*|*/../*|*/*|*\\*|*:*|//*)
       echo "[verify_release_package] unsafe checksums filename: ${checksum_name}" >&2
       exit 2
       ;;
@@ -161,7 +166,7 @@ if [ $# -eq 2 ]; then
   fi
 
   expected_zip_hash="$(printf '%s' "${expected_zip_hash}" | tr '[:upper:]' '[:lower:]')"
-  actual_zip_hash="$(shasum -a 256 "${ZIP_PATH}" | awk '{ print $1 }')"
+  actual_zip_hash="$(uecf_sha256 "${ZIP_PATH}")"
   if [ "${actual_zip_hash}" != "${expected_zip_hash}" ]; then
     echo "[verify_release_package] release zip checksum mismatch" >&2
     exit 2

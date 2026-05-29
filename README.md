@@ -62,7 +62,7 @@ LLM은 이 표에 있는 명령만 호출해야 한다.
 - Windows 기본값 (Command Prompt): `C:\Program Files\Epic Games\UE_5.7`
 - Windows Command Prompt 릴리즈/설치 wrapper는 실행 시 `tools\windows\bootstrap_dependencies.bat`로 `Git.Git`, `jqlang.jq`를 확인한다. 순수 `.bat` 테스트 wrapper는 `jq`만 확인한다.
 - `tools\lint\cpp_static_analysis.bat`은 실행 모드에 맞춰 `Cppcheck.Cppcheck`, `LLVM.LLVM`을 확인한다. `--check-tools`는 설치 없이 현재 탐지 결과만 출력한다.
-- 누락 의존성은 기본적으로 설치하지 않고 오류와 수동 `winget` 명령을 출력한다. 자동 설치를 허용하려면 해당 Command Prompt 세션에서 `set UECF_AUTO_INSTALL_DEPS=1`을 설정한다.
+- 누락 의존성은 기본적으로 `winget`으로 자동 설치한다. 자동 설치를 끄려면 해당 Command Prompt 세션에서 `set UECF_AUTO_INSTALL_DEPS=0`을 설정한다.
 - 자동 설치는 `winget install --id ... -e --source winget --disable-interactivity`로 실행된다. 설치 확인만 하고 싶으면 `UECF_SKIP_DEP_INSTALL=1`을 설정한다.
 
 ## 설치 및 릴리즈 패키지
@@ -93,6 +93,14 @@ tools/release/verify_release_package.sh \
 ```
 
 프로젝트 설치:
+
+```bash
+./install-uecommandforge.sh --project /path/to/MyProject.uproject
+```
+
+패키지 ZIP 경로를 생략하면 `sample/Saved/Release/Installer` 아래에 로컬 plugin/tools 패키지를 만든 뒤 설치한다. 기존 `sample/Saved/PluginBuild` 산출물을 재사용하려면 `UECF_INSTALL_SKIP_PLUGIN_BUILD=1`을 설정한다.
+
+이미 생성된 패키지를 명시해서 설치할 수도 있다.
 
 ```bash
 ./install-uecommandforge.sh \
