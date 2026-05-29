@@ -1,0 +1,24 @@
+@echo off
+setlocal EnableExtensions EnableDelayedExpansion
+
+if "%~2"=="" (
+  echo Usage: %~nx0 ^<schema.json^> ^<source.csv^|json^> [extra args...] 1>&2
+  exit /b 2
+)
+
+set "SCRIPT_DIR=%~dp0"
+set "SCHEMA_PATH=%~f1"
+set "SOURCE_PATH=%~f2"
+shift /1
+shift /1
+
+set "EXTRA_ARGS="
+:collect_args
+if "%~1"=="" goto run
+set EXTRA_ARGS=!EXTRA_ARGS! "%~1"
+shift /1
+goto collect_args
+
+:run
+call "%SCRIPT_DIR%run_commandlet.bat" ImportDataSource -Schema="%SCHEMA_PATH%" -Source="%SOURCE_PATH%" %EXTRA_ARGS%
+exit /b %ERRORLEVEL%

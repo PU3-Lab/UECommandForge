@@ -110,6 +110,33 @@ namespace UECommandForge::RollbackAssetChangesPrivate
         return !Assets.IsEmpty();
     }
 
+    bool DeleteAssetPackage(const FString& PackageName, FString& OutError)
+    {
+        const FString ObjectPath = ObjectPathOf(PackageName);
+        if (UObject* Existing = LoadObject<UObject>(nullptr, *ObjectPath))
+        {
+            TArray<UObject*> ObjectsToDelete;
+            ObjectsToDelete.Add(Existing);
+            const int32 DeletedCount = ObjectTools::ForceDeleteObjects(ObjectsToDelete, false);
+            if (DeletedCount <= 0)
+            {
+                OutError = TEXT("asset 삭제에 실패했습니다.");
+                return false;
+            }
+        }
+
+        const FString PackageFilename = FPackageName::LongPackageNameToFilename(
+            PackageName, FPackageName::GetAssetPackageExtension());
+        if (FPaths::FileExists(PackageFilename) &&
+            !IFileManager::Get().Delete(*PackageFilename))
+        {
+            OutError = FString::Printf(TEXT("package file 삭제에 실패했습니다: %s"), *PackageFilename);
+            return false;
+        }
+
+        return true;
+    }
+
     bool TryReadStringArray(const TSharedPtr<FJsonObject>& Object, const FString& Field,
         TArray<FString>& OutValues)
     {
@@ -299,6 +326,19 @@ namespace UECommandForge::RollbackAssetChangesPrivate
                     bPostValidationOk = false;
                 }
             }
+
+            if (OperationName == TEXT("delete_created_datatable"))
+            {
+                const FString PackageName = NormalizePackageName(Operation.AfterAssetPath);
+                if (IsValidPackagePath(PackageName) && AssetExists(AssetRegistry, PackageName))
+                {
+                    AddIssue(Report, TEXT("error"), TEXT("POST_CREATED_DATATABLE_STILL_EXISTS"),
+                        TEXT("rollback 후 생성된 DataTable asset이 아직 존재합니다."),
+                        TEXT("after_asset_path"), PackageName,
+                        TEXT("manual recovery: 생성된 DataTable asset을 확인하고 직접 삭제하세요."));
+                    bPostValidationOk = false;
+                }
+            }
         }
 
         Report.PostValidation.Add(TEXT("status"), bPostValidationOk ? TEXT("passed") : TEXT("failed"));
@@ -456,6 +496,36 @@ int32 URollbackAssetChangesCommandlet::Main(const FString& Params)
 
             Report.ChangedFiles.Add(FolderDiskPath);
             PathsToScan.Add(FolderPath);
+            AppliedOperations.Add(Operation);
+            ++AppliedRollbackCount;
+            continue;
+        }
+
+        if (OperationName == TEXT("delete_created_datatable"))
+        {
+            const FString TargetPath = NormalizePackageName(Operation.AfterAssetPath);
+            if (!IsValidPackagePath(TargetPath) || ContainsWildcard(TargetPath))
+            {
+                AddIssue(Report, TEXT("error"), TEXT("INVALID_ROLLBACK_PATH"),
+                    TEXT("rollback DataTable path가 유효하지 않습니다."),
+                    TEXT("after_asset_path"), TargetPath,
+                    TEXT("manual recovery: rollback plan의 DataTable path를 확인하세요."));
+                continue;
+            }
+
+            FString ApplyError;
+            if (!DeleteAssetPackage(TargetPath, ApplyError))
+            {
+                AddIssue(Report, TEXT("error"), TEXT("ROLLBACK_DELETE_DATATABLE_FAILED"),
+                    ApplyError, TEXT("after_asset_path"), TargetPath,
+                    TEXT("manual recovery: 생성된 DataTable asset을 직접 삭제하세요."));
+                continue;
+            }
+
+            Report.ChangedAssets.Add(TargetPath);
+            Report.ChangedFiles.Add(FPackageName::LongPackageNameToFilename(
+                TargetPath, FPackageName::GetAssetPackageExtension()));
+            PathsToScan.Add(PackagePathOf(TargetPath));
             AppliedOperations.Add(Operation);
             ++AppliedRollbackCount;
             continue;

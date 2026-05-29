@@ -25,6 +25,11 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
     "UECommandForge.Commandlets.RollbackAssetChanges.RejectsNonEmptyFolderDelete",
     EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FRollbackAssetChangesDeleteCreatedDataTableTest,
+    "UECommandForge.Commandlets.RollbackAssetChanges.DeletesCreatedDataTable",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
 namespace
 {
     bool LoadRollbackAssetChangesJsonObject(const FString& Path, TSharedPtr<FJsonObject>& OutObject)
@@ -152,6 +157,55 @@ bool FRollbackAssetChangesDeleteFolderTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("commandlet 이름"), RootObject->GetStringField(TEXT("commandlet")),
         TEXT("RollbackAssetChanges"));
     TestEqual(TEXT("post validation status"),
+        RootObject->GetObjectField(TEXT("post_validation"))->GetStringField(TEXT("status")),
+        TEXT("passed"));
+    return true;
+}
+
+bool FRollbackAssetChangesDeleteCreatedDataTableTest::RunTest(const FString& Parameters)
+{
+    const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
+        TEXT("CodexReports"), TEXT("test_rollback_asset_changes_delete_datatable.json"));
+    const FString RollbackPath = FPaths::Combine(FPaths::ProjectSavedDir(),
+        TEXT("CodexReports"), TEXT("test_rollback_asset_changes_delete_datatable_plan.json"));
+    const FString DataTablePackagePath = TEXT("/Game/Tests/RollbackCommandlet/DT_CreatedByImport");
+    const FString DataTableDiskPath = FPackageName::LongPackageNameToFilename(
+        DataTablePackagePath, FPackageName::GetAssetPackageExtension());
+
+    IFileManager::Get().Delete(*ReportPath);
+    IFileManager::Get().Delete(*RollbackPath);
+    IFileManager::Get().Delete(*DataTableDiskPath);
+
+    FCommandForgeRollbackPlan Plan;
+    Plan.TransactionId = TEXT("tx-rollback-delete-created-datatable");
+    Plan.Commandlet = TEXT("ImportDataSource");
+    Plan.Timestamp = TEXT("2026-05-29T00:00:00Z");
+
+    FCommandForgeRollbackOperation Operation;
+    Operation.PlannedOperation = TEXT("delete_created_datatable");
+    Operation.AfterAssetPath = DataTablePackagePath;
+    Operation.AfterFilePath = DataTableDiskPath;
+    Plan.Operations.Add(Operation);
+    TestTrue(TEXT("DataTable rollback plan 저장"),
+        UECommandForge::FRollbackPlanWriter::Write(RollbackPath, Plan));
+
+    URollbackAssetChangesCommandlet* Commandlet = NewObject<URollbackAssetChangesCommandlet>();
+    const int32 ExitCode = Commandlet->Main(FString::Printf(
+        TEXT("-RollbackPlan=\"%s\" -Output=\"%s\""),
+        *RollbackPath, *ReportPath));
+
+    TestEqual(TEXT("DataTable rollback exit code"), ExitCode, 0);
+    TestFalse(TEXT("생성 DataTable rollback 후 파일 없음"), FPaths::FileExists(DataTableDiskPath));
+
+    TSharedPtr<FJsonObject> RootObject;
+    TestTrue(TEXT("DataTable rollback report JSON 파싱"),
+        LoadRollbackAssetChangesJsonObject(ReportPath, RootObject));
+    TestTrue(TEXT("DataTable rollback ok true"), RootObject->GetBoolField(TEXT("ok")));
+    TestTrue(TEXT("DataTable rollback applied true"), RootObject->GetBoolField(TEXT("applied")));
+    TestEqual(TEXT("DataTable rollback 적용 수"),
+        RootObject->GetObjectField(TEXT("validation"))->GetStringField(TEXT("applied_rollback_count")),
+        TEXT("1"));
+    TestEqual(TEXT("DataTable post validation status"),
         RootObject->GetObjectField(TEXT("post_validation"))->GetStringField(TEXT("status")),
         TEXT("passed"));
     return true;

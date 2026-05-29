@@ -22,6 +22,8 @@ struct UECOMMANDFORGERUNTIME_API FCommandForgeDataSchemaField
     UPROPERTY() FString GameplayTagSource;
     UPROPERTY() FString Severity = TEXT("error");
     UPROPERTY() FString Exception;
+    UPROPERTY() FString Section;
+    UPROPERTY() FString DefaultValue;
 };
 
 USTRUCT()
@@ -47,6 +49,8 @@ struct UECOMMANDFORGERUNTIME_API FCommandForgeDataSchemaSpec
     UPROPERTY() FString TargetAssetPath;
     UPROPERTY() FString RowStructPath;
     UPROPERTY() FString DataAssetClassPath;
+    UPROPERTY() FString ConfigFile;
+    UPROPERTY() FString ConfigSection;
     UPROPERTY() TArray<FCommandForgeDataSchemaField> Fields;
     UPROPERTY() TArray<FCommandForgeDataSchemaException> Exceptions;
 };

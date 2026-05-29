@@ -37,6 +37,10 @@ for wrapper in \
     tools/ue/create_statetree.bat \
     tools/ue/bind_ai_flow.bat \
     tools/ue/validate_ai_flow.bat \
+    tools/ue/validate_data_source.bat \
+    tools/ue/import_data_source.bat \
+    tools/ue/validate_datatable.bat \
+    tools/ue/validate_config_rules.bat \
     tools/ue/place_actor.bat \
     tools/ue/create_ai_flow.bat \
     tools/ue/setup_npc_character.bat \
@@ -79,6 +83,10 @@ require_contains tools/ue/validate_cpp_reflection.bat 'ValidateCppReflection'
 require_contains tools/ue/validate_buildcs.bat 'ValidateBuildCs'
 require_contains tools/ue/analyze_uht_log.bat 'AnalyzeUhtLog'
 require_contains tools/ue/create_ai_flow.bat 'CreateAIFlow'
+require_contains tools/ue/validate_data_source.bat 'ValidateDataSource'
+require_contains tools/ue/import_data_source.bat 'ImportDataSource'
+require_contains tools/ue/validate_datatable.bat 'ValidateDataTable'
+require_contains tools/ue/validate_config_rules.bat 'ValidateConfigRules'
 require_contains tools/ue/setup_npc_character.bat 'specs\\profiles\\npc_character.json'
 require_contains tools/ue/setup_patrol_ai.bat 'specs\\profiles\\patrol_ai.json'
 require_contains tools/release/package_plugin.bat 'package_plugin.sh'

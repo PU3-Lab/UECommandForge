@@ -730,7 +730,7 @@ UE DataTable asset을 로드하고 RowStruct/RowName/필드 값을 검증한다.
 - `FGameplayTagTableRow`의 `Tag`처럼 UE DataTable에서 tag column이 `FName`으로 표현되는 경우도 `gameplay_tag` field로 검증할 수 있게 처리했다.
 - TDD 검증: 누락 커맨드렛 헤더로 RED를 확인한 뒤 구현했고, `./tools/ue/build_plugin.sh`, sample plugin in-place 빌드, `./tools/test/automation/run.sh`를 통과했다. 자동화 테스트는 49개 PASS, 0개 FAIL, 0개 SKIP이다.
 
-- [ ] **Step 5: `ValidateConfigRulesCommandlet` 작성**
+- [x] **Step 5: `ValidateConfigRulesCommandlet` 작성**
 
 project config를 읽어 schema와 비교한다.
 
@@ -741,7 +741,13 @@ project config를 읽어 schema와 비교한다.
 - allowlist 값 일치
 - 누락 config default 제안
 
-- [ ] **Step 6: wrapper와 테스트 추가**
+2026-05-29 완료:
+- `UValidateConfigRulesCommandlet`를 추가해 `-Schema`, `-Config`, `-Output` 인자로 project config INI를 schema와 비교한다. `-Config`가 없으면 schema의 `config_file`, 그 값도 없으면 `Config/DefaultGame.ini`를 사용한다.
+- `config_rules` schema kind, top-level `config_section/config_file`, field별 `section/default` parsing을 추가했다.
+- 필수 key 존재, bool/int/float/string 타입, min/max 범위, allowed_values 정책, 누락 key default 제안을 `CONFIG_*` validation issue로 보고한다.
+- TDD 검증: 누락 커맨드렛 헤더로 RED를 확인한 뒤 구현했고, `./tools/ue/build_plugin.sh`, sample plugin in-place 빌드, `./tools/test/automation/run.sh`를 통과했다. 자동화 테스트는 50개 PASS, 0개 FAIL, 0개 SKIP이다.
+
+- [x] **Step 6: wrapper와 테스트 추가**
 
 추가 파일:
 - `tools/ue/validate_data_source.sh/.bat`
@@ -757,8 +763,16 @@ project config를 읽어 schema와 비교한다.
 - 범위 위반 샘플 실패
 - 정상 샘플 PASS
 - DataTable import apply 후 UE asset 검증 PASS
-- rollback 후 기존 DataTable 상태 복구
+- rollback 후 생성 DataTable 제거
 - config schema 위반 리포트 생성
+
+2026-05-29 완료:
+- Data 검증/임포트/롤백용 macOS shell wrapper와 Windows batch wrapper를 추가했다.
+- `tools/test/smoke/windows_command_wrappers.sh`에 새 batch wrapper 정적 검사를 추가했다.
+- `tools/test/smoke/data_validation.sh`는 정상 CSV, 중복 ID, 필수 필드 누락, 범위 위반, 정상/위반 config rules 검증을 포함한다.
+- `tools/test/smoke/data_import_rollback.sh`는 CSV를 새 DataTable asset으로 import하고, `ValidateDataTable`로 asset 내용을 검증한 뒤 rollback plan의 `delete_created_datatable`로 생성 asset을 제거한다.
+- `RollbackAssetChangesCommandlet`에 `delete_created_datatable` operation 지원과 post validation을 추가했다. 기존 DataTable 복구(`restore_datatable_from_backup`)는 현재 rollback plan에 실제 백업 파일 경로가 없어 이번 스모크 범위에서 제외했다.
+- 검증: `./tools/ue/build_plugin.sh`, sample plugin in-place 빌드, `./tools/test/automation/run.sh`, `./tools/test/smoke/windows_command_wrappers.sh`, `UE_COMMANDLET_TIMEOUT=120 ./tools/test/smoke/data_validation.sh`, `UE_COMMANDLET_TIMEOUT=120 ./tools/test/smoke/data_import_rollback.sh`를 통과했다. standalone commandlet 스모크는 macOS 프로세스 권한 문제로 샌드박스 밖에서 실행했다.
 
 ## Task 4: 통합 워크플로우
 

@@ -111,6 +111,11 @@ namespace UECommandForge
             TryGetStringAlias(*FieldObject, TEXT("gameplay_tag_source"), TEXT("GameplayTagSource"), OutField.GameplayTagSource);
             TryGetStringAlias(*FieldObject, TEXT("severity"), TEXT("Severity"), OutField.Severity);
             TryGetStringAlias(*FieldObject, TEXT("exception"), TEXT("Exception"), OutField.Exception);
+            TryGetStringAlias(*FieldObject, TEXT("section"), TEXT("Section"), OutField.Section);
+            if (!TryGetStringAlias(*FieldObject, TEXT("default"), TEXT("Default"), OutField.DefaultValue))
+            {
+                TryGetStringAlias(*FieldObject, TEXT("default_value"), TEXT("DefaultValue"), OutField.DefaultValue);
+            }
             ReadStringArrayField(*FieldObject, TEXT("allowed_values"), TEXT("AllowedValues"), OutField.AllowedValues);
 
             double NumberValue = 0.0;
@@ -181,6 +186,8 @@ namespace UECommandForge
         TryGetStringAlias(*RootObject, TEXT("target_asset_path"), TEXT("TargetAssetPath"), OutSpec.TargetAssetPath);
         TryGetStringAlias(*RootObject, TEXT("row_struct_path"), TEXT("RowStructPath"), OutSpec.RowStructPath);
         TryGetStringAlias(*RootObject, TEXT("data_asset_class_path"), TEXT("DataAssetClassPath"), OutSpec.DataAssetClassPath);
+        TryGetStringAlias(*RootObject, TEXT("config_file"), TEXT("ConfigFile"), OutSpec.ConfigFile);
+        TryGetStringAlias(*RootObject, TEXT("config_section"), TEXT("ConfigSection"), OutSpec.ConfigSection);
 
         const TArray<TSharedPtr<FJsonValue>>* FieldValues = nullptr;
         if (!RootObject->TryGetArrayField(TEXT("fields"), FieldValues) &&
