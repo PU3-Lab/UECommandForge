@@ -46,7 +46,7 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
 | 5 | 완료 | `./tools/test/automation/run.sh` PASS 10 / FAIL 0, `./tools/test/smoke/ai_flow_binding.sh specs/examples/guard_ai.json` PASS 8 / FAIL 0 |
 | 6 | 완료 | `PlaceActor` 리포트 `ok: true`, `actor_placed: ok` |
 | 7 | 완료 | `./tools/ue/build_plugin.sh` 통과, `./tools/test/automation/run.sh` PASS 15 / FAIL 0, `CreateAIFlow` 인수 조건 통과 |
-| 8 | 계획 작성 | `docs/superpowers/plans/references/prototype.md` 기준 제품화 구현 및 GitHub Release 배포 계획 작성 |
+| 8 | 제품화 구현 및 배포 게이트 정의 완료 | `./tools/ue/build_plugin.sh`, `./tools/test/automation/run.sh` PASS 52 / FAIL 0 / SKIP 0, `./tools/test/smoke/prototype_automation.sh` PASS |
 
 ### 2026-05-27 Phase 3 마감 노트
 
@@ -105,6 +105,20 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
   - `sample/Saved/CodexReports/CreateAIFlow_20260528T003339Z.json` 기준 `ok: true`, `steps` 길이 5, `validation.actor_placed: ok`
 - 리뷰 및 eval 결과: [ucf-phase7-review-eval-report.md](ucf-phase7-review-eval-report.md)
 - 완성도 판단: 단순 뼈대가 아니라 동작하는 MVP/스프린트 완료본이며, 남은 범위는 Windows 실기 검증, rollback 자동화, UE runner 기반 CI, 프로파일 확장 같은 제품화 작업이다.
+
+### 2026-05-29 Phase 8 진행 노트
+
+- 에셋 정책, 에셋 변경 preflight/apply/rollback, 표준 폴더 생성, C++ 클래스 생성, Build.cs 검증, Reflection 정책 검증, UHT 로그 분석, 데이터 소스 검증/import, DataTable 검증, Config 검증을 Phase 8 명령 표면으로 추가했다.
+- 통합 품질 게이트 `PrototypeAutomationCommandlet`와 `tools/ue/validate_project_rules.sh/.bat`를 추가했다. 통합 리포트는 child commandlet별 JSON과 사람이 읽는 Markdown 요약을 함께 생성한다.
+- README 명령 표면을 Phase 8 기준으로 갱신하고, `docs/superpowers/plans/ucf-phase8-review-eval-report.md`에 제품화/eval 결과를 반영했다.
+- 배포 전 게이트와 배포 후 검증 기준을 README와 Phase 8 계획서에 고정했다.
+- 검증 결과:
+  - `./tools/ue/build_plugin.sh` 성공
+  - 샘플 `UnrealEditor` 타깃 빌드 성공
+  - `./tools/test/automation/run.sh` PASS 52 / FAIL 0 / SKIP 0
+  - `./tools/test/smoke/windows_command_wrappers.sh` 성공
+  - `UE_COMMANDLET_TIMEOUT=120 ./tools/test/smoke/prototype_automation.sh` 성공
+- 잔여 리스크는 Windows 실제 호스트에서 `.bat` wrapper를 실행하지 못한 점이다. 현재 macOS 검증에서는 정적 wrapper 검사와 `windows_host_required` 제한 리포트로 대체한다.
 
 ---
 

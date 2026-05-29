@@ -41,6 +41,7 @@ for wrapper in \
     tools/ue/import_data_source.bat \
     tools/ue/validate_datatable.bat \
     tools/ue/validate_config_rules.bat \
+    tools/ue/validate_project_rules.bat \
     tools/ue/place_actor.bat \
     tools/ue/create_ai_flow.bat \
     tools/ue/setup_npc_character.bat \
@@ -58,6 +59,7 @@ for wrapper in \
     tools/test/automation/run.bat \
     tools/test/smoke/installer_install_update_uninstall.bat \
     tools/test/smoke/release_package_install.bat \
+    tools/test/smoke/prototype_automation.bat \
     tools/test/smoke/create_ai_flow.bat
 do
     require_file "${wrapper}"
@@ -87,6 +89,7 @@ require_contains tools/ue/validate_data_source.bat 'ValidateDataSource'
 require_contains tools/ue/import_data_source.bat 'ImportDataSource'
 require_contains tools/ue/validate_datatable.bat 'ValidateDataTable'
 require_contains tools/ue/validate_config_rules.bat 'ValidateConfigRules'
+require_contains tools/ue/validate_project_rules.bat 'PrototypeAutomation'
 require_contains tools/ue/setup_npc_character.bat 'specs\\profiles\\npc_character.json'
 require_contains tools/ue/setup_patrol_ai.bat 'specs\\profiles\\patrol_ai.json'
 require_contains tools/release/package_plugin.bat 'package_plugin.sh'
@@ -102,5 +105,6 @@ require_contains tools/release/write_manifest.bat 'write_manifest.sh'
 require_contains tools/test/automation/run.bat 'Automation RunTests UECommandForge; Quit'
 require_contains tools/test/smoke/installer_install_update_uninstall.bat 'installer_install_update_uninstall.sh'
 require_contains tools/test/smoke/release_package_install.bat 'release_package_install.sh'
+require_contains tools/test/smoke/prototype_automation.bat 'prototype_automation.sh'
 require_contains tools/test/smoke/create_ai_flow.bat 'created_assets'
 require_contains tools/test/smoke/create_ai_flow.bat 'Missing asset'
