@@ -1231,6 +1231,20 @@ tools\test\smoke\installer_install_update_uninstall.bat
 - release package install smoke 통과
 - 자동 설치/update/uninstall smoke 통과
 
+2026-05-29 최종 검증 결과:
+- `git diff --check`: PASS
+- `tools/test/smoke/release_version_policy.sh`: PASS
+- `tools/ue/build_plugin.sh`: PASS
+- sample `UnrealEditor Mac Development -Project=sample/UECommandForgeSample.uproject`: PASS
+- `tools/test/automation/run.sh`: PASS 52 / FAIL 0 / SKIP 0 (`index.json`: succeeded 52, failed 0, notRun 0, succeededWithWarnings 3)
+- `tools/test/smoke/windows_command_wrappers.sh`: PASS
+- Phase 8 제품화 smoke: `asset_policy.sh`, `asset_change_apply_rollback.sh`, `cpp_generation.sh`, `cpp_reflection_policy.sh`, `uht_log_analysis.sh`, `data_validation.sh`, `data_import_rollback.sh`, `prototype_automation.sh`, `mid_real_project_flow.sh` 모두 PASS
+- Release package smoke: `release_package_source.sh`, `release_package_tools.sh`, `release_package_plugin.sh`, `release_package_install.sh` 모두 PASS
+- Installer smoke: `installer_install_update_uninstall.sh` PASS
+- Windows 제한 리포트: `windows_release_validation_report.sh` PASS. 결과는 `windows_host_required` 제한 리포트이며, Windows 실제 Command Prompt 실행은 남은 외부 검증이다.
+- Secret scan: PASS. release surface 기준 hardcoded token/API key/password/secret 패턴 없음. `.git` sample hook의 `last_update_token` 변수명은 release surface가 아니어서 제외했다.
+- 자동화 테스트와 smoke가 갱신한 test fixture `.uasset/.umap` 메타데이터 변경은 소스 변경이 아니므로 원복했다.
+
 ## 리스크 및 완화
 
 | 리스크 | 완화 |

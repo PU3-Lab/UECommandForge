@@ -102,23 +102,28 @@
 
 | 명령 | 결과 |
 |---|---|
+| `git diff --check` | PASS |
+| `./tools/test/smoke/release_version_policy.sh` | PASS |
 | `./tools/ue/build_plugin.sh` | PASS |
-| sample plugin in-place build | PASS |
-| `./tools/test/automation/run.sh` | PASS 52 / FAIL 0 / SKIP 0 |
+| sample `UnrealEditor Mac Development -Project=sample/UECommandForgeSample.uproject` build | PASS, sandbox 외부 |
+| `./tools/test/automation/run.sh` | PASS 52 / FAIL 0 / SKIP 0, succeededWithWarnings 3 |
+| `./tools/test/smoke/windows_command_wrappers.sh` | PASS |
+| `./tools/test/smoke/asset_policy.sh` | PASS, sandbox 외부 UE commandlet 실행 |
+| `./tools/test/smoke/asset_change_apply_rollback.sh` | PASS, sandbox 외부 UE commandlet 실행 |
+| `./tools/test/smoke/cpp_generation.sh` | PASS, sandbox 외부 UE commandlet 실행 |
+| `./tools/test/smoke/cpp_reflection_policy.sh` | PASS, sandbox 외부 UE commandlet 실행 |
+| `./tools/test/smoke/uht_log_analysis.sh` | PASS, sandbox 외부 UE commandlet 실행 |
+| `./tools/test/smoke/data_validation.sh` | PASS, sandbox 외부 UE commandlet 실행 |
+| `./tools/test/smoke/data_import_rollback.sh` | PASS, sandbox 외부 UE commandlet 실행 |
 | `./tools/test/smoke/prototype_automation.sh` | PASS, sandbox 외부 UE commandlet 실행 |
+| `./tools/test/smoke/mid_real_project_flow.sh` | PASS, sandbox 외부 UE commandlet 실행 |
 | `./tools/test/smoke/release_package_install.sh` | PASS |
 | `./tools/test/smoke/release_package_source.sh` | PASS |
-| `./tools/test/smoke/installer_install_update_uninstall.sh` | PASS |
 | `./tools/test/smoke/release_package_tools.sh` | PASS |
 | `./tools/test/smoke/release_package_plugin.sh` | PASS, sandbox 외부 full build |
-| `UECF_RELEASE_PLUGIN_SKIP_BUILD=1 ./tools/test/smoke/release_package_plugin.sh` | PASS |
-| `./tools/test/smoke/release_version_policy.sh` | PASS |
-| `./tools/test/smoke/windows_command_wrappers.sh` | PASS |
+| `./tools/test/smoke/installer_install_update_uninstall.sh` | PASS |
 | `./tools/test/smoke/windows_release_validation_report.sh` | PASS |
-| `tools/release/install_local.sh --run-commandlet-check true ...` | PASS, sandbox 외부 |
-| `bash -n install-uecommandforge.sh tools/release/*.sh tools/test/smoke/release_package_install.sh tools/test/smoke/installer_install_update_uninstall.sh tools/test/smoke/release_package_source.sh tools/test/smoke/windows_release_validation_report.sh tools/test/smoke/windows_command_wrappers.sh` | PASS |
-| `git diff --check` | PASS |
-| secret pattern scan | PASS |
+| secret pattern scan | PASS, `.git` sample hook 제외한 release surface 기준 |
 
 ## 최종 판정
 

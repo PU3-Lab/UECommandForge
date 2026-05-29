@@ -46,7 +46,7 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
 | 5 | 완료 | `./tools/test/automation/run.sh` PASS 10 / FAIL 0, `./tools/test/smoke/ai_flow_binding.sh specs/examples/guard_ai.json` PASS 8 / FAIL 0 |
 | 6 | 완료 | `PlaceActor` 리포트 `ok: true`, `actor_placed: ok` |
 | 7 | 완료 | `./tools/ue/build_plugin.sh` 통과, `./tools/test/automation/run.sh` PASS 15 / FAIL 0, `CreateAIFlow` 인수 조건 통과 |
-| 8 | 제품화 구현 및 배포 게이트 정의 완료 | `./tools/ue/build_plugin.sh`, `./tools/test/automation/run.sh` PASS 52 / FAIL 0 / SKIP 0, `./tools/test/smoke/prototype_automation.sh` PASS |
+| 8 | 로컬 최종 검증 완료, Windows 실기 검증 및 GitHub Release 게시 전 | `./tools/ue/build_plugin.sh`, `./tools/test/automation/run.sh` PASS 52 / FAIL 0 / SKIP 0, Phase 8 smoke/package/installer 게이트 PASS |
 
 ### 2026-05-27 Phase 3 마감 노트
 
@@ -118,6 +118,7 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
   - `./tools/test/automation/run.sh` PASS 52 / FAIL 0 / SKIP 0
   - `./tools/test/smoke/windows_command_wrappers.sh` 성공
   - `UE_COMMANDLET_TIMEOUT=120 ./tools/test/smoke/prototype_automation.sh` 성공
+- Task 7 로컬 최종 검증에서 asset/C++/data/config/통합 스모크, release package source/tools/plugin/install smoke, installer install/update/uninstall smoke, Windows 제한 리포트, secret scan을 모두 통과했다.
 - 잔여 리스크는 Windows 실제 호스트에서 `.bat` wrapper를 실행하지 못한 점이다. 현재 macOS 검증에서는 정적 wrapper 검사와 `windows_host_required` 제한 리포트로 대체한다.
 
 ---
