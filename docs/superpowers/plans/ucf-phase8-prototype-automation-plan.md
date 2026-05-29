@@ -640,9 +640,9 @@ Spec 필드:
 
 ## Task 3: DataAsset / DataTable / Config 관리 제품화
 
-상태: 후순위로 이동. Task 6의 배포 산출물, 자동 설치 스크립트, 설치 검증 smoke를 먼저 완료한 뒤 진행한다.
+상태: 진행 중. Task 6 배포 산출물과 설치 검증 smoke 완료 후 DataAsset/DataTable/Config 제품화 작업을 재개했다.
 
-- [ ] **Step 1: `DataSchemaSpec` 정의**
+- [x] **Step 1: `DataSchemaSpec` 정의**
 
 지원 필드 타입:
 - `string`
@@ -667,7 +667,13 @@ Spec 필드:
 - severity
 - exception
 
-- [ ] **Step 2: `ValidateDataSourceCommandlet` 작성**
+2026-05-29 완료:
+- `FCommandForgeDataSchemaSpec`, `FCommandForgeDataSchemaField`, `FCommandForgeDataSchemaException` 런타임 타입을 추가했다.
+- `FDataSchemaSpecParser`로 JSON 기반 schema spec 파싱을 추가했다.
+- 필수 top-level 키, field 배열, 지원 타입 목록, field 정책, exception 목록의 기본 검증을 포함했다.
+- TDD 검증: 누락 헤더로 RED를 확인한 뒤 구현했고, `./tools/ue/build_plugin.sh`, sample plugin in-place 빌드, `./tools/test/automation/run.sh`를 통과했다. 자동화 테스트는 47개 PASS, 0개 FAIL, 0개 SKIP이다.
+
+- [x] **Step 2: `ValidateDataSourceCommandlet` 작성**
 
 CSV/JSON source를 스키마와 비교한다.
 
@@ -682,7 +688,13 @@ CSV/JSON source를 스키마와 비교한다.
 - SoftObjectPath 누락
 - UTF-8 인코딩 문제
 
-- [ ] **Step 3: `ImportDataSourceCommandlet` 작성**
+2026-05-29 완료:
+- `UValidateDataSourceCommandlet`를 추가해 `-Schema`, `-Source`, `-Output`, 선택 `-Format` 인자로 CSV/JSON source를 검증한다.
+- `DataSchemaSpec` 기준으로 필수 필드, unique/key 중복, int/float/bool 타입, min/max, regex, allowed_values, GameplayTag 등록 여부, SoftObjectPath 형식과 package 존재 여부, UTF-8 source 인코딩을 검증한다.
+- JSON 리포트는 기존 `FJsonReportWriter` envelope를 사용하며, 실패 항목은 `issues` 배열에 `DATA_SOURCE_*` 코드로 기록한다.
+- TDD 검증: 누락 커맨드렛 헤더로 RED를 확인한 뒤 구현했고, `./tools/ue/build_plugin.sh`, sample plugin in-place 빌드, `./tools/test/automation/run.sh`를 통과했다. 자동화 테스트는 48개 PASS, 0개 FAIL, 0개 SKIP이다.
+
+- [x] **Step 3: `ImportDataSourceCommandlet` 작성**
 
 검증된 source를 UE DataTable 또는 DataAsset set으로 import한다.
 
@@ -693,7 +705,14 @@ CSV/JSON source를 스키마와 비교한다.
 - import 후 datatable validation
 - source hash 기록
 
-- [ ] **Step 4: `ValidateDataTableCommandlet` 작성**
+2026-05-29 완료:
+- `UImportDataSourceCommandlet`를 추가해 `-Schema`, `-Source`, `-Output`, 선택 `-RollbackPlan`, `-DryRun` 인자로 CSV/JSON source를 UE `UDataTable` asset으로 import한다.
+- dry-run은 target asset 존재 여부 기준 diff, row count, source hash, rollback plan 후보 경로를 Result JSON에 기록하되 asset을 생성하지 않는다.
+- apply는 import 전 snapshot JSON과 rollback plan을 `Saved/CodexReports` 아래에 만들고, `row_struct_path`로 지정한 `FTableRowBase` 기반 struct에 CSV/JSON을 import한 뒤 package를 저장한다.
+- rollback plan 경로는 `Saved/CodexReports` 하위로 제한하면서, commandlet 실행 환경에서 전달되는 project-relative report 경로도 허용하도록 보강했다.
+- TDD 검증: 누락 커맨드렛 헤더로 RED를 확인한 뒤 구현했고, `./tools/ue/build_plugin.sh`, sample plugin in-place 빌드, `./tools/test/automation/run.sh`를 통과했다. 자동화 테스트는 49개 PASS, 0개 FAIL, 0개 SKIP이다.
+
+- [x] **Step 4: `ValidateDataTableCommandlet` 작성**
 
 UE DataTable asset을 로드하고 RowStruct/RowName/필드 값을 검증한다.
 
@@ -704,6 +723,12 @@ UE DataTable asset을 로드하고 RowStruct/RowName/필드 값을 검증한다.
 - SoftObjectPath 참조 존재
 - GameplayTag 등록 여부
 - enum 값 일치
+
+2026-05-29 완료:
+- `UValidateDataTableCommandlet`를 추가해 `-Schema`, `-Asset`, `-Output` 인자로 UE `UDataTable` asset을 schema와 비교한다. `-Asset`이 없으면 schema의 `target_asset_path`를 사용한다.
+- DataTable 존재, RowStruct 로드/일치, RowStruct field 존재, field type 호환성, required 값, unique/key 중복, min/max, allowed_values, GameplayTag 등록 여부, SoftObjectPath 형식과 package 존재 여부를 검증한다.
+- `FGameplayTagTableRow`의 `Tag`처럼 UE DataTable에서 tag column이 `FName`으로 표현되는 경우도 `gameplay_tag` field로 검증할 수 있게 처리했다.
+- TDD 검증: 누락 커맨드렛 헤더로 RED를 확인한 뒤 구현했고, `./tools/ue/build_plugin.sh`, sample plugin in-place 빌드, `./tools/test/automation/run.sh`를 통과했다. 자동화 테스트는 49개 PASS, 0개 FAIL, 0개 SKIP이다.
 
 - [ ] **Step 5: `ValidateConfigRulesCommandlet` 작성**
 

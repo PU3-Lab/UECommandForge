@@ -16,6 +16,7 @@ public class UECommandForgeEditor : ModuleRules
             "AssetTools", "AssetRegistry",
             "BlueprintGraph", "KismetCompiler", "Kismet",
             "EditorScriptingUtilities",
+            "GameplayTags",
             "AIModule", "GameplayTasks", "NavigationSystem",
             "StateTreeModule", "StateTreeEditorModule", "GameplayStateTreeModule",
             "PropertyBindingUtils"
