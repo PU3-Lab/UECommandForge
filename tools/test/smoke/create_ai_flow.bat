@@ -2,6 +2,9 @@
 setlocal EnableExtensions EnableDelayedExpansion
 
 set "SCRIPT_DIR=%~dp0"
+call "%SCRIPT_DIR%..\..\windows\bootstrap_dependencies.bat" jq
+if errorlevel 1 exit /b %ERRORLEVEL%
+
 for %%I in ("%SCRIPT_DIR%..\..\..") do set "REPO_ROOT=%%~fI"
 set "SAMPLE_DIR=%REPO_ROOT%\sample"
 set "UE_TOOLS=%REPO_ROOT%\tools\ue"

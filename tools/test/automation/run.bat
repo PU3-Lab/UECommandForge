@@ -2,6 +2,9 @@
 setlocal EnableExtensions
 
 set "SCRIPT_DIR=%~dp0"
+call "%SCRIPT_DIR%..\..\windows\bootstrap_dependencies.bat" jq
+if errorlevel 1 exit /b %ERRORLEVEL%
+
 call "%SCRIPT_DIR%..\..\ue\ue_env.bat"
 if errorlevel 1 exit /b %ERRORLEVEL%
 

@@ -2,11 +2,8 @@
 setlocal EnableExtensions
 
 set "SCRIPT_DIR=%~dp0"
-where bash >nul 2>nul
-if errorlevel 1 (
-  echo [installer_install_update_uninstall] bash not found. Install Git for Windows or run installer_install_update_uninstall.sh from Git Bash. 1>&2
-  exit /b 2
-)
+call "%SCRIPT_DIR%..\..\windows\bootstrap_dependencies.bat" core
+if errorlevel 1 exit /b %ERRORLEVEL%
 
-bash "%SCRIPT_DIR%installer_install_update_uninstall.sh" %*
+"%UECF_BASH_EXE%" "%SCRIPT_DIR%installer_install_update_uninstall.sh" %*
 exit /b %ERRORLEVEL%

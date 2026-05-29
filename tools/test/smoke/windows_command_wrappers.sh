@@ -13,11 +13,12 @@ require_file() {
 require_contains() {
     local path="$1"
     local pattern="$2"
-    grep -q "${pattern}" "${REPO_ROOT}/${path}"
+    grep -q -- "${pattern}" "${REPO_ROOT}/${path}"
 }
 
 for wrapper in \
     install-uecommandforge.bat \
+    tools/lint/cpp_static_analysis.bat \
     tools/ue/ue_env.bat \
     tools/ue/run_commandlet.bat \
     tools/ue/hello.bat \
@@ -66,9 +67,26 @@ do
     require_contains "${wrapper}" '@echo off'
 done
 
+require_file tools/windows/bootstrap_dependencies.bat
+require_contains tools/windows/bootstrap_dependencies.bat 'Git.Git'
+require_contains tools/windows/bootstrap_dependencies.bat 'jqlang.jq'
+require_contains tools/windows/bootstrap_dependencies.bat 'LLVM.LLVM'
+require_contains tools/windows/bootstrap_dependencies.bat 'Cppcheck.Cppcheck'
+require_contains tools/windows/bootstrap_dependencies.bat 'UECF_SKIP_DEP_INSTALL'
+require_contains tools/windows/bootstrap_dependencies.bat 'UECF_AUTO_INSTALL_DEPS'
+require_contains tools/windows/bootstrap_dependencies.bat '--source winget'
+require_contains tools/windows/bootstrap_dependencies.bat '--disable-interactivity'
+require_contains tools/windows/bootstrap_dependencies.bat 'cppcheck'
+require_contains tools/windows/bootstrap_dependencies.bat 'clang-tidy'
+
 require_file install-uecommandforge.ps1
 require_contains install-uecommandforge.bat 'install-uecommandforge.sh'
+require_contains install-uecommandforge.bat 'bootstrap_dependencies.bat'
+require_contains install-uecommandforge.bat 'UECF_BASH_EXE'
 require_contains install-uecommandforge.ps1 'install-uecommandforge.sh'
+require_contains tools/lint/cpp_static_analysis.bat 'bootstrap_dependencies.bat'
+require_contains tools/lint/cpp_static_analysis.bat 'cppcheck'
+require_contains tools/lint/cpp_static_analysis.bat 'clang-tidy'
 require_contains tools/ue/ue_env.bat 'UnrealEditor-Cmd.exe'
 require_contains tools/ue/ue_env.bat 'UECF_PROJECT_FILE'
 require_contains tools/ue/run_commandlet.bat 'Saved\\CodexReports'
@@ -93,18 +111,35 @@ require_contains tools/ue/validate_project_rules.bat 'PrototypeAutomation'
 require_contains tools/ue/setup_npc_character.bat 'specs\\profiles\\npc_character.json'
 require_contains tools/ue/setup_patrol_ai.bat 'specs\\profiles\\patrol_ai.json'
 require_contains tools/release/package_plugin.bat 'package_plugin.sh'
+require_contains tools/release/package_plugin.bat 'bootstrap_dependencies.bat'
 require_contains tools/release/package_source.bat 'package_source.sh'
+require_contains tools/release/package_source.bat 'bootstrap_dependencies.bat'
 require_contains tools/release/package_tools.bat 'package_tools.sh'
+require_contains tools/release/package_tools.bat 'bootstrap_dependencies.bat'
 require_contains tools/release/install_into_sample_project.bat 'install_into_sample_project.sh'
+require_contains tools/release/install_into_sample_project.bat 'bootstrap_dependencies.bat'
 require_contains tools/release/install_local.bat 'install_local.sh'
+require_contains tools/release/install_local.bat 'bootstrap_dependencies.bat'
 require_contains tools/release/uninstall.bat 'uninstall.sh'
+require_contains tools/release/uninstall.bat 'bootstrap_dependencies.bat'
 require_contains tools/release/update_install.bat 'update_install.sh'
+require_contains tools/release/update_install.bat 'bootstrap_dependencies.bat'
 require_contains tools/release/verify_release_package.bat 'verify_release_package.sh'
+require_contains tools/release/verify_release_package.bat 'bootstrap_dependencies.bat'
 require_contains tools/release/write_checksums.bat 'write_checksums.sh'
+require_contains tools/release/write_checksums.bat 'bootstrap_dependencies.bat'
 require_contains tools/release/write_manifest.bat 'write_manifest.sh'
+require_contains tools/release/write_manifest.bat 'bootstrap_dependencies.bat'
 require_contains tools/test/automation/run.bat 'Automation RunTests UECommandForge; Quit'
+require_contains tools/test/automation/run.bat 'bootstrap_dependencies.bat'
+require_contains tools/test/automation/run.bat 'jq'
 require_contains tools/test/smoke/installer_install_update_uninstall.bat 'installer_install_update_uninstall.sh'
+require_contains tools/test/smoke/installer_install_update_uninstall.bat 'bootstrap_dependencies.bat'
 require_contains tools/test/smoke/release_package_install.bat 'release_package_install.sh'
+require_contains tools/test/smoke/release_package_install.bat 'bootstrap_dependencies.bat'
 require_contains tools/test/smoke/prototype_automation.bat 'prototype_automation.sh'
+require_contains tools/test/smoke/prototype_automation.bat 'bootstrap_dependencies.bat'
 require_contains tools/test/smoke/create_ai_flow.bat 'created_assets'
+require_contains tools/test/smoke/create_ai_flow.bat 'bootstrap_dependencies.bat'
+require_contains tools/test/smoke/create_ai_flow.bat 'jq'
 require_contains tools/test/smoke/create_ai_flow.bat 'Missing asset'

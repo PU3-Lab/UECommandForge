@@ -15,6 +15,19 @@ if not "%~1"=="" (
   if "%MODE%"=="run" goto :usage_error
 )
 
+if "%MODE%"=="check-tools" goto check_tools
+if "%MODE%"=="cppcheck-only" call "%SCRIPT_DIR%..\windows\bootstrap_dependencies.bat" cppcheck
+if "%MODE%"=="clang-tidy-only" call "%SCRIPT_DIR%..\windows\bootstrap_dependencies.bat" clang-tidy
+if "%MODE%"=="run" (
+  if "%RUN_CLANG_TIDY%"=="1" (
+    call "%SCRIPT_DIR%..\windows\bootstrap_dependencies.bat" lint
+  ) else (
+    call "%SCRIPT_DIR%..\windows\bootstrap_dependencies.bat" cppcheck
+  )
+)
+if errorlevel 1 exit /b %ERRORLEVEL%
+
+:check_tools
 call :find_clang_tidy
 call :find_cppcheck
 
