@@ -392,6 +392,20 @@ findstr /c:"UFUNCTION" "Plugins\UECommandForge\Source\UECommandForgeRuntime\Publ
 findstr /c:"$className::ApplyDamage" "Plugins\UECommandForge\Source\UECommandForgeRuntime\Private\Generated\CodexFeature\$className.cpp"
 ```
 
+### 정리
+
+`GenerateCppClass -Apply`는 실제 프로젝트 플러그인 `Source` 아래에 C++ 파일을 생성하고, 현재 report에는 rollback plan이 제공되지 않는다. 검증 후 테스트 산출물이 빌드 대상에 섞이지 않도록 생성 파일을 제거한다.
+
+```powershell
+$className = Get-Content Saved\CodexReports\cpp_generation_feature_fixtures\class_name.txt
+$header = "Plugins\UECommandForge\Source\UECommandForgeRuntime\Public\Generated\CodexFeature\$className.h"
+$source = "Plugins\UECommandForge\Source\UECommandForgeRuntime\Private\Generated\CodexFeature\$className.cpp"
+Remove-Item -LiteralPath $header,$source -Force -ErrorAction Stop
+if ((Test-Path -LiteralPath $header) -or (Test-Path -LiteralPath $source)) {
+  throw "C++ 생성 테스트 파일 정리에 실패했습니다."
+}
+```
+
 ## 시나리오 5: C++ reflection 및 Build.cs 정책 검증
 
 ### 목적

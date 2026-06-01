@@ -1,0 +1,22 @@
+{
+  "version": "1",
+  "kind": "blueprint_defaults",
+  "transaction_id": "tx-sample-blueprint-defaults",
+  "blueprint": {
+    "asset_path": "/Game/AI/Characters/BP_Guard",
+    "compile": true,
+    "save": true
+  },
+  "defaults": [
+    {
+      "property": "bHidden",
+      "value": "False"
+    }
+  ],
+  "components": [
+    {
+      "name": "CodexSceneComponent",
+      "class": "SceneComponent"
+    }
+  ]
+}

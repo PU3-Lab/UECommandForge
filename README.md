@@ -19,6 +19,7 @@ unreal-harness/
 | `tools/ue/create_character_bp.sh <spec.json>` | `tools\ue\create_character_bp.bat <spec.json>` | Character Blueprint 생성 |
 | `tools/ue/create_ai_controller.sh <spec.json>` | `tools\ue\create_ai_controller.bat <spec.json>` | AIController Blueprint 생성 |
 | `tools/ue/compile_blueprints.sh` | `tools\ue\compile_blueprints.bat` | Blueprint 일괄 컴파일 |
+| `tools/ue/set_blueprint_defaults.sh <spec.json>` | `tools\ue\set_blueprint_defaults.bat <spec.json>` | Blueprint CDO 기본값/컴포넌트 적용 |
 | `tools/ue/create_statetree.sh <spec.json>` | `tools\ue\create_statetree.bat <spec.json>` | StateTree 에셋 생성 |
 | `tools/ue/bind_ai_flow.sh <spec.json>` | `tools\ue\bind_ai_flow.bat <spec.json>` | Character, AIController, StateTree 바인딩 |
 | `tools/ue/validate_ai_flow.sh <spec.json>` | `tools\ue\validate_ai_flow.bat <spec.json>` | AI 플로우 바인딩 CDO 검증 |

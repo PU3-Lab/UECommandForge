@@ -16,6 +16,18 @@ require_contains() {
     grep -q -- "${pattern}" "${REPO_ROOT}/${path}"
 }
 
+require_contains_regex() {
+    local path="$1"
+    local pattern="$2"
+    grep -Eq -- "${pattern}" "${REPO_ROOT}/${path}"
+}
+
+require_contains_fixed() {
+    local path="$1"
+    local pattern="$2"
+    grep -Fq -- "${pattern}" "${REPO_ROOT}/${path}"
+}
+
 require_not_contains() {
     local path="$1"
     local pattern="$2"
@@ -107,6 +119,7 @@ for wrapper in \
     tools/ue/create_character_bp.bat \
     tools/ue/create_ai_controller.bat \
     tools/ue/compile_blueprints.bat \
+    tools/ue/set_blueprint_defaults.bat \
     tools/ue/create_statetree.bat \
     tools/ue/bind_ai_flow.bat \
     tools/ue/validate_ai_flow.bat \
@@ -190,9 +203,9 @@ require_contains tools/ue/run_commandlet.bat 'executepythoncommand'
 require_contains tools/ue/run_commandlet.bat 'pythonscriptplugin'
 require_contains tools/ue/run_commandlet.bat 'import\\s+unreal'
 require_contains tools/ue/run_commandlet.bat 'unreal.'
-require_contains tools/ue/run_commandlet.bat 'executepythonscript|executepythoncommand|pythonscriptplugin'
+require_contains_regex tools/ue/run_commandlet.bat 'executepythonscript|executepythoncommand|pythonscriptplugin'
 require_contains tools/ue/run_commandlet.bat '-replace'
-require_contains tools/ue/run_commandlet.bat '(^| )py($| )'
+require_contains_fixed tools/ue/run_commandlet.bat '(^| )py($| )'
 require_contains tools/ue/run_commandlet.bat 'COMBINED_ARG:&='
 require_not_contains tools/ue/validate_asset_rules.bat '!EXTRA_ARGS!'
 require_not_contains tools/ue/create_project_folders.bat '!EXTRA_ARGS!'
@@ -209,6 +222,8 @@ require_contains tools/ue/rollback_asset_changes.bat 'RollbackAssetChanges'
 require_contains tools/ue/rollback_asset_changes.bat 'ROLLBACK_PATH=%~f1'
 require_contains tools/ue/create_project_folders.bat 'CreateProjectFolders'
 require_contains tools/ue/generate_cpp_class.bat 'GenerateCppClass'
+require_contains tools/ue/set_blueprint_defaults.bat 'SetBlueprintDefaults'
+require_contains tools/ue/set_blueprint_defaults.bat 'SPEC_FILE=%~f1'
 require_contains tools/ue/validate_cpp_reflection.bat 'ValidateCppReflection'
 require_contains tools/ue/validate_buildcs.bat 'ValidateBuildCs'
 require_contains tools/ue/analyze_uht_log.bat 'AnalyzeUhtLog'
@@ -269,7 +284,7 @@ if [[ -n "${POWERSHELL_EXE}" ]]; then
 fi
 
 if command -v cmd.exe >/dev/null 2>&1; then
-    require_windows_command_succeeds 'Usage:' cmd.exe /c install-uecommandforge.bat --help
+    require_windows_command_succeeds 'Usage:' cmd.exe //c install-uecommandforge.bat --help
 fi
 
 if [[ -n "${POWERSHELL_EXE}" ]]; then
