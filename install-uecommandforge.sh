@@ -9,19 +9,48 @@ TOOLS_PACKAGE=""
 INSTALL_ARGS=()
 
 usage() {
-  cat >&2 <<USAGE
-Usage: $0 --project <path.uproject> [--plugin-package <zip> --tools-package <zip>] [--codex-home <path>]
+  cat >&2 <<'USAGE'
+Usage:
+  Windows Command Prompt:
+    install-uecommandforge.bat --project "C:\Path\To\MyProject\MyProject.uproject"
 
-If both package paths are omitted, this wrapper creates local plugin/tools packages first.
-Set UECF_INSTALL_SKIP_PLUGIN_BUILD=1 to reuse an existing sample/Saved/PluginBuild output.
+  PowerShell:
+    .\install-uecommandforge.ps1 --project "C:\Path\To\MyProject\MyProject.uproject"
+
+  Git Bash, macOS, or Linux:
+    ./install-uecommandforge.sh --project "/path/to/MyProject.uproject"
+
+Required:
+  --project <path.uproject|project-dir>
+      Unreal project file, or a project folder containing exactly one .uproject file.
+
+Optional:
+  --plugin-package <zip> --tools-package <zip>
+      Use existing release packages. Provide both options together.
+      If omitted, the installer creates local plugin/tools packages first.
+
+  --codex-home <path>
+      Install Codex-side tools under this Codex home. Defaults to ~/.codex.
+
+Notes:
+  Set UECF_INSTALL_SKIP_PLUGIN_BUILD=1 to reuse sample/Saved/PluginBuild.
+  The install log is created after project validation at:
+    <Project>/Saved/UECommandForge/install.log
 USAGE
+}
+
+fail_with_usage() {
+  local message="$1"
+  echo "[install-uecommandforge] ERROR: ${message}" >&2
+  echo >&2
+  usage
 }
 
 require_value() {
   local option="$1"
   local value="${2:-}"
   if [ -z "${value}" ]; then
-    echo "[install-uecommandforge] ${option} requires a value" >&2
+    fail_with_usage "Option ${option} needs a value."
     exit 2
   fi
 }
@@ -63,7 +92,7 @@ while [ $# -gt 0 ]; do
 done
 
 if [ -z "${PROJECT_FILE}" ]; then
-  usage
+  fail_with_usage "Missing required option: --project. Pass your Unreal project .uproject file or the project folder."
   exit 2
 fi
 
@@ -93,21 +122,30 @@ normalize_project_file() {
     if [ "${#matches[@]}" -eq 1 ]; then
       echo "[install-uecommandforge] resolved project directory to ${matches[0]}"
       normalized="${matches[0]}"
+    elif [ "${#matches[@]}" -eq 0 ]; then
+      echo "[install-uecommandforge] ERROR: The --project folder does not contain a .uproject file: ${input}" >&2
+      echo "[install-uecommandforge] Pass the exact .uproject file, for example:" >&2
+      echo "[install-uecommandforge]   install-uecommandforge.bat --project \"C:\\Path\\To\\MyProject\\MyProject.uproject\"" >&2
+      exit 2
     else
-      echo "[install-uecommandforge] --project must point to a .uproject file, or a directory with exactly one .uproject: ${input}" >&2
+      echo "[install-uecommandforge] ERROR: The --project folder contains multiple .uproject files: ${input}" >&2
+      echo "[install-uecommandforge] Pass the exact .uproject file so the installer knows which project to modify." >&2
       exit 2
     fi
   fi
 
   if [ ! -f "${normalized}" ]; then
-    echo "[install-uecommandforge] project file not found: ${input}" >&2
+    echo "[install-uecommandforge] ERROR: Could not find the project path passed to --project: ${input}" >&2
+    echo "[install-uecommandforge] Check the path and include the .uproject file name, for example:" >&2
+    echo "[install-uecommandforge]   install-uecommandforge.bat --project \"C:\\Path\\To\\MyProject\\MyProject.uproject\"" >&2
     exit 2
   fi
 
   case "${normalized}" in
     *.uproject) ;;
     *)
-      echo "[install-uecommandforge] --project must point to a .uproject file: ${input}" >&2
+      echo "[install-uecommandforge] ERROR: The --project path is not a .uproject file: ${input}" >&2
+      echo "[install-uecommandforge] Pass a .uproject file or a folder containing exactly one .uproject file." >&2
       exit 2
       ;;
   esac
@@ -153,7 +191,7 @@ require_windows_build_prerequisites() {
 
 if { [ -n "${PLUGIN_PACKAGE}" ] && [ -z "${TOOLS_PACKAGE}" ]; } \
   || { [ -z "${PLUGIN_PACKAGE}" ] && [ -n "${TOOLS_PACKAGE}" ]; }; then
-  echo "[install-uecommandforge] provide both --plugin-package and --tools-package, or omit both for auto packaging" >&2
+  fail_with_usage "Package install needs both --plugin-package and --tools-package. Omit both options to let the installer create packages automatically."
   exit 2
 fi
 

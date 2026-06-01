@@ -68,6 +68,26 @@ require_windows_command_succeeds() {
     rm -f "${output}"
 }
 
+require_command_fails_with() {
+    local expected_status="$1"
+    local expected_pattern="$2"
+    shift 2
+
+    local output
+    output="$(mktemp)"
+    set +e
+    (
+        cd "${REPO_ROOT}"
+        "$@"
+    ) >"${output}" 2>&1
+    local status=$?
+    set -e
+
+    test "${status}" -eq "${expected_status}"
+    grep -q -- "${expected_pattern}" "${output}"
+    rm -f "${output}"
+}
+
 for wrapper in \
     install-uecommandforge.bat \
     tools/lint/cpp_static_analysis.bat \
@@ -138,6 +158,8 @@ require_file install-uecommandforge.ps1
 require_contains install-uecommandforge.sh 'package_plugin.sh'
 require_contains install-uecommandforge.sh 'package_tools.sh'
 require_contains install-uecommandforge.sh 'UECF_INSTALL_SKIP_PLUGIN_BUILD'
+require_command_fails_with 2 'Missing required option: --project' \
+    ./install-uecommandforge.sh
 require_contains install-uecommandforge.bat 'install-uecommandforge.sh'
 require_contains install-uecommandforge.bat '-l'
 require_contains install-uecommandforge.bat 'bootstrap_dependencies.bat'
