@@ -7,7 +7,7 @@ if "%~1"=="" (
 )
 
 set "SCRIPT_DIR=%~dp0"
-set "ROLLBACK_PATH=%~1"
+set "ROLLBACK_PATH=%~f1"
 shift /1
 
 set "EXTRA_ARGS="

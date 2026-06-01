@@ -7,7 +7,7 @@ if "%~1"=="" (
 )
 
 set "SCRIPT_DIR=%~dp0"
-set "PLAN_PATH=%~1"
+set "PLAN_PATH=%~f1"
 shift /1
 
 set "EXTRA_ARGS="
