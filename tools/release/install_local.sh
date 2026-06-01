@@ -65,12 +65,13 @@ fi
 
 PROJECT_FILE="$(cd "$(dirname "${PROJECT_FILE}")" && pwd)/$(basename "${PROJECT_FILE}")"
 PROJECT_DIR="$(cd "$(dirname "${PROJECT_FILE}")" && pwd)"
-CODEX_HOME="$(mkdir -p "${CODEX_HOME}" && cd "${CODEX_HOME}" && pwd)"
+CODEX_HOME="$(mkdir -p "${CODEX_HOME}" && cd "${CODEX_HOME}" && pwd -P)"
 INSTALL_ROOT="${CODEX_HOME}/UECommandForge"
 PLUGIN_DIR="${PROJECT_DIR}/Plugins/UECommandForge"
 PROJECT_LINK_DIR="${PROJECT_DIR}/UECommandForge"
 LOG_DIR="${PROJECT_DIR}/Saved/UECommandForge"
 LOG_FILE="${LOG_DIR}/install.log"
+CODEX_AGENTS_FILE="${CODEX_HOME}/AGENTS.md"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 BACKUP_ROOT="${PROJECT_DIR}/Saved/UECommandForge/Backups/${STAMP}"
 
@@ -138,9 +139,8 @@ reject_symlink_path "${PROJECT_DIR}/Saved/UECommandForge"
 reject_symlink_path "${INSTALL_ROOT}"
 reject_symlink_path "${INSTALL_ROOT}/tools"
 reject_symlink_path "${INSTALL_ROOT}/specs"
+reject_symlink_path "${CODEX_AGENTS_FILE}"
 require_managed_existing_targets
-
-mkdir -p "${LOG_DIR}" "${INSTALL_ROOT}" "${PROJECT_LINK_DIR}"
 
 verify_package() {
   local zip_path="$1"
@@ -163,6 +163,90 @@ copy_tree() {
   mkdir -p "$(dirname "${dest}")"
   rm -rf "${dest}"
   cp -R "${src}" "${dest}"
+}
+
+require_codex_agents_appendable() {
+  local begin_count=0
+  local end_count=0
+
+  if [ ! -w "${CODEX_HOME}" ]; then
+    echo "[install_local] Codex home is not writable: ${CODEX_HOME}" >&2
+    exit 2
+  fi
+
+  local probe_file
+  probe_file="$(mktemp "${CODEX_HOME}/.AGENTS.md.preflight.XXXXXX")"
+  if ! mv "${probe_file}" "${probe_file}.rename"; then
+    rm -f "${probe_file}" "${probe_file}.rename"
+    echo "[install_local] Codex home cannot atomically update AGENTS.md: ${CODEX_HOME}" >&2
+    exit 2
+  fi
+  rm -f "${probe_file}.rename"
+
+  if [ -e "${CODEX_AGENTS_FILE}" ]; then
+    if [ ! -f "${CODEX_AGENTS_FILE}" ]; then
+      echo "[install_local] Codex AGENTS path is not a regular file: ${CODEX_AGENTS_FILE}" >&2
+      exit 2
+    fi
+    if [ ! -w "${CODEX_AGENTS_FILE}" ]; then
+      echo "[install_local] Codex AGENTS file is not writable: ${CODEX_AGENTS_FILE}" >&2
+      echo "[install_local] Existing AGENTS.md was preserved; fix file permissions and retry." >&2
+      exit 2
+    fi
+    begin_count="$(grep -c 'BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS' "${CODEX_AGENTS_FILE}" || true)"
+    end_count="$(grep -c 'END UECOMMANDFORGE CODEX INSTRUCTIONS' "${CODEX_AGENTS_FILE}" || true)"
+    if [ "${begin_count}" -ne "${end_count}" ] || [ "${begin_count}" -gt 1 ]; then
+      echo "[install_local] Existing Codex AGENTS.md has an invalid UECommandForge managed block; fix markers and retry: ${CODEX_AGENTS_FILE}" >&2
+      exit 2
+    fi
+  fi
+}
+
+append_codex_agents_instructions() {
+  local temp_file
+  local begin_count=0
+  local end_count=0
+  local instructions_file="${TOOLS_ROOT}/specs/codex/unreal-automation-agents.md"
+  if [ ! -f "${instructions_file}" ]; then
+    echo "[install_local] Codex instruction source is missing: ${instructions_file}" >&2
+    exit 2
+  fi
+
+  temp_file="$(mktemp "${CODEX_HOME}/.AGENTS.md.XXXXXX")"
+  if [ -f "${CODEX_AGENTS_FILE}" ]; then
+    cp -p "${CODEX_AGENTS_FILE}" "${temp_file}"
+    begin_count="$(grep -c 'BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS' "${CODEX_AGENTS_FILE}" || true)"
+    end_count="$(grep -c 'END UECOMMANDFORGE CODEX INSTRUCTIONS' "${CODEX_AGENTS_FILE}" || true)"
+    if [ "${begin_count}" -ne "${end_count}" ] || [ "${begin_count}" -gt 1 ]; then
+      rm -f "${temp_file}" "${temp_file}.stripped"
+      echo "[install_local] Existing Codex AGENTS.md has an invalid UECommandForge managed block; fix markers and retry: ${CODEX_AGENTS_FILE}" >&2
+      exit 2
+    fi
+    if [ "${begin_count}" -eq 1 ]; then
+      awk '
+        /BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS/ { skipping = 1; next }
+        /END UECOMMANDFORGE CODEX INSTRUCTIONS/ { skipping = 0; next }
+        skipping != 1 { print }
+      ' "${CODEX_AGENTS_FILE}" > "${temp_file}.stripped"
+      cat "${temp_file}.stripped" > "${temp_file}"
+      rm -f "${temp_file}.stripped"
+    fi
+  fi
+
+  if [ -s "${CODEX_AGENTS_FILE}" ]; then
+    printf '\n' >> "${temp_file}"
+  fi
+
+cat >> "${temp_file}" <<'AGENTS'
+<!-- BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS -->
+AGENTS
+  cat "${instructions_file}" >> "${temp_file}"
+  printf '\n' >> "${temp_file}"
+cat >> "${temp_file}" <<'AGENTS'
+<!-- END UECOMMANDFORGE CODEX INSTRUCTIONS -->
+AGENTS
+
+  mv "${temp_file}" "${CODEX_AGENTS_FILE}"
 }
 
 verify_package "${PLUGIN_PACKAGE}"
@@ -206,6 +290,9 @@ jq -e \
   '.release_channel == $plugin_manifest[0].release_channel' \
   "${TOOLS_MANIFEST}" >/dev/null
 
+require_codex_agents_appendable
+mkdir -p "${LOG_DIR}" "${INSTALL_ROOT}" "${PROJECT_LINK_DIR}"
+
 if [ "${BACKUP}" = true ]; then
   mkdir -p "${BACKUP_ROOT}"
   if [ -d "${PLUGIN_DIR}" ]; then
@@ -235,6 +322,7 @@ rm -f "${PLUGIN_DIR}/uecommandforge-manifest.json" \
 copy_tree "${TOOLS_ROOT}/tools" "${INSTALL_ROOT}/tools"
 copy_tree "${TOOLS_ROOT}/specs" "${INSTALL_ROOT}/specs"
 find "${INSTALL_ROOT}/tools" -type f -name '*.sh' -exec chmod +x {} +
+append_codex_agents_instructions
 
 cat > "${INSTALL_ROOT}/uecommandforge.env" <<ENV
 UECF_PROJECT_FILE=${PROJECT_FILE}
@@ -298,6 +386,7 @@ jq -n \
   echo "plugin_path=${PLUGIN_DIR}"
   echo "tools_path=${INSTALL_ROOT}/tools"
   echo "specs_path=${INSTALL_ROOT}/specs"
+  echo "codex_agents_path=${CODEX_AGENTS_FILE}"
 } >> "${LOG_FILE}"
 
 if [ "${RUN_COMMANDLET_CHECK}" = true ]; then

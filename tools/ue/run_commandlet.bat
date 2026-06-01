@@ -15,6 +15,8 @@ if not "%COMMANDLET:&=%"=="%COMMANDLET%" goto unsafe_commandlet
 if not "%COMMANDLET:|=%"=="%COMMANDLET%" goto unsafe_commandlet
 if not "%COMMANDLET:<=%"=="%COMMANDLET%" goto unsafe_commandlet
 if not "%COMMANDLET:>=%"=="%COMMANDLET%" goto unsafe_commandlet
+call :reject_unreal_python_arg "%COMMANDLET%"
+if errorlevel 1 exit /b %ERRORLEVEL%
 shift /1
 
 if not exist "%PROJECT_FILE%" (
@@ -22,11 +24,12 @@ if not exist "%PROJECT_FILE%" (
   exit /b 2
 )
 
+for %%I in ("%PROJECT_FILE%") do set "PROJECT_DIR=%%~dpI"
+if "!PROJECT_DIR:~-1!"=="\" set "PROJECT_DIR=!PROJECT_DIR:~0,-1!"
+
 if defined UECF_REPORT_DIR (
   set "REPORT_DIR=%UECF_REPORT_DIR%"
 ) else (
-  for %%I in ("%PROJECT_FILE%") do set "PROJECT_DIR=%%~dpI"
-  if "!PROJECT_DIR:~-1!"=="\" set "PROJECT_DIR=!PROJECT_DIR:~0,-1!"
   set "REPORT_DIR=!PROJECT_DIR!\Saved\CodexReports"
 )
 if not exist "%REPORT_DIR%" mkdir "%REPORT_DIR%"
@@ -44,7 +47,7 @@ set "ARG=%~1"
 set "NEXT_ARG=%~2"
 set "ARG_NEEDS_VALUE="
 set "ARG_IS_COMMA_LIST="
-for %%K in (-ApplyBuildCs -Asset -AssetPaths -AssetPolicy -AssetRootPaths -BuildCsPolicy -Config -ConfigRules -DataSchema -DataSource -Format -Log -Markdown -Plan -Policy -RollbackPlan -RootPaths -Schema -Source -Spec -SpecFile) do (
+for %%K in (-ApplyBuildCs -Asset -AssetPaths -AssetPolicy -AssetRootPaths -BuildCsPolicy -Config -ConfigRules -DataSchema -DataSource -ExecCmds -Format -Log -Markdown -Plan -Policy -RollbackPlan -RootPaths -Schema -Source -Spec -SpecFile) do (
   if /I "%ARG%"=="%%K" set "ARG_NEEDS_VALUE=1"
 )
 for %%K in (-AssetPaths -AssetRootPaths -RootPaths) do (
@@ -91,6 +94,8 @@ if not "%COMBINED_ARG:&=%"=="%COMBINED_ARG%" goto unsafe_arg
 if not "%COMBINED_ARG:|=%"=="%COMBINED_ARG%" goto unsafe_arg
 if not "%COMBINED_ARG:<=%"=="%COMBINED_ARG%" goto unsafe_arg
 if not "%COMBINED_ARG:>=%"=="%COMBINED_ARG%" goto unsafe_arg
+call :reject_unreal_python_arg "%COMBINED_ARG%"
+if errorlevel 1 exit /b %ERRORLEVEL%
 set "EXTRA_ARGS=%EXTRA_ARGS% "%COMBINED_ARG%""
 goto collect_args
 
@@ -101,12 +106,16 @@ if defined UECF_DEBUG_ARGS echo [run_commandlet] extra args:%EXTRA_ARGS% 1>&2
   -run="%COMMANDLET%" ^
   -Output="%OUTPUT_JSON%" ^
   %EXTRA_ARGS% ^
-  -unattended -nop4 -nosplash -log -stdout -FullStdOutLogOutput
+  -unattended -nop4 -nosplash -nullrhi -log -stdout -FullStdOutLogOutput
 
 set "UE_EXIT=%ERRORLEVEL%"
 
 if not exist "%OUTPUT_JSON%" (
   echo [run_commandlet] Result JSON이 없습니다: %OUTPUT_JSON% 1>&2
+  echo [run_commandlet] Unreal이 크래시했으면 아래 로그를 확인하세요. 1>&2
+  echo [run_commandlet]   Project log: %PROJECT_DIR%\Saved\Logs 1>&2
+  echo [run_commandlet]   Crash report: %LOCALAPPDATA%\CrashReportClient\Saved\Crashes 1>&2
+  echo [run_commandlet]   Project crash report: %PROJECT_DIR%\Saved\Crashes 1>&2
   exit /b 5
 )
 
@@ -119,4 +128,19 @@ exit /b 2
 
 :unsafe_commandlet
 echo [run_commandlet] Unsafe cmd metacharacter in commandlet name. 1>&2
+exit /b 2
+
+:reject_unreal_python_arg
+set "UECF_ARG=%~1"
+"%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -Command "$v=$env:UECF_ARG; $n=$v.Replace([char]34,' '); $n=$n -replace '[;,\s'']+',' '; if ($v -match '(?i)(executepythonscript|executepythoncommand|pythonscriptplugin|import\s+unreal|unreal\.|\.py)' -or $n -match '(?i)(^| )py($| )') { exit 2 }; exit 0" >nul
+if errorlevel 2 goto unsafe_python_arg
+if errorlevel 1 goto python_guard_failed
+exit /b 0
+
+:unsafe_python_arg
+echo [run_commandlet] Unreal Python access is not allowed; use UECommandForge commandlets/wrappers instead. 1>&2
+exit /b 2
+
+:python_guard_failed
+echo [run_commandlet] Failed to inspect commandlet argument for Unreal Python access. 1>&2
 exit /b 2

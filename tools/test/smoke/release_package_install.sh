@@ -28,6 +28,17 @@ esac
 rm -rf "${WORK_DIR}"
 mkdir -p "${PROJECT_DIR}" "${CODEX_HOME}"
 cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" "${PROJECT_DIR}/UECommandForgeSample.uproject"
+cat > "${CODEX_HOME}/AGENTS.md" <<'AGENTS'
+# 개인 Codex 지침
+
+이 내용은 설치 후에도 보존되어야 한다.
+
+<!-- BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS -->
+## 오래된 UECommandForge 지침
+
+- OLD_UNREAL_PYTHON_RULE_SHOULD_BE_REPLACED
+<!-- END UECOMMANDFORGE CODEX INSTRUCTIONS -->
+AGENTS
 
 PLUGIN_OUT="${WORK_DIR}/PluginPackage"
 TOOLS_OUT="${WORK_DIR}/ToolsPackage"
@@ -59,11 +70,24 @@ test -f "${PROJECT_DIR}/Plugins/UECommandForge/UECommandForge.uplugin"
 test -f "${PROJECT_DIR}/Plugins/UECommandForge/${RUNTIME_BINARY}"
 test -f "${CODEX_HOME}/UECommandForge/tools/ue/run_commandlet.sh"
 test -f "${CODEX_HOME}/UECommandForge/specs/policies/assets.policy.json"
+test -f "${CODEX_HOME}/UECommandForge/specs/codex/unreal-automation-agents.md"
 test -x "${CODEX_HOME}/UECommandForge/tools/ue/run_commandlet.sh"
 test -f "${CODEX_HOME}/UECommandForge/uecommandforge.env"
 test -f "${CODEX_HOME}/UECommandForge/uecommandforge-installed.json"
 test -f "${PROJECT_DIR}/UECommandForge/uecommandforge-project.json"
 test -f "${PROJECT_DIR}/Saved/UECommandForge/install.log"
+test -f "${CODEX_HOME}/AGENTS.md"
+grep -q '이 내용은 설치 후에도 보존되어야 한다.' "${CODEX_HOME}/AGENTS.md"
+grep -q 'BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS' "${CODEX_HOME}/AGENTS.md"
+grep -q 'Codex가 하지 말아야 할 일' "${CODEX_HOME}/AGENTS.md"
+grep -q '사용자가 요청하더라도 Unreal Python으로 Unreal Editor/프로젝트/에셋에 접근하지 않는다.' "${CODEX_HOME}/AGENTS.md"
+grep -q 'ExecCmds.*비 Python 자동화 명령' "${CODEX_HOME}/AGENTS.md"
+grep -q '파일을 만들지 않더라도 Python 코드를 Unreal에 전달하거나 실행하지 않는다.' "${CODEX_HOME}/AGENTS.md"
+grep -q '코드 조각도 제공하지 말고' "${CODEX_HOME}/AGENTS.md"
+grep -q '실패한 commandlet을 우회하기 위해 임시 스크립트' "${CODEX_HOME}/AGENTS.md"
+grep -q '기존 commandlet/wrapper 기반 대안' "${CODEX_HOME}/AGENTS.md"
+test "$(grep -c 'BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS' "${CODEX_HOME}/AGENTS.md")" -eq 1
+! grep -q 'OLD_UNREAL_PYTHON_RULE_SHOULD_BE_REPLACED' "${CODEX_HOME}/AGENTS.md"
 
 jq -e \
   --arg project_file "${PROJECT_FILE}" \
@@ -102,6 +126,9 @@ test ! -e "${PROJECT_DIR}/UECommandForge/uecommandforge-project.json"
   --tools-package "${TOOLS_ZIP}" \
   --codex-home "${CODEX_HOME}" \
   --run-commandlet-check false
+
+test "$(grep -c 'BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS' "${CODEX_HOME}/AGENTS.md")" -eq 1
+grep -q '이 내용은 설치 후에도 보존되어야 한다.' "${CODEX_HOME}/AGENTS.md"
 
 "${REPO_ROOT}/tools/release/uninstall.sh" \
   --project "${PROJECT_FILE}" \
@@ -164,6 +191,96 @@ if "${REPO_ROOT}/tools/release/install_local.sh" \
   echo "unmanaged existing Codex metadata should fail" >&2
   exit 1
 fi
+
+READONLY_AGENTS_PROJECT="${WORK_DIR}/ReadonlyAgentsProject"
+READONLY_AGENTS_CODEX="${WORK_DIR}/ReadonlyAgentsCodex"
+mkdir -p "${READONLY_AGENTS_PROJECT}" "${READONLY_AGENTS_CODEX}"
+cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" \
+  "${READONLY_AGENTS_PROJECT}/UECommandForgeSample.uproject"
+printf '# read-only agents\n' > "${READONLY_AGENTS_CODEX}/AGENTS.md"
+chmod 400 "${READONLY_AGENTS_CODEX}/AGENTS.md"
+set +e
+"${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${READONLY_AGENTS_PROJECT}/UECommandForgeSample.uproject" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${TOOLS_ZIP}" \
+  --codex-home "${READONLY_AGENTS_CODEX}" \
+  --run-commandlet-check false >/dev/null 2>&1
+READONLY_STATUS=$?
+set -e
+chmod 600 "${READONLY_AGENTS_CODEX}/AGENTS.md"
+if [ "${READONLY_STATUS}" -eq 0 ]; then
+  echo "read-only Codex AGENTS.md should fail before install targets are created" >&2
+  exit 1
+fi
+test ! -e "${READONLY_AGENTS_PROJECT}/Plugins/UECommandForge"
+test ! -e "${READONLY_AGENTS_PROJECT}/Saved/UECommandForge"
+test ! -e "${READONLY_AGENTS_PROJECT}/UECommandForge"
+test ! -e "${READONLY_AGENTS_CODEX}/UECommandForge"
+test ! -e "${READONLY_AGENTS_CODEX}/UECommandForge/tools"
+test ! -e "${READONLY_AGENTS_CODEX}/UECommandForge/uecommandforge-installed.json"
+
+BROKEN_AGENTS_PROJECT="${WORK_DIR}/BrokenAgentsProject"
+BROKEN_AGENTS_CODEX="${WORK_DIR}/BrokenAgentsCodex"
+mkdir -p "${BROKEN_AGENTS_PROJECT}" "${BROKEN_AGENTS_CODEX}"
+cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" \
+  "${BROKEN_AGENTS_PROJECT}/UECommandForgeSample.uproject"
+cat > "${BROKEN_AGENTS_CODEX}/AGENTS.md" <<'AGENTS'
+# 개인 Codex 지침
+
+이 내용은 깨진 마커 검사 후에도 보존되어야 한다.
+
+<!-- BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS -->
+## 닫히지 않은 UECommandForge 지침
+
+- OLD_UNCLOSED_RULE_SHOULD_REMAIN_ON_FAILURE
+AGENTS
+set +e
+"${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${BROKEN_AGENTS_PROJECT}/UECommandForgeSample.uproject" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${TOOLS_ZIP}" \
+  --codex-home "${BROKEN_AGENTS_CODEX}" \
+  --run-commandlet-check false >/dev/null 2>&1
+BROKEN_AGENTS_STATUS=$?
+set -e
+if [ "${BROKEN_AGENTS_STATUS}" -eq 0 ]; then
+  echo "broken Codex AGENTS.md managed markers should fail before install targets are created" >&2
+  exit 1
+fi
+grep -q '이 내용은 깨진 마커 검사 후에도 보존되어야 한다.' "${BROKEN_AGENTS_CODEX}/AGENTS.md"
+grep -q 'OLD_UNCLOSED_RULE_SHOULD_REMAIN_ON_FAILURE' "${BROKEN_AGENTS_CODEX}/AGENTS.md"
+test ! -e "${BROKEN_AGENTS_PROJECT}/Plugins/UECommandForge"
+test ! -e "${BROKEN_AGENTS_PROJECT}/Saved/UECommandForge"
+test ! -e "${BROKEN_AGENTS_PROJECT}/UECommandForge"
+test ! -e "${BROKEN_AGENTS_CODEX}/UECommandForge"
+
+NOWRITE_CODEX_PROJECT="${WORK_DIR}/NoWriteCodexProject"
+NOWRITE_CODEX_HOME="${WORK_DIR}/NoWriteCodexHome"
+mkdir -p "${NOWRITE_CODEX_PROJECT}" "${NOWRITE_CODEX_HOME}"
+cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" \
+  "${NOWRITE_CODEX_PROJECT}/UECommandForgeSample.uproject"
+printf '# writable agents in non-writable dir\n' > "${NOWRITE_CODEX_HOME}/AGENTS.md"
+chmod 600 "${NOWRITE_CODEX_HOME}/AGENTS.md"
+chmod 500 "${NOWRITE_CODEX_HOME}"
+set +e
+"${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${NOWRITE_CODEX_PROJECT}/UECommandForgeSample.uproject" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${TOOLS_ZIP}" \
+  --codex-home "${NOWRITE_CODEX_HOME}" \
+  --run-commandlet-check false >/dev/null 2>&1
+NOWRITE_STATUS=$?
+set -e
+chmod 700 "${NOWRITE_CODEX_HOME}"
+if [ "${NOWRITE_STATUS}" -eq 0 ]; then
+  echo "non-writable Codex home should fail before install targets are created" >&2
+  exit 1
+fi
+test ! -e "${NOWRITE_CODEX_PROJECT}/Plugins/UECommandForge"
+test ! -e "${NOWRITE_CODEX_PROJECT}/Saved/UECommandForge"
+test ! -e "${NOWRITE_CODEX_PROJECT}/UECommandForge"
+test ! -e "${NOWRITE_CODEX_HOME}/UECommandForge"
 
 MISMATCH_TOOLS_OUT="${WORK_DIR}/MismatchedToolsPackage"
 mkdir -p "${MISMATCH_TOOLS_OUT}"

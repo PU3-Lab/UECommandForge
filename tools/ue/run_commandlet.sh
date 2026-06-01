@@ -15,6 +15,63 @@ fi
 COMMANDLET="$1"
 shift
 
+contains_exec_python() {
+  local value="$1"
+  local normalized
+  case "${value}" in
+    *"executepython"*|*"pythonscript"*|*"import unreal"*|*"unreal."*) return 0 ;;
+  esac
+  normalized="$(printf '%s' "${value}" | tr '\011\012\015;,' '     ')"
+  normalized="${normalized//\"/ }"
+  normalized="${normalized//\'/ }"
+  case " ${normalized} " in
+    *" py "*) return 0 ;;
+  esac
+  return 1
+}
+
+reject_unreal_python_args() {
+  local previous_was_exec_cmds=false
+  local raw lower exec_value
+
+  raw="${COMMANDLET}"
+  lower="$(printf '%s' "${raw}" | tr '[:upper:]' '[:lower:]')"
+  if contains_exec_python "${lower}"; then
+    echo "[run_commandlet] Unreal Python access is not allowed; use UECommandForge commandlets/wrappers instead." >&2
+    exit 2
+  fi
+
+  for raw in "$@"; do
+    lower="$(printf '%s' "${raw}" | tr '[:upper:]' '[:lower:]')"
+
+    case "${lower}" in
+      *"-executepythonscript"*|*"-executepythoncommand"*|*"pythonscriptplugin"*|*"import unreal"*|*"unreal."*|*".py"*)
+        echo "[run_commandlet] Unreal Python access is not allowed; use UECommandForge commandlets/wrappers instead." >&2
+        exit 2
+        ;;
+    esac
+
+    if [ "${previous_was_exec_cmds}" = true ] && contains_exec_python "${lower}"; then
+      echo "[run_commandlet] Unreal Python access is not allowed; use UECommandForge commandlets/wrappers instead." >&2
+      exit 2
+    fi
+
+    previous_was_exec_cmds=false
+    case "${lower}" in
+      -execcmds)
+        previous_was_exec_cmds=true
+        ;;
+      -execcmds=*)
+        exec_value="${lower#-execcmds=}"
+        if contains_exec_python "${exec_value}"; then
+          echo "[run_commandlet] Unreal Python access is not allowed; use UECommandForge commandlets/wrappers instead." >&2
+          exit 2
+        fi
+        ;;
+    esac
+  done
+}
+
 if [ ! -f "${PROJECT_FILE}" ]; then
   echo "[run_commandlet] Project file을 찾을 수 없습니다: ${PROJECT_FILE}" >&2
   exit 2
@@ -22,7 +79,6 @@ fi
 
 PROJECT_DIR="$(cd "$(dirname "${PROJECT_FILE}")" && pwd)"
 REPORT_DIR="${UECF_REPORT_DIR:-${PROJECT_DIR}/Saved/CodexReports}"
-mkdir -p "${REPORT_DIR}"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 OUTPUT_JSON="${REPORT_DIR}/${COMMANDLET}_${STAMP}.json"
 TIMEOUT_SEC="${UE_COMMANDLET_TIMEOUT:-300}"
@@ -33,6 +89,9 @@ case "${TIMEOUT_SEC}" in
     exit 2
     ;;
 esac
+
+reject_unreal_python_args "$@"
+mkdir -p "${REPORT_DIR}"
 
 run_unreal_commandlet() {
   "${UNREAL_EDITOR_CMD}" "${PROJECT_FILE}" \

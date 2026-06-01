@@ -23,6 +23,11 @@
 - `~/.claude/` 등 전역 경로에 프로젝트 관련 문서를 저장하지 않는다.
 - 새 문서 유형이 필요하면 `docs/` 하위에 적절한 서브디렉토리를 만든다.
 
+## Unreal 자동화 작업 규칙
+
+- Unreal Editor/에셋/Blueprint 자동화 작업을 수행하기 전에 `specs/codex/unreal-automation-agents.md`를 읽고 그대로 따른다.
+- 설치 스크립트는 위 파일의 내용을 `~/.codex/AGENTS.md`의 UECommandForge managed block에 삽입한다. 지침 본문을 shell heredoc에 중복 작성하지 않는다.
+
 ## 코드 리뷰 규칙
 
 - **Codex CLI에서 서브에이전트 도구가 제공되면 `reviewer` 서브에이전트로 코드 리뷰를 수행한다.**
