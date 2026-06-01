@@ -34,7 +34,7 @@ require_windows_bootstrap_contains() {
     for assignment in "$@"; do
         command="${command} \$env:${assignment%%=*} = \"${assignment#*=}\";"
     done
-    command="${command} cmd /c \"tools\\windows\\bootstrap_dependencies.bat jq\"; exit \$LASTEXITCODE"
+    command="${command} cmd /c \"call tools\\windows\\bootstrap_dependencies.bat jq\"; exit \$LASTEXITCODE"
 
     set +e
     (
@@ -153,6 +153,20 @@ require_contains tools/ue/ue_env.bat 'UECF_PROJECT_FILE'
 require_contains tools/ue/run_commandlet.bat 'Saved\\CodexReports'
 require_contains tools/ue/run_commandlet.bat 'UECF_REPORT_DIR'
 require_contains tools/ue/run_commandlet.bat '%%~dpI'
+require_contains tools/ue/run_commandlet.bat '-AssetPaths'
+require_contains tools/ue/run_commandlet.bat '-AssetRootPaths'
+require_contains tools/ue/run_commandlet.bat '-Markdown'
+require_contains tools/ue/run_commandlet.bat '-Format'
+require_contains tools/ue/run_commandlet.bat '-ApplyBuildCs'
+require_contains tools/ue/run_commandlet.bat 'DisableDelayedExpansion'
+require_contains tools/ue/run_commandlet.bat 'Unsafe cmd metacharacter'
+require_contains tools/ue/run_commandlet.bat 'Unsafe cmd metacharacter in commandlet name'
+require_contains tools/ue/run_commandlet.bat 'COMBINED_ARG:&='
+require_not_contains tools/ue/validate_asset_rules.bat '!EXTRA_ARGS!'
+require_not_contains tools/ue/create_project_folders.bat '!EXTRA_ARGS!'
+require_contains tools/ue/hello.bat 'DisableDelayedExpansion'
+require_contains tools/ue/snapshot_assets.bat 'DisableDelayedExpansion'
+require_contains tools/ue/compile_blueprints.bat 'DisableDelayedExpansion'
 require_contains tools/ue/snapshot_assets.bat 'AssetSnapshot'
 require_contains tools/ue/validate_asset_rules.bat 'ValidateAssetRules'
 require_contains tools/ue/plan_asset_changes.bat 'PlanAssetChanges'

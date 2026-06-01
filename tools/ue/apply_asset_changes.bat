@@ -1,5 +1,5 @@
 @echo off
-setlocal EnableExtensions EnableDelayedExpansion
+setlocal EnableExtensions DisableDelayedExpansion
 
 if "%~1"=="" (
   echo Usage: %~nx0 ^<plan.json^> [extra args...] 1>&2
@@ -13,7 +13,7 @@ shift /1
 set "EXTRA_ARGS="
 :collect_args
 if "%~1"=="" goto run
-set EXTRA_ARGS=!EXTRA_ARGS! "%~1"
+set EXTRA_ARGS=%EXTRA_ARGS% "%~1"
 shift /1
 goto collect_args
 

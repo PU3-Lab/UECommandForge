@@ -1,3 +1,141 @@
+# 세션 요약 — 2026-06-01
+
+## 수행 내용
+
+### Windows 설치 실기 검증 및 후속 수정
+
+`install-uecommandforge.bat` 중심으로 Windows 실제 환경 설치를 확인했다. Unreal Engine 5.7, Visual Studio BuildTools, Windows SDK 환경에서 plugin packaging과 프로젝트 설치를 진행했고, 설치 후 사용자 경로의 `.bat` wrapper로 commandlet 실행까지 검증했다.
+
+| 항목 | 결과 |
+|---|---|
+| Windows installer 실행 | `install-uecommandforge.bat --project C:\Workspaces\projects\factory-space\frontend` 실행 성공 |
+| 프로젝트 경로 자동 해석 | 디렉터리 인자를 `Wanted_Factory.uproject`로 해석 |
+| plugin package build | UE 5.7 Win64 package build 성공 |
+| 프로젝트 plugin 설치 | `C:\Workspaces\projects\factory-space\frontend\Plugins\UECommandForge` 설치 확인 |
+| Codex tools 설치 | `C:\Users\Sam\.codex\UECommandForge` 설치 확인 |
+| 기본 commandlet | `hello.bat` 실행 및 `.validation.engine_boot == "ok"` 확인 |
+| read-only commandlet | `snapshot_assets.bat -RootPaths=/Game` 실행 성공 |
+| 검증 commandlet | `validate_asset_rules.bat` 인자 전달은 성공, 대상 프로젝트 정책 위반 18건 확인 |
+| 생성 계열 dry-run | `create_project_folders.bat ... -DryRun` 실행 성공 |
+| 공백 포함 경로 | `-Spec="...Windows Bat Space\project folders.json"` 형태 실행 성공 |
+
+### Windows `.bat` wrapper 인자 전달 수정
+
+설치된 `validate_asset_rules.bat`가 `-Policy` 값을 commandlet에 전달하지 못해 `MISSING_ARG`를 반환하는 문제를 추적했다. 원인은 wrapper에서 `-Policy="%PATH%"` 형태가 `cmd` 인자 처리 과정에서 `-Policy`와 값으로 분리되고, `run_commandlet.bat`가 이를 UE commandlet이 기대하는 `-Policy=...` 형태로 복원하지 못한 것이었다.
+
+수정 내용:
+
+- `tools\ue\run_commandlet.bat`에서 알려진 값 옵션을 `-Key=Value` 형태로 복원
+- 이미 `-Key=Value`로 들어온 인자는 따옴표를 유지한 채 전달
+- `-Markdown`, `-AssetPaths`, `-AssetRootPaths`, `-Format`, `-ApplyBuildCs` 등 실제 commandlet 값 옵션 allowlist 보강
+- Windows batch가 comma를 인자 구분자로 취급하는 경우를 고려해 `-AssetPaths`, `-AssetRootPaths`, `-RootPaths`의 분리된 조각을 comma list로 복원
+- comma list tail 재결합은 `/Game`, `/Plugin`, `/Engine` 경로 조각으로 제한해 독립 positional argument 흡수를 방지
+- 인자 수집 구간에서 delayed expansion을 끄고 `!` 포함 경로 손상을 방지
+- `&`, `|`, `<`, `>` 포함 인자는 batch 재조립 구조에서 안전하게 전달할 수 없으므로 명시적으로 거부
+- `CommandletName`의 `&`, `|`, `<`, `>` 포함 값도 명시적으로 거부
+- 사용자-facing UE wrapper들의 delayed expansion 기반 인자 수집/forwarding을 줄여 wrapper 내부에서 `!` 포함 인자가 손상되지 않도록 보강
+- commandlet 전용 추가 인자를 UE 공통 플래그보다 앞에 배치
+- 디버깅용 `UECF_DEBUG_ARGS` 출력 추가
+- 수정본을 설치 경로 `C:\Users\Sam\.codex\UECommandForge\tools\ue\run_commandlet.bat`에도 반영
+
+### Superpowers plugin 상태 확인
+
+사용자가 Superpowers plugin을 재설치한 뒤 활성화 여부를 확인했다.
+
+| 항목 | 결과 |
+|---|---|
+| plugin cache | `C:\Users\Sam\.codex\plugins\cache\openai-curated\superpowers\fef63ecf` 존재 |
+| plugin manifest | `.codex-plugin\plugin.json` 존재, `skills: ./skills/` 확인 |
+| Codex config | `[plugins."superpowers@openai-curated"] enabled = true` 확인 |
+| 현재 세션 tool 검색 | `tool_search superpowers` 결과 0개 |
+| 현재 세션 활성 skill 목록 | `superpowers:*` 노출 |
+| 서브에이전트 도구 | 부모 세션에서 `multi_agent_v1.spawn_agent`/`wait_agent` 사용 가능, 전용 `reviewer` role은 미노출 |
+
+판정:
+
+- Superpowers는 디스크에 설치되어 있고 config에서도 enabled 상태다.
+- deferred tool 검색에는 노출되지 않지만, 현재 Codex 세션의 skill 목록에는 `superpowers:*`가 로드되어 있다.
+- `config.toml`에 `[marketplaces.openai-curated]` 정의는 보이지 않는다.
+- 전용 reviewer role은 없으므로, 코드 리뷰 단계에서는 `default` 서브에이전트에 reviewer 역할을 명시해 진행한다.
+
+## 변경 파일
+
+| 파일 | 내용 |
+|---|---|
+| `tools/ue/run_commandlet.bat` | Windows commandlet wrapper의 `-Key Value`, `-Key=Value`, 공백 포함 값 전달 보강 |
+| `tools/ue/*.bat` 일부 | 사용자-facing wrapper의 delayed expansion 기반 extra arg 수집 제거 |
+| `tools/test/smoke/windows_command_wrappers.sh` | PowerShell 내부 batch exit code 전파를 위해 bootstrap 음성 테스트에 `call` 사용 |
+| `docs/superpowers/plans/2026-06-01-windows-install-followup-validation.md` | Windows 설치 후속 검증 기록 문서 추가 |
+| `SESSION_SUMMARY.md` | 이번 세션 요약 추가 |
+
+## 코드 리뷰
+
+저장소 지침에 따라 코드 변경 후 서브에이전트 리뷰를 수행했다. 현재 세션에는 전용 `reviewer` role이 없어 `default` 서브에이전트에 reviewer/security reviewer 역할을 명시해 진행했다.
+
+| 지적 | 처리 |
+|---|---|
+| `!ARG!=!NEXT_ARG!` 형태가 공백 포함 경로를 깨뜨릴 수 있음 | 전체 `"-Key=Value"` quoting으로 수정하고 공백 포함 경로 테스트 통과 |
+| 모든 `-Flag value`를 결합하면 boolean flag와 positional argument를 오해할 수 있음 | 알려진 값 옵션 목록에 대해서만 결합하도록 수정 |
+| delayed expansion으로 `!` 포함 값이 손상될 수 있음 | 인자 수집 구간에서 `DisableDelayedExpansion` 적용 |
+| 값 옵션 allowlist 누락으로 일부 `-Key value` 인자가 깨질 수 있음 | 실제 commandlet 값 옵션 allowlist 보강 |
+| comma list 값이 batch 인자 분리로 깨질 수 있음 | `-AssetPaths`, `-AssetRootPaths`, `-RootPaths` 조각 재결합 |
+| comma list 재결합이 독립 positional arg를 흡수할 수 있음 | tail 재결합 대상을 `/Game`, `/Plugin`, `/Engine` 경로 조각으로 제한 |
+| `&`, `|`, `<`, `>` 포함 값이 batch 재조립 중 명령 주입으로 이어질 수 있음 | 해당 cmd metacharacter 포함 인자 명시 거부 |
+| `CommandletName` 메타문자 값이 직접 호출 경로에서 명령 주입으로 이어질 수 있음 | commandlet 이름에도 unsafe cmd metacharacter 거부 적용 |
+| 사용자-facing wrapper가 `run_commandlet.bat` 전에 `!` 포함 값을 손상시킬 수 있음 | `!EXTRA_ARGS!` 수집 패턴 제거 및 `%*` forwarding wrapper에 `DisableDelayedExpansion` 적용 |
+| 문서의 PASS 기준이 policy fail과 충돌함 | PASS 기준과 섹션별 기대 결과 정리 |
+
+## 검증 결과
+
+| 검증 | 결과 |
+|---|---|
+| 설치 산출물 존재 확인 | PASS |
+| 설치된 `.bat` wrapper 목록 비교 | PASS |
+| `cmd /c "C:\Users\Sam\.codex\UECommandForge\tools\ue\hello.bat"` | PASS |
+| `cmd /c "C:\Users\Sam\.codex\UECommandForge\tools\ue\snapshot_assets.bat -RootPaths=/Game"` | PASS |
+| `cmd /c "C:\Users\Sam\.codex\UECommandForge\tools\ue\validate_asset_rules.bat ... -RootPaths=/Game"` | COMMANDLET PASS / POLICY FAIL |
+| `cmd /c "C:\Users\Sam\.codex\UECommandForge\tools\ue\create_project_folders.bat ... -DryRun"` | PASS |
+| 공백 포함 `-Spec` 경로 dry-run | PASS |
+| `git diff --check` | PASS |
+| `tools/test/smoke/windows_command_wrappers.sh` | PASS |
+| `UECF_DEBUG_ARGS` 기반 인자 재조립 확인 | PASS, `-Markdown`, `-AssetPaths`, `-RootPaths`, `-ApplyBuildCs`, `!` 포함 `-Spec` 확인 |
+| unsafe cmd metacharacter 음성 테스트 | PASS, `&` 포함 값은 exit `2`로 거부 |
+| commandlet name metacharacter 음성 테스트 | PASS, `Hello&echo ...` 형태는 exit `2`로 거부 |
+| comma list tail 회귀 테스트 | PASS, `LooseArg`는 `-RootPaths`에 흡수되지 않음 |
+| 설치본 `hello.bat` 재확인 | PASS, `Hello_257384142.json`, `.ok == true`, `.validation.engine_boot == "ok"` |
+| 설치본 `validate_asset_rules.bat` 재확인 | COMMANDLET PASS / POLICY FAIL, `ValidateAssetRules_2580322502.json`, `.errors == []`, `.validation.issue_count == "18"` |
+| 설치본 `create_project_folders.bat ... -DryRun` 재확인 | PASS, `CreateProjectFolders_2580322502.json`, `.dry_run == true`, `.created_folder_count == "0"` |
+
+정책 위반 요약:
+
+- `MISSING_DEPENDENCY`: 16건
+- `REDIRECTOR_FOUND`: 1건
+- `ASSET_PREFIX_MISMATCH`: 1건
+
+## 현재 상태
+
+- **브랜치:** `main`
+- **워킹 트리:** 변경 있음
+- **커밋/푸시:** 이번 후속 수정은 아직 커밋하지 않음
+- **이전 Windows installer packaging 수정 커밋:** `e46e301 fix: support Windows installer packaging`
+
+현재 변경:
+
+```text
+ M SESSION_SUMMARY.md
+ M tools/test/smoke/windows_command_wrappers.sh
+ M tools/ue/*.bat
+?? docs/superpowers/plans/2026-06-01-windows-install-followup-validation.md
+```
+
+## 다음 작업
+
+1. Unreal Editor GUI에서 `UECommandForge` plugin 로드 수동 확인
+2. 대상 프로젝트의 asset policy 위반 18건을 별도 이슈로 처리
+3. 이번 변경을 커밋하고 푸시
+
+---
+
 # 세션 요약 — 2026-05-28
 
 ## 수행 내용

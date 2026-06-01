@@ -11,6 +11,10 @@ if "%~1"=="" (
 )
 
 set "COMMANDLET=%~1"
+if not "%COMMANDLET:&=%"=="%COMMANDLET%" goto unsafe_commandlet
+if not "%COMMANDLET:|=%"=="%COMMANDLET%" goto unsafe_commandlet
+if not "%COMMANDLET:<=%"=="%COMMANDLET%" goto unsafe_commandlet
+if not "%COMMANDLET:>=%"=="%COMMANDLET%" goto unsafe_commandlet
 shift /1
 
 if not exist "%PROJECT_FILE%" (
@@ -32,20 +36,72 @@ if not defined STAMP set "STAMP=%RANDOM%%RANDOM%"
 
 set "OUTPUT_JSON=%REPORT_DIR%\%COMMANDLET%_%STAMP%.json"
 
+setlocal DisableDelayedExpansion
 set "EXTRA_ARGS="
 :collect_args
 if "%~1"=="" goto run_commandlet
-set EXTRA_ARGS=!EXTRA_ARGS! "%~1"
+set "ARG=%~1"
+set "NEXT_ARG=%~2"
+set "ARG_NEEDS_VALUE="
+set "ARG_IS_COMMA_LIST="
+for %%K in (-ApplyBuildCs -Asset -AssetPaths -AssetPolicy -AssetRootPaths -BuildCsPolicy -Config -ConfigRules -DataSchema -DataSource -Format -Log -Markdown -Plan -Policy -RollbackPlan -RootPaths -Schema -Source -Spec -SpecFile) do (
+  if /I "%ARG%"=="%%K" set "ARG_NEEDS_VALUE=1"
+)
+for %%K in (-AssetPaths -AssetRootPaths -RootPaths) do (
+  if /I "%ARG%"=="%%K" set "ARG_IS_COMMA_LIST=1"
+)
+if not "%NEXT_ARG%"=="" (
+  if defined ARG_NEEDS_VALUE (
+    if not "%NEXT_ARG:~0,1%"=="-" (
+      shift /1
+      shift /1
+      set "COMBINED_ARG=%ARG%=%NEXT_ARG%"
+      if defined ARG_IS_COMMA_LIST goto collect_comma_tail
+      goto append_combined_arg
+    )
+  )
+)
+set "ARG_KEY="
+set "ARG_VALUE="
+for /f "tokens=1* delims==" %%A in ("%ARG%") do (
+  set "ARG_KEY=%%A"
+  set "ARG_VALUE=%%B"
+)
+set "COMBINED_ARG=%ARG%"
+if defined ARG_VALUE (
+  for %%K in (-AssetPaths -AssetRootPaths -RootPaths) do (
+    if /I "%ARG_KEY%"=="%%K" set "ARG_IS_COMMA_LIST=1"
+  )
+)
 shift /1
+if defined ARG_IS_COMMA_LIST goto collect_comma_tail
+goto append_combined_arg
+
+:collect_comma_tail
+if "%~1"=="" goto append_combined_arg
+set "NEXT_ARG=%~1"
+if "%NEXT_ARG:~0,1%"=="-" goto append_combined_arg
+if not "%NEXT_ARG:~0,5%"=="/Game" if not "%NEXT_ARG:~0,7%"=="/Plugin" if not "%NEXT_ARG:~0,7%"=="/Engine" goto append_combined_arg
+set "COMBINED_ARG=%COMBINED_ARG%,%NEXT_ARG%"
+shift /1
+goto collect_comma_tail
+
+:append_combined_arg
+if not "%COMBINED_ARG:&=%"=="%COMBINED_ARG%" goto unsafe_arg
+if not "%COMBINED_ARG:|=%"=="%COMBINED_ARG%" goto unsafe_arg
+if not "%COMBINED_ARG:<=%"=="%COMBINED_ARG%" goto unsafe_arg
+if not "%COMBINED_ARG:>=%"=="%COMBINED_ARG%" goto unsafe_arg
+set "EXTRA_ARGS=%EXTRA_ARGS% "%COMBINED_ARG%""
 goto collect_args
 
 :run_commandlet
 echo [run_commandlet] %COMMANDLET% 시작 1>&2
+if defined UECF_DEBUG_ARGS echo [run_commandlet] extra args:%EXTRA_ARGS% 1>&2
 "%UNREAL_EDITOR_CMD%" "%PROJECT_FILE%" ^
   -run="%COMMANDLET%" ^
   -Output="%OUTPUT_JSON%" ^
-  -unattended -nop4 -nosplash -log -stdout -FullStdOutLogOutput ^
-  %EXTRA_ARGS%
+  %EXTRA_ARGS% ^
+  -unattended -nop4 -nosplash -log -stdout -FullStdOutLogOutput
 
 set "UE_EXIT=%ERRORLEVEL%"
 
@@ -56,3 +112,11 @@ if not exist "%OUTPUT_JSON%" (
 
 echo %OUTPUT_JSON%
 exit /b %UE_EXIT%
+
+:unsafe_arg
+echo [run_commandlet] Unsafe cmd metacharacter in argument. 1>&2
+exit /b 2
+
+:unsafe_commandlet
+echo [run_commandlet] Unsafe cmd metacharacter in commandlet name. 1>&2
+exit /b 2
