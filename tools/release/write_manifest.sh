@@ -84,6 +84,7 @@ files_json() {
 plugin_files_path="${TMP_DIR}/plugin_files.json"
 tool_files_path="${TMP_DIR}/tool_files.json"
 spec_files_path="${TMP_DIR}/spec_files.json"
+skill_files_path="${TMP_DIR}/skill_files.json"
 checksums_path="${TMP_DIR}/checksums.json"
 install_commands_path="${TMP_DIR}/install_commands.json"
 
@@ -92,6 +93,7 @@ install_commands_path="${TMP_DIR}/install_commands.json"
   find . -type f \
     ! -path './tools/*' \
     ! -path './specs/*' \
+    ! -path './skills/*' \
     ! -path './uecommandforge-manifest.json' \
     ! -path './install.md' \
     ! -path './release-notes.md' \
@@ -102,6 +104,7 @@ install_commands_path="${TMP_DIR}/install_commands.json"
 ) > "${plugin_files_path}"
 files_json "${PACKAGE_ROOT}" tools > "${tool_files_path}"
 files_json "${PACKAGE_ROOT}" specs > "${spec_files_path}"
+files_json "${PACKAGE_ROOT}" skills > "${skill_files_path}"
 printf '%s\n' "${INSTALL_COMMANDS}" > "${install_commands_path}"
 (
   cd "${PACKAGE_ROOT}"
@@ -130,6 +133,7 @@ if ! jq -n \
   --slurpfile plugin_files "${plugin_files_path}" \
   --slurpfile tool_files "${tool_files_path}" \
   --slurpfile spec_files "${spec_files_path}" \
+  --slurpfile skill_files "${skill_files_path}" \
   --slurpfile checksums "${checksums_path}" \
   --slurpfile install_commands "${install_commands_path}" \
   '{
@@ -140,6 +144,7 @@ if ! jq -n \
     plugin_files: $plugin_files[0],
     tool_files: $tool_files[0],
     spec_files: $spec_files[0],
+    skill_files: $skill_files[0],
     checksums: $checksums[0],
     install_commands: $install_commands[0],
     post_install_checks: (

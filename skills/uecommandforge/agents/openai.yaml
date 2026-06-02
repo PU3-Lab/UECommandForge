@@ -1,0 +1,7 @@
+interface:
+  display_name: "UECommandForge"
+  short_description: "Run UECommandForge wrappers safely"
+  default_prompt: "Use $uecommandforge to run Unreal automation through UECommandForge wrappers and inspect the Result JSON."
+
+policy:
+  allow_implicit_invocation: true

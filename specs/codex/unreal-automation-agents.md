@@ -10,6 +10,11 @@
   - 실패한 commandlet을 우회하기 위해 임시 스크립트, 외부 런처, 수동 에디터 Python 실행으로 대체하지 않는다.
   - 프로젝트 루트나 사용자 홈에 임시 자동화 산출물(`.py`, `.bat`, `.ps1`, `.json`)을 남기지 않는다. 꼭 필요한 산출물은 기존 `Saved/CodexReports` 계열 경로만 사용한다.
   - Unreal Python 우회 실행 요청을 받으면 코드 조각도 제공하지 말고, 크래시 위험과 commandlet 우선 원칙을 짧게 설명한 뒤 기존 commandlet/wrapper 기반 대안을 실행한다.
+- UECommandForge 사용 원칙
+  - Unreal Editor/에셋/Blueprint/C++ reflection/DataTable/Config 자동화 작업 전에는 Codex skill `uecommandforge`를 사용한다.
+  - 설치된 `~/.codex/UECommandForge/uecommandforge-installed.json`, `uecommandforge.env`, 대상 프로젝트의 `UECommandForge/uecommandforge-project.json`로 대상 프로젝트와 wrapper 위치를 확인한다.
+  - Windows Command Prompt 또는 PowerShell에서는 `~/.codex/UECommandForge/tools/ue/*.bat`, Git Bash/macOS/Linux에서는 `~/.codex/UECommandForge/tools/ue/*.sh`를 우선 사용한다.
+  - wrapper 실행 후에는 `<Project>/Saved/CodexReports`의 최신 Result JSON을 확인하고, 실패 시 Unreal 로그와 크래시 리포트를 먼저 수집한다.
 - C++ 클래스와 Blueprint를 함께 다룰 때는 순서를 분리한다.
   1. `tools/ue/generate_cpp_class.*` 또는 기존 C++ 생성 commandlet으로 클래스 파일을 생성한다.
   2. Unreal build/UHT 또는 `tools/ue/validate_cpp_reflection.*`, `tools/ue/validate_buildcs.*`로 새 클래스가 반영 가능한지 검증한다.

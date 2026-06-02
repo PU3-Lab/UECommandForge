@@ -54,9 +54,10 @@ jq -e '
   and (.plugin_files | type == "array")
   and (.tool_files | type == "array")
   and (.spec_files | type == "array")
-  and ((.plugin_files | length) + (.tool_files | length) + (.spec_files | length) > 0)
+  and (.skill_files | type == "array")
+  and ((.plugin_files | length) + (.tool_files | length) + (.spec_files | length) + (.skill_files | length) > 0)
   and (.checksums | type == "object")
-  and ([.plugin_files[], .tool_files[], .spec_files[], "install.md", "release-notes.md", "validation-report.json"] | all(. as $path | ($manifest.checksums[$path] | type == "string")))
+  and ([.plugin_files[], .tool_files[], .spec_files[], .skill_files[], "install.md", "release-notes.md", "validation-report.json"] | all(. as $path | ($manifest.checksums[$path] | type == "string")))
   and (.install_commands | type == "array" and all(type == "string"))
   and (.post_install_checks | type == "array" and length > 0)
 ' "${MANIFEST}" >/dev/null
@@ -91,11 +92,21 @@ jq -r '.spec_files[]' "${MANIFEST}" | tr -d '\r' | while IFS= read -r path; do
   test -f "${WORK_DIR}/${path}"
 done
 
+jq -r '.skill_files[]' "${MANIFEST}" | tr -d '\r' | while IFS= read -r path; do
+  case "${path}" in
+    ''|..|*/..|/*|../*|*/../*|*\\*|*:*|//*)
+      echo "[verify_release_package] unsafe manifest path: ${path}" >&2
+      exit 2
+      ;;
+  esac
+  test -f "${WORK_DIR}/${path}"
+done
+
 EXPECTED_FILES="${LIST_DIR}/expected-files.txt"
 ACTUAL_FILES="${LIST_DIR}/actual-files.txt"
 CHECKSUM_FILES="${LIST_DIR}/checksum-files.txt"
 
-jq -r '.plugin_files[], .tool_files[], .spec_files[], "install.md", "release-notes.md", "validation-report.json"' "${MANIFEST}" \
+jq -r '.plugin_files[], .tool_files[], .spec_files[], .skill_files[], "install.md", "release-notes.md", "validation-report.json"' "${MANIFEST}" \
   | tr -d '\r' \
   | sort > "${EXPECTED_FILES}"
 

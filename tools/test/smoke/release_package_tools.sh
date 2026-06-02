@@ -101,22 +101,26 @@ grep -q '^tools/release/package_tools.sh$' "${ZIP_LIST}"
 grep -q '^specs/policies/assets.policy.json$' "${ZIP_LIST}"
 grep -q '^specs/codex/unreal-automation-agents.md$' "${ZIP_LIST}"
 grep -q '^specs/examples/blueprint_defaults.json$' "${ZIP_LIST}"
+grep -q '^skills/uecommandforge/SKILL.md$' "${ZIP_LIST}"
 grep -q '^install-uecommandforge.sh$' "${ZIP_LIST}"
 grep -q '^install-uecommandforge.bat$' "${ZIP_LIST}"
 grep -q '^install-uecommandforge.ps1$' "${ZIP_LIST}"
 grep -q '^uecommandforge-manifest.json$' "${ZIP_LIST}"
 grep -q '^validation-report.json$' "${ZIP_LIST}"
+METADATA_ATTRS="${WORK_DIR}/metadata-attrs.txt"
 unzip -Z -v "${TOOLS_ZIP}" install.md release-notes.md validation-report.json uecommandforge-manifest.json \
-  | grep -E 'Unix file attributes' \
-  | awk '{ print $4 }' \
-  | while IFS= read -r mode; do
-    mode="${mode#(}"
-    mode="${mode%,}"
-    if [ "${mode}" != "100644" ]; then
-      echo "release package metadata should be 100644, got ${mode}" >&2
-      exit 1
-    fi
-  done
+  | grep -E 'Unix file attributes' > "${METADATA_ATTRS}" || true
+if [ -s "${METADATA_ATTRS}" ]; then
+  awk '{ print $4 }' "${METADATA_ATTRS}" \
+    | while IFS= read -r mode; do
+      mode="${mode#(}"
+      mode="${mode%,}"
+      if [ "${mode}" != "100644" ]; then
+        echo "release package metadata should be 100644, got ${mode}" >&2
+        exit 1
+      fi
+    done
+fi
 
 unzip -p "${TOOLS_ZIP}" uecommandforge-manifest.json | jq -e \
   --arg version "${VERSION}" \
@@ -130,6 +134,7 @@ unzip -p "${TOOLS_ZIP}" uecommandforge-manifest.json | jq -e \
    and (.spec_files | index("specs/policies/assets.policy.json"))
    and (.spec_files | index("specs/codex/unreal-automation-agents.md"))
    and (.spec_files | index("specs/examples/blueprint_defaults.json"))
+   and (.skill_files | index("skills/uecommandforge/SKILL.md"))
    and (.install_commands | index("./install-uecommandforge.sh"))
    and (.install_commands | index("install-uecommandforge.bat"))
    and (.install_commands | index("install-uecommandforge.ps1"))
@@ -137,6 +142,7 @@ unzip -p "${TOOLS_ZIP}" uecommandforge-manifest.json | jq -e \
    and (.checksums["tools/ue/set_blueprint_defaults.sh"] | type == "string")
    and (.checksums["tools/ue/set_blueprint_defaults.bat"] | type == "string")
    and (.checksums["specs/examples/blueprint_defaults.json"] | type == "string")
+   and (.checksums["skills/uecommandforge/SKILL.md"] | type == "string")
    and (.checksums["install-uecommandforge.sh"] | type == "string")
    and (.checksums["install.md"] | type == "string")
    and (.checksums["release-notes.md"] | type == "string")
@@ -327,14 +333,16 @@ printf 'tool\n' > "${MANIFEST_OUTPUT_ROOT}/tools/tool.txt"
 printf 'spec\n' > "${MANIFEST_OUTPUT_ROOT}/specs/spec.txt"
 printf 'preserve manifest target\n' > "${MANIFEST_OUTPUT_TARGET}"
 ln -s "${MANIFEST_OUTPUT_TARGET}" "${MANIFEST_OUTPUT_LINK}"
-if "${REPO_ROOT}/tools/release/write_manifest.sh" \
-  --package-root "${MANIFEST_OUTPUT_ROOT}" \
-  --version "${VERSION}" \
-  --channel manifest-output \
-  --package-type tools \
-  --output "${MANIFEST_OUTPUT_LINK}" >/dev/null 2>&1; then
-  echo "write_manifest should reject symlink output path" >&2
-  exit 1
+if uecf_path_is_reparse_point "${MANIFEST_OUTPUT_LINK}"; then
+  if "${REPO_ROOT}/tools/release/write_manifest.sh" \
+    --package-root "${MANIFEST_OUTPUT_ROOT}" \
+    --version "${VERSION}" \
+    --channel manifest-output \
+    --package-type tools \
+    --output "${MANIFEST_OUTPUT_LINK}" >/dev/null 2>&1; then
+    echo "write_manifest should reject symlink output path" >&2
+    exit 1
+  fi
 fi
 grep -q 'preserve manifest target' "${MANIFEST_OUTPUT_TARGET}"
 

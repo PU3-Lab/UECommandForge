@@ -80,6 +80,8 @@ uecf_reject_link_ancestors "${REPO_ROOT}/tools" "package_tools"
 uecf_reject_link_tree "${REPO_ROOT}/tools" "package_tools"
 uecf_reject_link_ancestors "${REPO_ROOT}/specs" "package_tools"
 uecf_reject_link_tree "${REPO_ROOT}/specs" "package_tools"
+uecf_reject_link_ancestors "${REPO_ROOT}/skills" "package_tools"
+uecf_reject_link_tree "${REPO_ROOT}/skills" "package_tools"
 uecf_reject_link_ancestors "${REPO_ROOT}/install-uecommandforge.sh" "package_tools"
 uecf_reject_link_path "${REPO_ROOT}/install-uecommandforge.sh" "package_tools"
 uecf_reject_link_ancestors "${REPO_ROOT}/install-uecommandforge.bat" "package_tools"
@@ -92,6 +94,7 @@ mkdir -p "${PACKAGE_DIR}"
 
 cp -R "${REPO_ROOT}/tools" "${PACKAGE_DIR}/tools"
 cp -R "${REPO_ROOT}/specs" "${PACKAGE_DIR}/specs"
+cp -R "${REPO_ROOT}/skills" "${PACKAGE_DIR}/skills"
 cp "${REPO_ROOT}/install-uecommandforge.sh" "${PACKAGE_DIR}/install-uecommandforge.sh"
 cp "${REPO_ROOT}/install-uecommandforge.bat" "${PACKAGE_DIR}/install-uecommandforge.bat"
 cp "${REPO_ROOT}/install-uecommandforge.ps1" "${PACKAGE_DIR}/install-uecommandforge.ps1"
@@ -102,6 +105,7 @@ REQUIRED_BLUEPRINT_DEFAULTS_FILES=(
   "tools/ue/set_blueprint_defaults.sh"
   "tools/ue/set_blueprint_defaults.bat"
   "specs/examples/blueprint_defaults.json"
+  "skills/uecommandforge/SKILL.md"
 )
 
 for required_path in "${REQUIRED_BLUEPRINT_DEFAULTS_FILES[@]}"; do
@@ -139,6 +143,7 @@ uecf_write_file_from_stdin "${PACKAGE_DIR}/release-notes.md" "package_tools" <<N
 - Type: Tools and specs for Codex-side installation
 - Release channel: ${CHANNEL}
 - Target Codex root: ~/.codex/UECommandForge
+- Target Codex skill: ~/.codex/skills/uecommandforge
 
 ## Validation
 
@@ -174,6 +179,13 @@ uecf_write_file_from_stdin "${PACKAGE_DIR}/validation-report.json" "package_tool
         "tools/ue/set_blueprint_defaults.bat",
         "specs/examples/blueprint_defaults.json"
       ]
+    },
+    {
+      "name": "uecommandforge skill included",
+      "status": "pass",
+      "required_files": [
+        "skills/uecommandforge/SKILL.md"
+      ]
     }
   ],
   "known_limits": [
@@ -195,7 +207,7 @@ REPORT
 (
   cd "${PACKAGE_DIR}"
   uecf_create_zip "${ZIP_PATH}" \
-    tools specs \
+    tools specs skills \
     install-uecommandforge.sh install-uecommandforge.bat install-uecommandforge.ps1 \
     uecommandforge-manifest.json install.md release-notes.md validation-report.json
 )

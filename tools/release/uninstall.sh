@@ -50,6 +50,7 @@ PROJECT_FILE="$(cd "$(dirname "${PROJECT_FILE}")" && pwd)/$(basename "${PROJECT_
 PROJECT_DIR="$(cd "$(dirname "${PROJECT_FILE}")" && pwd)"
 CODEX_HOME="$(mkdir -p "${CODEX_HOME}" && cd "${CODEX_HOME}" && pwd)"
 INSTALL_ROOT="${CODEX_HOME}/UECommandForge"
+CODEX_SKILL_DIR="${CODEX_HOME}/skills/uecommandforge"
 LOG_DIR="${PROJECT_DIR}/Saved/UECommandForge"
 LOG_FILE="${LOG_DIR}/uninstall.log"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
@@ -71,12 +72,16 @@ reject_symlink_path "${LOG_DIR}"
 reject_symlink_path "${INSTALL_ROOT}"
 reject_symlink_path "${INSTALL_ROOT}/tools"
 reject_symlink_path "${INSTALL_ROOT}/specs"
+reject_symlink_path "${CODEX_HOME}/skills"
+reject_symlink_path "${CODEX_SKILL_DIR}"
 uecf_reject_link_ancestors "${PLUGIN_DIR}" "uninstall"
 uecf_reject_link_ancestors "${INSTALL_ROOT}/tools" "uninstall"
 uecf_reject_link_ancestors "${INSTALL_ROOT}/specs" "uninstall"
+uecf_reject_link_ancestors "${CODEX_SKILL_DIR}" "uninstall"
 uecf_reject_link_tree "${PLUGIN_DIR}" "uninstall"
 uecf_reject_link_tree "${INSTALL_ROOT}/tools" "uninstall"
 uecf_reject_link_tree "${INSTALL_ROOT}/specs" "uninstall"
+uecf_reject_link_tree "${CODEX_SKILL_DIR}" "uninstall"
 uecf_reject_output_file_path "${PROJECT_MANIFEST}" "uninstall"
 uecf_reject_output_file_path "${INSTALLED_MANIFEST}" "uninstall"
 uecf_reject_output_file_path "${INSTALL_ROOT}/uecommandforge.env" "uninstall"
@@ -98,11 +103,19 @@ jq -e \
   --arg plugin_path "${PLUGIN_DIR}" \
   --arg tools_path "${INSTALL_ROOT}/tools" \
   --arg specs_path "${INSTALL_ROOT}/specs" \
+  --arg skill_path "${CODEX_SKILL_DIR}" \
   '.project_file == $project_file
    and .plugin_path == $plugin_path
    and .tools_path == $tools_path
-   and .specs_path == $specs_path' \
+   and .specs_path == $specs_path
+   and ((.skill_path // $skill_path) == $skill_path)' \
   "${INSTALLED_MANIFEST}" >/dev/null
+if [ -e "${CODEX_SKILL_DIR}" ]; then
+  jq -e \
+    --arg skill_path "${CODEX_SKILL_DIR}" \
+    '.skill_path == $skill_path' \
+    "${INSTALLED_MANIFEST}" >/dev/null
+fi
 
 mkdir -p "${LOG_DIR}"
 uecf_reject_link_tree "${PLUGIN_DIR}" "uninstall"
@@ -121,6 +134,8 @@ if [ "${REMOVE_SPECS}" = true ]; then
   rm -rf "${INSTALL_ROOT}/specs"
 fi
 if [ "${REMOVE_CODEX_TOOLS}" = true ] && [ "${REMOVE_SPECS}" = true ]; then
+  uecf_reject_link_tree "${CODEX_SKILL_DIR}" "uninstall"
+  rm -rf "${CODEX_SKILL_DIR}"
   uecf_reject_output_file_path "${INSTALL_ROOT}/uecommandforge.env" "uninstall"
   uecf_reject_output_file_path "${INSTALL_ROOT}/uecommandforge.env.sh" "uninstall"
   uecf_reject_output_file_path "${INSTALLED_MANIFEST}" "uninstall"

@@ -72,6 +72,7 @@ PROJECT_FILE="$(cd "$(dirname "${PROJECT_FILE}")" && pwd)/$(basename "${PROJECT_
 PROJECT_DIR="$(cd "$(dirname "${PROJECT_FILE}")" && pwd)"
 CODEX_HOME="$(mkdir -p "${CODEX_HOME}" && cd "${CODEX_HOME}" && pwd -P)"
 INSTALL_ROOT="${CODEX_HOME}/UECommandForge"
+CODEX_SKILL_DIR="${CODEX_HOME}/skills/uecommandforge"
 PLUGIN_DIR="${PROJECT_DIR}/Plugins/UECommandForge"
 PROJECT_LINK_DIR="${PROJECT_DIR}/UECommandForge"
 LOG_DIR="${PROJECT_DIR}/Saved/UECommandForge"
@@ -96,6 +97,7 @@ require_managed_existing_targets() {
     has_project_state=true
   fi
   if [ -e "${INSTALL_ROOT}/tools" ] || [ -e "${INSTALL_ROOT}/specs" ] \
+    || [ -e "${CODEX_SKILL_DIR}" ] \
     || [ -e "${CODEX_ENV_FILE}" ] || [ -e "${CODEX_SHELL_ENV_FILE}" ] \
     || [ -e "${INSTALLED_MANIFEST}" ]; then
     has_codex_state=true
@@ -127,11 +129,19 @@ require_managed_existing_targets() {
       --arg plugin_path "${PLUGIN_DIR}" \
       --arg tools_path "${INSTALL_ROOT}/tools" \
       --arg specs_path "${INSTALL_ROOT}/specs" \
+      --arg skill_path "${CODEX_SKILL_DIR}" \
       '.project_file == $project_file
        and .plugin_path == $plugin_path
        and .tools_path == $tools_path
-       and .specs_path == $specs_path' \
+       and .specs_path == $specs_path
+       and ((.skill_path // $skill_path) == $skill_path)' \
       "${INSTALLED_MANIFEST}" >/dev/null
+    if [ -e "${CODEX_SKILL_DIR}" ]; then
+      jq -e \
+        --arg skill_path "${CODEX_SKILL_DIR}" \
+        '.skill_path == $skill_path' \
+        "${INSTALLED_MANIFEST}" >/dev/null
+    fi
   fi
 }
 
@@ -143,6 +153,8 @@ reject_symlink_path "${PROJECT_DIR}/Saved/UECommandForge"
 reject_symlink_path "${INSTALL_ROOT}"
 reject_symlink_path "${INSTALL_ROOT}/tools"
 reject_symlink_path "${INSTALL_ROOT}/specs"
+reject_symlink_path "${CODEX_HOME}/skills"
+reject_symlink_path "${CODEX_SKILL_DIR}"
 reject_symlink_path "${CODEX_AGENTS_FILE}"
 uecf_reject_output_file_path "${CODEX_ENV_FILE}" "install_local"
 uecf_reject_output_file_path "${CODEX_SHELL_ENV_FILE}" "install_local"
@@ -152,6 +164,7 @@ uecf_reject_output_file_path "${LOG_FILE}" "install_local"
 uecf_reject_link_tree "${PLUGIN_DIR}" "install_local"
 uecf_reject_link_tree "${INSTALL_ROOT}/tools" "install_local"
 uecf_reject_link_tree "${INSTALL_ROOT}/specs" "install_local"
+uecf_reject_link_tree "${CODEX_SKILL_DIR}" "install_local"
 require_managed_existing_targets
 
 verify_package() {
@@ -300,8 +313,9 @@ if [ ! -f "${PLUGIN_ROOT}/UECommandForge.uplugin" ]; then
   echo "[install_local] plugin package missing UECommandForge.uplugin" >&2
   exit 2
 fi
-if [ ! -d "${TOOLS_ROOT}/tools" ] || [ ! -d "${TOOLS_ROOT}/specs" ]; then
-  echo "[install_local] tools package missing tools/specs" >&2
+if [ ! -d "${TOOLS_ROOT}/tools" ] || [ ! -d "${TOOLS_ROOT}/specs" ] \
+  || [ ! -d "${TOOLS_ROOT}/skills/uecommandforge" ]; then
+  echo "[install_local] tools package missing tools/specs/skills" >&2
   exit 2
 fi
 
@@ -354,11 +368,18 @@ if [ "${BACKUP}" = true ]; then
     mkdir -p "${BACKUP_ROOT}/Codex"
     mv "${INSTALL_ROOT}/specs" "${BACKUP_ROOT}/Codex/specs"
   fi
+  if [ -d "${CODEX_SKILL_DIR}" ]; then
+    uecf_reject_link_tree "${CODEX_SKILL_DIR}" "install_local"
+    uecf_reject_link_ancestors "${BACKUP_ROOT}/Codex/skills/uecommandforge" "install_local"
+    mkdir -p "${BACKUP_ROOT}/Codex/skills"
+    mv "${CODEX_SKILL_DIR}" "${BACKUP_ROOT}/Codex/skills/uecommandforge"
+  fi
 else
   uecf_reject_link_tree "${PLUGIN_DIR}" "install_local"
   uecf_reject_link_tree "${INSTALL_ROOT}/tools" "install_local"
   uecf_reject_link_tree "${INSTALL_ROOT}/specs" "install_local"
-  rm -rf "${PLUGIN_DIR}" "${INSTALL_ROOT}/tools" "${INSTALL_ROOT}/specs"
+  uecf_reject_link_tree "${CODEX_SKILL_DIR}" "install_local"
+  rm -rf "${PLUGIN_DIR}" "${INSTALL_ROOT}/tools" "${INSTALL_ROOT}/specs" "${CODEX_SKILL_DIR}"
 fi
 
 mkdir -p "$(dirname "${PLUGIN_DIR}")"
@@ -372,6 +393,7 @@ rm -f "${PLUGIN_DIR}/uecommandforge-manifest.json" \
 
 copy_tree "${TOOLS_ROOT}/tools" "${INSTALL_ROOT}/tools"
 copy_tree "${TOOLS_ROOT}/specs" "${INSTALL_ROOT}/specs"
+copy_tree "${TOOLS_ROOT}/skills/uecommandforge" "${CODEX_SKILL_DIR}"
 find "${INSTALL_ROOT}/tools" -type f -name '*.sh' -exec chmod +x {} +
 append_codex_agents_instructions
 
@@ -398,6 +420,7 @@ if ! jq -n \
   --arg plugin_path "${PLUGIN_DIR}" \
   --arg tools_path "${INSTALL_ROOT}/tools" \
   --arg specs_path "${INSTALL_ROOT}/specs" \
+  --arg skill_path "${CODEX_SKILL_DIR}" \
   --arg codex_home "${CODEX_HOME}" \
   --arg env_path "${CODEX_ENV_FILE}" \
   --arg shell_env_path "${CODEX_SHELL_ENV_FILE}" \
@@ -412,6 +435,7 @@ if ! jq -n \
     plugin_path: $plugin_path,
     tools_path: $tools_path,
     specs_path: $specs_path,
+    skill_path: $skill_path,
     codex_home: $codex_home,
     env_path: $env_path,
     shell_env_path: $shell_env_path,
@@ -436,6 +460,7 @@ if ! jq -n \
   --arg codex_home "${CODEX_HOME}" \
   --arg codex_tools_path "${INSTALL_ROOT}/tools" \
   --arg codex_specs_path "${INSTALL_ROOT}/specs" \
+  --arg codex_skill_path "${CODEX_SKILL_DIR}" \
   --arg installed_version "${VERSION}" \
   --arg installed_manifest_path "${INSTALLED_MANIFEST}" \
   --arg default_env_path "${CODEX_ENV_FILE}" \
@@ -446,6 +471,7 @@ if ! jq -n \
     codex_home: $codex_home,
     codex_tools_path: $codex_tools_path,
     codex_specs_path: $codex_specs_path,
+    codex_skill_path: $codex_skill_path,
     installed_version: $installed_version,
     installed_manifest_path: $installed_manifest_path,
     default_env_path: $default_env_path,
@@ -464,6 +490,7 @@ uecf_reject_output_file_path "${LOG_FILE}" "install_local"
   echo "plugin_path=${PLUGIN_DIR}"
   echo "tools_path=${INSTALL_ROOT}/tools"
   echo "specs_path=${INSTALL_ROOT}/specs"
+  echo "skill_path=${CODEX_SKILL_DIR}"
   echo "codex_agents_path=${CODEX_AGENTS_FILE}"
 } | uecf_append_file_from_stdin "${LOG_FILE}" "install_local"
 
