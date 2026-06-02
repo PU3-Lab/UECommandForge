@@ -2,6 +2,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/common.sh"
 PROJECT_FILE="${UECF_PROJECT:-${PROJECT_FILE:-}}"
 PLUGIN_PACKAGE=""
 TOOLS_PACKAGE=""
@@ -63,6 +65,9 @@ if [ ! -f "${TOOLS_PACKAGE}" ]; then
   exit 2
 fi
 
+uecf_reject_link_ancestors "${CODEX_HOME}" "install_local"
+uecf_reject_link_ancestors "${PROJECT_FILE}" "install_local"
+uecf_reject_link_ancestors "$(dirname "${PROJECT_FILE}")" "install_local"
 PROJECT_FILE="$(cd "$(dirname "${PROJECT_FILE}")" && pwd)/$(basename "${PROJECT_FILE}")"
 PROJECT_DIR="$(cd "$(dirname "${PROJECT_FILE}")" && pwd)"
 CODEX_HOME="$(mkdir -p "${CODEX_HOME}" && cd "${CODEX_HOME}" && pwd -P)"
@@ -72,28 +77,25 @@ PROJECT_LINK_DIR="${PROJECT_DIR}/UECommandForge"
 LOG_DIR="${PROJECT_DIR}/Saved/UECommandForge"
 LOG_FILE="${LOG_DIR}/install.log"
 CODEX_AGENTS_FILE="${CODEX_HOME}/AGENTS.md"
+CODEX_ENV_FILE="${INSTALL_ROOT}/uecommandforge.env"
+INSTALLED_MANIFEST="${INSTALL_ROOT}/uecommandforge-installed.json"
+PROJECT_MANIFEST="${PROJECT_LINK_DIR}/uecommandforge-project.json"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 BACKUP_ROOT="${PROJECT_DIR}/Saved/UECommandForge/Backups/${STAMP}"
 
 reject_symlink_path() {
-  local path="$1"
-  if [ -L "${path}" ]; then
-    echo "[install_local] refusing to operate on symlink path: ${path}" >&2
-    exit 2
-  fi
+  uecf_reject_link_path "$1" "install_local"
 }
 
 require_managed_existing_targets() {
-  local project_manifest="${PROJECT_LINK_DIR}/uecommandforge-project.json"
-  local installed_manifest="${INSTALL_ROOT}/uecommandforge-installed.json"
   local has_project_state=false
   local has_codex_state=false
 
-  if [ -e "${PLUGIN_DIR}" ] || [ -e "${PROJECT_LINK_DIR}" ] || [ -e "${project_manifest}" ]; then
+  if [ -e "${PLUGIN_DIR}" ] || [ -e "${PROJECT_LINK_DIR}" ] || [ -e "${PROJECT_MANIFEST}" ]; then
     has_project_state=true
   fi
   if [ -e "${INSTALL_ROOT}/tools" ] || [ -e "${INSTALL_ROOT}/specs" ] \
-    || [ -e "${INSTALL_ROOT}/uecommandforge.env" ] || [ -e "${installed_manifest}" ]; then
+    || [ -e "${CODEX_ENV_FILE}" ] || [ -e "${INSTALLED_MANIFEST}" ]; then
     has_codex_state=true
   fi
 
@@ -102,7 +104,7 @@ require_managed_existing_targets() {
   fi
 
   if [ "${has_project_state}" = true ]; then
-    if [ ! -f "${project_manifest}" ]; then
+    if [ ! -f "${PROJECT_MANIFEST}" ]; then
       echo "[install_local] existing project install targets are unmanaged; refusing to overwrite" >&2
       exit 2
     fi
@@ -110,11 +112,11 @@ require_managed_existing_targets() {
       --arg project_file "${PROJECT_FILE}" \
       --arg plugin_path "${PLUGIN_DIR}" \
       '.project_file == $project_file and .plugin_path == $plugin_path' \
-      "${project_manifest}" >/dev/null
+      "${PROJECT_MANIFEST}" >/dev/null
   fi
 
   if [ "${has_codex_state}" = true ]; then
-    if [ ! -f "${installed_manifest}" ]; then
+    if [ ! -f "${INSTALLED_MANIFEST}" ]; then
       echo "[install_local] existing Codex install targets are unmanaged; refusing to overwrite" >&2
       exit 2
     fi
@@ -127,7 +129,7 @@ require_managed_existing_targets() {
        and .plugin_path == $plugin_path
        and .tools_path == $tools_path
        and .specs_path == $specs_path' \
-      "${installed_manifest}" >/dev/null
+      "${INSTALLED_MANIFEST}" >/dev/null
   fi
 }
 
@@ -140,6 +142,13 @@ reject_symlink_path "${INSTALL_ROOT}"
 reject_symlink_path "${INSTALL_ROOT}/tools"
 reject_symlink_path "${INSTALL_ROOT}/specs"
 reject_symlink_path "${CODEX_AGENTS_FILE}"
+uecf_reject_output_file_path "${CODEX_ENV_FILE}" "install_local"
+uecf_reject_output_file_path "${INSTALLED_MANIFEST}" "install_local"
+uecf_reject_output_file_path "${PROJECT_MANIFEST}" "install_local"
+uecf_reject_output_file_path "${LOG_FILE}" "install_local"
+uecf_reject_link_tree "${PLUGIN_DIR}" "install_local"
+uecf_reject_link_tree "${INSTALL_ROOT}/tools" "install_local"
+uecf_reject_link_tree "${INSTALL_ROOT}/specs" "install_local"
 require_managed_existing_targets
 
 verify_package() {
@@ -161,6 +170,7 @@ copy_tree() {
   local src="$1"
   local dest="$2"
   mkdir -p "$(dirname "${dest}")"
+  uecf_reject_link_tree "${dest}" "install_local"
   rm -rf "${dest}"
   cp -R "${src}" "${dest}"
 }
@@ -263,6 +273,8 @@ TOOLS_ROOT="${WORK_DIR}/tools"
 mkdir -p "${PLUGIN_ROOT}" "${TOOLS_ROOT}"
 unzip -q "${PLUGIN_PACKAGE}" -d "${PLUGIN_ROOT}"
 unzip -q "${TOOLS_PACKAGE}" -d "${TOOLS_ROOT}"
+uecf_reject_link_tree "${PLUGIN_ROOT}" "install_local"
+uecf_reject_link_tree "${TOOLS_ROOT}" "install_local"
 
 if [ ! -f "${PLUGIN_ROOT}/UECommandForge.uplugin" ]; then
   echo "[install_local] plugin package missing UECommandForge.uplugin" >&2
@@ -294,24 +306,37 @@ require_codex_agents_appendable
 mkdir -p "${LOG_DIR}" "${INSTALL_ROOT}" "${PROJECT_LINK_DIR}"
 
 if [ "${BACKUP}" = true ]; then
+  uecf_reject_link_ancestors "${BACKUP_ROOT}" "install_local"
+  uecf_reject_link_tree "${PROJECT_DIR}/Saved/UECommandForge/Backups" "install_local"
+  uecf_reject_link_tree "${BACKUP_ROOT}" "install_local"
   mkdir -p "${BACKUP_ROOT}"
   if [ -d "${PLUGIN_DIR}" ]; then
+    uecf_reject_link_tree "${PLUGIN_DIR}" "install_local"
+    uecf_reject_link_ancestors "${BACKUP_ROOT}/Plugins/UECommandForge" "install_local"
     mkdir -p "${BACKUP_ROOT}/Plugins"
     mv "${PLUGIN_DIR}" "${BACKUP_ROOT}/Plugins/UECommandForge"
   fi
   if [ -d "${INSTALL_ROOT}/tools" ]; then
+    uecf_reject_link_tree "${INSTALL_ROOT}/tools" "install_local"
+    uecf_reject_link_ancestors "${BACKUP_ROOT}/Codex/tools" "install_local"
     mkdir -p "${BACKUP_ROOT}/Codex"
     mv "${INSTALL_ROOT}/tools" "${BACKUP_ROOT}/Codex/tools"
   fi
   if [ -d "${INSTALL_ROOT}/specs" ]; then
+    uecf_reject_link_tree "${INSTALL_ROOT}/specs" "install_local"
+    uecf_reject_link_ancestors "${BACKUP_ROOT}/Codex/specs" "install_local"
     mkdir -p "${BACKUP_ROOT}/Codex"
     mv "${INSTALL_ROOT}/specs" "${BACKUP_ROOT}/Codex/specs"
   fi
 else
+  uecf_reject_link_tree "${PLUGIN_DIR}" "install_local"
+  uecf_reject_link_tree "${INSTALL_ROOT}/tools" "install_local"
+  uecf_reject_link_tree "${INSTALL_ROOT}/specs" "install_local"
   rm -rf "${PLUGIN_DIR}" "${INSTALL_ROOT}/tools" "${INSTALL_ROOT}/specs"
 fi
 
 mkdir -p "$(dirname "${PLUGIN_DIR}")"
+uecf_reject_link_tree "${PLUGIN_DIR}" "install_local"
 cp -R "${PLUGIN_ROOT}" "${PLUGIN_DIR}"
 rm -f "${PLUGIN_DIR}/uecommandforge-manifest.json" \
   "${PLUGIN_DIR}/checksums.txt" \
@@ -324,12 +349,14 @@ copy_tree "${TOOLS_ROOT}/specs" "${INSTALL_ROOT}/specs"
 find "${INSTALL_ROOT}/tools" -type f -name '*.sh' -exec chmod +x {} +
 append_codex_agents_instructions
 
-cat > "${INSTALL_ROOT}/uecommandforge.env" <<ENV
+uecf_reject_output_file_path "${CODEX_ENV_FILE}" "install_local"
+uecf_write_file_from_stdin "${CODEX_ENV_FILE}" "install_local" <<ENV
 UECF_PROJECT_FILE=${PROJECT_FILE}
 CODEX_HOME=${CODEX_HOME}
 UECF_INSTALL_ROOT=${INSTALL_ROOT}
 ENV
 
+uecf_reject_output_file_path "${INSTALLED_MANIFEST}" "install_local"
 jq -n \
   --arg installed_at "${STAMP}" \
   --arg version "${VERSION}" \
@@ -357,8 +384,9 @@ jq -n \
     },
     backup_path: $backup_path,
     last_validation_report: null
-  }' > "${INSTALL_ROOT}/uecommandforge-installed.json"
+  }' | uecf_write_file_from_stdin "${INSTALLED_MANIFEST}" "install_local"
 
+uecf_reject_output_file_path "${PROJECT_MANIFEST}" "install_local"
 jq -n \
   --arg project_file "${PROJECT_FILE}" \
   --arg plugin_path "${PLUGIN_DIR}" \
@@ -366,8 +394,8 @@ jq -n \
   --arg codex_tools_path "${INSTALL_ROOT}/tools" \
   --arg codex_specs_path "${INSTALL_ROOT}/specs" \
   --arg installed_version "${VERSION}" \
-  --arg installed_manifest_path "${INSTALL_ROOT}/uecommandforge-installed.json" \
-  --arg default_env_path "${INSTALL_ROOT}/uecommandforge.env" \
+  --arg installed_manifest_path "${INSTALLED_MANIFEST}" \
+  --arg default_env_path "${CODEX_ENV_FILE}" \
   '{
     project_file: $project_file,
     plugin_path: $plugin_path,
@@ -377,8 +405,9 @@ jq -n \
     installed_version: $installed_version,
     installed_manifest_path: $installed_manifest_path,
     default_env_path: $default_env_path
-  }' > "${PROJECT_LINK_DIR}/uecommandforge-project.json"
+  }' | uecf_write_file_from_stdin "${PROJECT_MANIFEST}" "install_local"
 
+uecf_reject_output_file_path "${LOG_FILE}" "install_local"
 {
   echo "installed_at=${STAMP}"
   echo "version=${VERSION}"
@@ -387,10 +416,10 @@ jq -n \
   echo "tools_path=${INSTALL_ROOT}/tools"
   echo "specs_path=${INSTALL_ROOT}/specs"
   echo "codex_agents_path=${CODEX_AGENTS_FILE}"
-} >> "${LOG_FILE}"
+} | uecf_append_file_from_stdin "${LOG_FILE}" "install_local"
 
 if [ "${RUN_COMMANDLET_CHECK}" = true ]; then
   UECF_PROJECT_FILE="${PROJECT_FILE}" "${INSTALL_ROOT}/tools/ue/hello.sh" >/dev/null
 fi
 
-echo "${INSTALL_ROOT}/uecommandforge-installed.json"
+echo "${INSTALLED_MANIFEST}"

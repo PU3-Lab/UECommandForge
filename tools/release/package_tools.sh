@@ -6,7 +6,11 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 # shellcheck disable=SC1091
 source "${SCRIPT_DIR}/common.sh"
 
+uecf_reject_link_ancestors "${REPO_ROOT}" "package_tools"
+
 PLUGIN_DESCRIPTOR="${REPO_ROOT}/sample/Plugins/UECommandForge/UECommandForge.uplugin"
+uecf_reject_link_ancestors "${PLUGIN_DESCRIPTOR}" "package_tools"
+uecf_reject_link_path "${PLUGIN_DESCRIPTOR}" "package_tools"
 VERSION="$(jq -r '.VersionName' "${PLUGIN_DESCRIPTOR}")"
 CHANNEL="local"
 OUT_DIR="${REPO_ROOT}/sample/Saved/Release"
@@ -51,6 +55,7 @@ case "${CHANNEL}" in
     ;;
 esac
 
+uecf_reject_link_ancestors "${OUT_DIR}" "package_tools"
 mkdir -p "${OUT_DIR}"
 OUT_DIR="$(cd "${OUT_DIR}" && pwd)"
 PACKAGE_NAME="UECommandForge-${VERSION}-Tools"
@@ -66,6 +71,22 @@ case "${PACKAGE_DIR}" in
     ;;
 esac
 
+uecf_reject_link_ancestors "${OUT_DIR}" "package_tools"
+uecf_reject_link_ancestors "${PACKAGE_DIR}" "package_tools"
+uecf_reject_output_file_path "${ZIP_PATH}" "package_tools"
+uecf_reject_output_file_path "${CHECKSUMS_PATH}" "package_tools"
+uecf_reject_link_tree "${PACKAGE_DIR}" "package_tools"
+uecf_reject_link_ancestors "${REPO_ROOT}/tools" "package_tools"
+uecf_reject_link_tree "${REPO_ROOT}/tools" "package_tools"
+uecf_reject_link_ancestors "${REPO_ROOT}/specs" "package_tools"
+uecf_reject_link_tree "${REPO_ROOT}/specs" "package_tools"
+uecf_reject_link_ancestors "${REPO_ROOT}/install-uecommandforge.sh" "package_tools"
+uecf_reject_link_path "${REPO_ROOT}/install-uecommandforge.sh" "package_tools"
+uecf_reject_link_ancestors "${REPO_ROOT}/install-uecommandforge.bat" "package_tools"
+uecf_reject_link_path "${REPO_ROOT}/install-uecommandforge.bat" "package_tools"
+uecf_reject_link_ancestors "${REPO_ROOT}/install-uecommandforge.ps1" "package_tools"
+uecf_reject_link_path "${REPO_ROOT}/install-uecommandforge.ps1" "package_tools"
+
 rm -rf "${PACKAGE_DIR}" "${ZIP_PATH}"
 mkdir -p "${PACKAGE_DIR}"
 
@@ -75,8 +96,23 @@ cp "${REPO_ROOT}/install-uecommandforge.sh" "${PACKAGE_DIR}/install-uecommandfor
 cp "${REPO_ROOT}/install-uecommandforge.bat" "${PACKAGE_DIR}/install-uecommandforge.bat"
 cp "${REPO_ROOT}/install-uecommandforge.ps1" "${PACKAGE_DIR}/install-uecommandforge.ps1"
 
-if find "${PACKAGE_DIR}" -type l -print -quit | grep -q .; then
-  echo "[package_tools] symlinks are not allowed in release packages" >&2
+uecf_reject_link_tree "${PACKAGE_DIR}" "package_tools"
+
+REQUIRED_BLUEPRINT_DEFAULTS_FILES=(
+  "tools/ue/set_blueprint_defaults.sh"
+  "tools/ue/set_blueprint_defaults.bat"
+  "specs/examples/blueprint_defaults.json"
+)
+
+for required_path in "${REQUIRED_BLUEPRINT_DEFAULTS_FILES[@]}"; do
+  if [ ! -f "${PACKAGE_DIR}/${required_path}" ]; then
+    echo "[package_tools] required blueprint defaults file is missing: ${required_path}" >&2
+    exit 2
+  fi
+done
+
+if [ ! -x "${PACKAGE_DIR}/tools/ue/set_blueprint_defaults.sh" ]; then
+  echo "[package_tools] blueprint defaults shell wrapper is not executable" >&2
   exit 2
 fi
 
@@ -129,6 +165,15 @@ cat > "${PACKAGE_DIR}/validation-report.json" <<REPORT
     {
       "name": "manifest checksum coverage",
       "status": "pass"
+    },
+    {
+      "name": "blueprint defaults wrapper included",
+      "status": "pass",
+      "required_files": [
+        "tools/ue/set_blueprint_defaults.sh",
+        "tools/ue/set_blueprint_defaults.bat",
+        "specs/examples/blueprint_defaults.json"
+      ]
     }
   ],
   "known_limits": [
@@ -155,7 +200,7 @@ REPORT
     uecommandforge-manifest.json install.md release-notes.md validation-report.json
 )
 
-"${SCRIPT_DIR}/write_checksums.sh" "${ZIP_PATH}" > "${CHECKSUMS_PATH}"
+uecf_write_checksums_file "${ZIP_PATH}" "${CHECKSUMS_PATH}" "package_tools"
 "${SCRIPT_DIR}/verify_release_package.sh" "${ZIP_PATH}" "${CHECKSUMS_PATH}" >/dev/null
 
 echo "${ZIP_PATH}"

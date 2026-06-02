@@ -16,6 +16,7 @@
   3. 새 프로세스에서 기존 Blueprint 생성 commandlet(`create_character_bp.*`, `create_ai_controller.*`, `create_ai_flow.*`)을 실행한다.
   4. Result JSON과 Unreal 로그를 확인한 뒤 다음 단계로 진행한다.
 - Blueprint/Asset 생성은 UECommandForge의 기존 commandlet과 wrapper를 우선 사용한다. 새 자동화가 필요하면 commandlet과 `tools/ue/` wrapper로 구현하고 smoke test를 추가한다.
+- Blueprint 생성 이후 CDO 기본값이나 컴포넌트를 적용해야 하면 Unreal Python으로 직접 수정하지 말고 `tools/ue/set_blueprint_defaults.*`와 `blueprint_defaults` spec을 사용한다.
 - Unreal 크래시가 발생하면 새 우회 스크립트를 만들기 전에 기존 로그를 먼저 수집한다.
   - 프로젝트 로그: `<Project>/Saved/Logs`
   - 프로젝트 크래시 리포트: `<Project>/Saved/Crashes`

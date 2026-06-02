@@ -3,6 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+# shellcheck disable=SC1091
+source "${REPO_ROOT}/tools/release/common.sh"
 WORK_DIR="${REPO_ROOT}/sample/Saved/CodexReports/ReleasePackageInstall"
 VERSION="$(jq -r '.VersionName' "${REPO_ROOT}/sample/Plugins/UECommandForge/UECommandForge.uplugin")"
 PROJECT_DIR="${WORK_DIR}/Project"
@@ -24,6 +26,121 @@ case "$(uname -s)" in
     RUNTIME_BINARY="Binaries/Win64/UnrealEditor-UECommandForgeRuntime.dll"
     ;;
 esac
+
+is_windows_bash() {
+  uecf_is_windows_bash
+}
+
+to_windows_path() {
+  cygpath -w "$1"
+}
+
+deny_directory_writes() {
+  local path="$1"
+  if is_windows_bash; then
+    local windows_path
+    windows_path="$(to_windows_path "${path}")"
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \
+      '& {
+        param([string]$Path)
+        $ErrorActionPreference = "Stop"
+        $Sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+        $Ace = "*" + $Sid + ":(OI)(CI)(W)"
+        & icacls.exe $Path /deny $Ace | Out-Null
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      }' \
+      "${windows_path}"
+  else
+    chmod 500 "${path}"
+  fi
+}
+
+restore_directory_writes() {
+  local path="$1"
+  if is_windows_bash; then
+    local windows_path
+    windows_path="$(to_windows_path "${path}")"
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \
+      '& {
+        param([string]$Path)
+        $ErrorActionPreference = "Stop"
+        $Sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+        $Principal = "*" + $Sid
+        & icacls.exe $Path /remove:d $Principal | Out-Null
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+        & icacls.exe $Path /inheritance:e | Out-Null
+        if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      }' \
+      "${windows_path}"
+  else
+    chmod 700 "${path}"
+  fi
+}
+
+path_is_directory_link() {
+  uecf_path_is_reparse_point "$1"
+}
+
+create_directory_link() {
+  local target="$1"
+  local link="$2"
+  if ln -s "${target}" "${link}" 2>/dev/null; then
+    if path_is_directory_link "${link}"; then
+      return 0
+    fi
+    rm -rf "${link}"
+  fi
+
+  if is_windows_bash; then
+    local windows_target
+    local windows_link
+    windows_target="$(to_windows_path "${target}")"
+    windows_link="$(to_windows_path "${link}")"
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \
+      '& {
+        param([string]$Link, [string]$Target)
+        $ErrorActionPreference = "Stop"
+        try {
+          New-Item -ItemType SymbolicLink -Path $Link -Target $Target -Force | Out-Null
+        } catch {
+          New-Item -ItemType Junction -Path $Link -Target $Target -Force | Out-Null
+        }
+      }' \
+      "${windows_link}" "${windows_target}"
+    path_is_directory_link "${link}"
+    return $?
+  fi
+
+  return 1
+}
+
+remove_directory_fixture() {
+  local path="$1"
+  if is_windows_bash; then
+    local windows_path
+    windows_path="$(to_windows_path "${path}")"
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \
+      '& {
+        param([string]$Path)
+        $ErrorActionPreference = "Stop"
+        if (Test-Path -LiteralPath $Path) {
+          Remove-Item -LiteralPath $Path -Recurse -Force
+        }
+      }' \
+      "${windows_path}"
+  else
+    rm -rf "${path}"
+  fi
+}
+
+NOWRITE_DENIED=false
+cleanup_permissions() {
+  if [ "${NOWRITE_DENIED}" = true ] && [ -n "${NOWRITE_CODEX_HOME:-}" ]; then
+    restore_directory_writes "${NOWRITE_CODEX_HOME}" || true
+    NOWRITE_DENIED=false
+  fi
+}
+trap cleanup_permissions EXIT
 
 rm -rf "${WORK_DIR}"
 mkdir -p "${PROJECT_DIR}" "${CODEX_HOME}"
@@ -69,9 +186,13 @@ PROJECT_FILE="${PROJECT_DIR}/UECommandForgeSample.uproject"
 test -f "${PROJECT_DIR}/Plugins/UECommandForge/UECommandForge.uplugin"
 test -f "${PROJECT_DIR}/Plugins/UECommandForge/${RUNTIME_BINARY}"
 test -f "${CODEX_HOME}/UECommandForge/tools/ue/run_commandlet.sh"
+test -f "${CODEX_HOME}/UECommandForge/tools/ue/set_blueprint_defaults.sh"
+test -f "${CODEX_HOME}/UECommandForge/tools/ue/set_blueprint_defaults.bat"
 test -f "${CODEX_HOME}/UECommandForge/specs/policies/assets.policy.json"
 test -f "${CODEX_HOME}/UECommandForge/specs/codex/unreal-automation-agents.md"
+test -f "${CODEX_HOME}/UECommandForge/specs/examples/blueprint_defaults.json"
 test -x "${CODEX_HOME}/UECommandForge/tools/ue/run_commandlet.sh"
+test -x "${CODEX_HOME}/UECommandForge/tools/ue/set_blueprint_defaults.sh"
 test -f "${CODEX_HOME}/UECommandForge/uecommandforge.env"
 test -f "${CODEX_HOME}/UECommandForge/uecommandforge-installed.json"
 test -f "${PROJECT_DIR}/UECommandForge/uecommandforge-project.json"
@@ -86,6 +207,8 @@ grep -q '파일을 만들지 않더라도 Python 코드를 Unreal에 전달하�
 grep -q '코드 조각도 제공하지 말고' "${CODEX_HOME}/AGENTS.md"
 grep -q '실패한 commandlet을 우회하기 위해 임시 스크립트' "${CODEX_HOME}/AGENTS.md"
 grep -q '기존 commandlet/wrapper 기반 대안' "${CODEX_HOME}/AGENTS.md"
+grep -q 'tools/ue/set_blueprint_defaults.*' "${CODEX_HOME}/AGENTS.md"
+grep -q 'blueprint_defaults' "${CODEX_HOME}/AGENTS.md"
 test "$(grep -c 'BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS' "${CODEX_HOME}/AGENTS.md")" -eq 1
 ! grep -q 'OLD_UNREAL_PYTHON_RULE_SHOULD_BE_REPLACED' "${CODEX_HOME}/AGENTS.md"
 
@@ -262,7 +385,8 @@ cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" \
   "${NOWRITE_CODEX_PROJECT}/UECommandForgeSample.uproject"
 printf '# writable agents in non-writable dir\n' > "${NOWRITE_CODEX_HOME}/AGENTS.md"
 chmod 600 "${NOWRITE_CODEX_HOME}/AGENTS.md"
-chmod 500 "${NOWRITE_CODEX_HOME}"
+deny_directory_writes "${NOWRITE_CODEX_HOME}"
+NOWRITE_DENIED=true
 set +e
 "${REPO_ROOT}/tools/release/install_local.sh" \
   --project "${NOWRITE_CODEX_PROJECT}/UECommandForgeSample.uproject" \
@@ -272,7 +396,8 @@ set +e
   --run-commandlet-check false >/dev/null 2>&1
 NOWRITE_STATUS=$?
 set -e
-chmod 700 "${NOWRITE_CODEX_HOME}"
+restore_directory_writes "${NOWRITE_CODEX_HOME}"
+NOWRITE_DENIED=false
 if [ "${NOWRITE_STATUS}" -eq 0 ]; then
   echo "non-writable Codex home should fail before install targets are created" >&2
   exit 1
@@ -318,7 +443,10 @@ SYMLINK_PROJECT="${WORK_DIR}/SymlinkProject"
 SYMLINK_TARGET="${WORK_DIR}/SymlinkTarget"
 mkdir -p "${SYMLINK_PROJECT}" "${SYMLINK_TARGET}"
 cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" "${SYMLINK_PROJECT}/UECommandForgeSample.uproject"
-ln -s "${SYMLINK_TARGET}" "${SYMLINK_PROJECT}/Plugins"
+if ! create_directory_link "${SYMLINK_TARGET}" "${SYMLINK_PROJECT}/Plugins"; then
+  echo "could not create symlinked Plugins directory fixture" >&2
+  exit 1
+fi
 if "${REPO_ROOT}/tools/release/install_local.sh" \
   --project "${SYMLINK_PROJECT}/UECommandForgeSample.uproject" \
   --plugin-package "${PLUGIN_ZIP}" \
@@ -328,6 +456,264 @@ if "${REPO_ROOT}/tools/release/install_local.sh" \
   echo "symlinked Plugins directory should fail" >&2
   exit 1
 fi
+
+REPARSE_CODEX_PROJECT="${WORK_DIR}/ReparseCodexHomeProject"
+REPARSE_CODEX_TARGET="${WORK_DIR}/ReparseCodexHomeTarget"
+REPARSE_CODEX_HOME="${WORK_DIR}/ReparseCodexHome"
+mkdir -p "${REPARSE_CODEX_PROJECT}" "${REPARSE_CODEX_TARGET}"
+cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" \
+  "${REPARSE_CODEX_PROJECT}/UECommandForgeSample.uproject"
+if ! create_directory_link "${REPARSE_CODEX_TARGET}" "${REPARSE_CODEX_HOME}"; then
+  echo "could not create reparse Codex home fixture" >&2
+  exit 1
+fi
+if "${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${REPARSE_CODEX_PROJECT}/UECommandForgeSample.uproject" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${TOOLS_ZIP}" \
+  --codex-home "${REPARSE_CODEX_HOME}" \
+  --run-commandlet-check false >/dev/null 2>&1; then
+  echo "reparse Codex home should fail" >&2
+  exit 1
+fi
+test ! -e "${REPARSE_CODEX_PROJECT}/Plugins/UECommandForge"
+test ! -e "${REPARSE_CODEX_PROJECT}/Saved/UECommandForge"
+test ! -e "${REPARSE_CODEX_PROJECT}/UECommandForge"
+test ! -e "${REPARSE_CODEX_TARGET}/UECommandForge"
+
+REPARSE_PARENT_PROJECT="${WORK_DIR}/ReparseCodexParentProject"
+REPARSE_PARENT_TARGET="${WORK_DIR}/ReparseCodexParentTarget"
+REPARSE_PARENT_LINK="${WORK_DIR}/ReparseCodexParent"
+REPARSE_PARENT_CODEX_HOME="${REPARSE_PARENT_LINK}/NestedCodexHome"
+mkdir -p "${REPARSE_PARENT_PROJECT}" "${REPARSE_PARENT_TARGET}"
+cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" \
+  "${REPARSE_PARENT_PROJECT}/UECommandForgeSample.uproject"
+if ! create_directory_link "${REPARSE_PARENT_TARGET}" "${REPARSE_PARENT_LINK}"; then
+  echo "could not create reparse Codex parent fixture" >&2
+  exit 1
+fi
+if "${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${REPARSE_PARENT_PROJECT}/UECommandForgeSample.uproject" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${TOOLS_ZIP}" \
+  --codex-home "${REPARSE_PARENT_CODEX_HOME}" \
+  --run-commandlet-check false >/dev/null 2>&1; then
+  echo "Codex home below reparse parent should fail" >&2
+  exit 1
+fi
+test ! -e "${REPARSE_PARENT_PROJECT}/Plugins/UECommandForge"
+test ! -e "${REPARSE_PARENT_PROJECT}/Saved/UECommandForge"
+test ! -e "${REPARSE_PARENT_PROJECT}/UECommandForge"
+test ! -e "${REPARSE_PARENT_TARGET}/NestedCodexHome"
+
+REPARSE_PROJECT_TARGET="${WORK_DIR}/ReparseProjectTarget"
+REPARSE_PROJECT_PARENT="${WORK_DIR}/ReparseProjectParent"
+REPARSE_PROJECT_DIR="${REPARSE_PROJECT_PARENT}/Project"
+REPARSE_PROJECT_CODEX="${WORK_DIR}/ReparseProjectCodex"
+mkdir -p "${REPARSE_PROJECT_TARGET}" "${REPARSE_PROJECT_CODEX}"
+if ! create_directory_link "${REPARSE_PROJECT_TARGET}" "${REPARSE_PROJECT_PARENT}"; then
+  echo "could not create reparse project parent fixture" >&2
+  exit 1
+fi
+mkdir -p "${REPARSE_PROJECT_DIR}"
+cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" \
+  "${REPARSE_PROJECT_DIR}/UECommandForgeSample.uproject"
+if "${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${REPARSE_PROJECT_DIR}/UECommandForgeSample.uproject" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${TOOLS_ZIP}" \
+  --codex-home "${REPARSE_PROJECT_CODEX}" \
+  --run-commandlet-check false >/dev/null 2>&1; then
+  echo "project below reparse parent should fail" >&2
+  exit 1
+fi
+test ! -e "${REPARSE_PROJECT_TARGET}/Project/Plugins/UECommandForge"
+test ! -e "${REPARSE_PROJECT_TARGET}/Project/Saved/UECommandForge"
+test ! -e "${REPARSE_PROJECT_TARGET}/Project/UECommandForge"
+test ! -e "${REPARSE_PROJECT_CODEX}/UECommandForge"
+
+RELATIVE_REPARSE_ROOT="${WORK_DIR}/RelativeReparseRoot"
+RELATIVE_REPARSE_TARGET="${WORK_DIR}/RelativeReparseTarget"
+RELATIVE_REPARSE_CODEX_TARGET="${WORK_DIR}/RelativeReparseCodexTarget"
+mkdir -p "${RELATIVE_REPARSE_TARGET}" "${RELATIVE_REPARSE_CODEX_TARGET}"
+if ! create_directory_link "${RELATIVE_REPARSE_TARGET}" "${RELATIVE_REPARSE_ROOT}"; then
+  echo "could not create relative reparse cwd fixture" >&2
+  exit 1
+fi
+mkdir -p "${RELATIVE_REPARSE_ROOT}/Project" "${RELATIVE_REPARSE_ROOT}/CodexHome"
+cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" \
+  "${RELATIVE_REPARSE_ROOT}/Project/UECommandForgeSample.uproject"
+(
+  cd "${RELATIVE_REPARSE_ROOT}"
+  if "${REPO_ROOT}/tools/release/install_local.sh" \
+    --project "Project/UECommandForgeSample.uproject" \
+    --plugin-package "${PLUGIN_ZIP}" \
+    --tools-package "${TOOLS_ZIP}" \
+    --codex-home "CodexHome" \
+    --run-commandlet-check false >/dev/null 2>&1; then
+    echo "relative install below reparse cwd should fail" >&2
+    exit 1
+  fi
+)
+test ! -e "${RELATIVE_REPARSE_TARGET}/Project/Plugins/UECommandForge"
+test ! -e "${RELATIVE_REPARSE_TARGET}/Project/Saved/UECommandForge"
+test ! -e "${RELATIVE_REPARSE_TARGET}/CodexHome/UECommandForge"
+
+EXISTING_CHILD_REPARSE_PROJECT="${WORK_DIR}/ExistingChildReparseProject"
+EXISTING_CHILD_REPARSE_CODEX="${WORK_DIR}/ExistingChildReparseCodex"
+EXISTING_CHILD_REPARSE_TARGET="${WORK_DIR}/ExistingChildReparseTarget"
+mkdir -p "${EXISTING_CHILD_REPARSE_PROJECT}" "${EXISTING_CHILD_REPARSE_CODEX}" "${EXISTING_CHILD_REPARSE_TARGET}"
+cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" \
+  "${EXISTING_CHILD_REPARSE_PROJECT}/UECommandForgeSample.uproject"
+"${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${EXISTING_CHILD_REPARSE_PROJECT}/UECommandForgeSample.uproject" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${TOOLS_ZIP}" \
+  --codex-home "${EXISTING_CHILD_REPARSE_CODEX}" \
+  --run-commandlet-check false >/dev/null
+printf 'preserve existing install child target\n' > "${EXISTING_CHILD_REPARSE_TARGET}/sentinel.txt"
+remove_directory_fixture "${EXISTING_CHILD_REPARSE_PROJECT}/Plugins/UECommandForge/Binaries"
+if ! create_directory_link "${EXISTING_CHILD_REPARSE_TARGET}" \
+  "${EXISTING_CHILD_REPARSE_PROJECT}/Plugins/UECommandForge/Binaries"; then
+  echo "could not create existing install child reparse fixture" >&2
+  exit 1
+fi
+if "${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${EXISTING_CHILD_REPARSE_PROJECT}/UECommandForgeSample.uproject" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${TOOLS_ZIP}" \
+  --codex-home "${EXISTING_CHILD_REPARSE_CODEX}" \
+  --backup false \
+  --run-commandlet-check false >/dev/null 2>&1; then
+  echo "existing install target with reparse child should fail" >&2
+  exit 1
+fi
+grep -q 'preserve existing install child target' "${EXISTING_CHILD_REPARSE_TARGET}/sentinel.txt"
+
+BACKUP_REPARSE_PROJECT="${WORK_DIR}/BackupReparseProject"
+BACKUP_REPARSE_CODEX="${WORK_DIR}/BackupReparseCodex"
+BACKUP_REPARSE_TARGET="${WORK_DIR}/BackupReparseTarget"
+BACKUP_REPARSE_LINK="${BACKUP_REPARSE_PROJECT}/Saved/UECommandForge/Backups"
+mkdir -p "${BACKUP_REPARSE_PROJECT}" "${BACKUP_REPARSE_CODEX}" "${BACKUP_REPARSE_TARGET}"
+cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" \
+  "${BACKUP_REPARSE_PROJECT}/UECommandForgeSample.uproject"
+"${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${BACKUP_REPARSE_PROJECT}/UECommandForgeSample.uproject" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${TOOLS_ZIP}" \
+  --codex-home "${BACKUP_REPARSE_CODEX}" \
+  --run-commandlet-check false >/dev/null
+printf 'preserve backup target\n' > "${BACKUP_REPARSE_TARGET}/sentinel.txt"
+remove_directory_fixture "${BACKUP_REPARSE_LINK}"
+if ! create_directory_link "${BACKUP_REPARSE_TARGET}" "${BACKUP_REPARSE_LINK}"; then
+  echo "could not create backup reparse fixture" >&2
+  exit 1
+fi
+if "${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${BACKUP_REPARSE_PROJECT}/UECommandForgeSample.uproject" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${TOOLS_ZIP}" \
+  --codex-home "${BACKUP_REPARSE_CODEX}" \
+  --run-commandlet-check false >/dev/null 2>&1; then
+  echo "backup reparse path should fail" >&2
+  exit 1
+fi
+grep -q 'preserve backup target' "${BACKUP_REPARSE_TARGET}/sentinel.txt"
+
+for metadata_case in env installed project log; do
+  METADATA_REPARSE_PROJECT="${WORK_DIR}/MetadataReparseProject-${metadata_case}"
+  METADATA_REPARSE_CODEX="${WORK_DIR}/MetadataReparseCodex-${metadata_case}"
+  METADATA_REPARSE_TARGET="${WORK_DIR}/MetadataReparseTarget-${metadata_case}"
+  mkdir -p "${METADATA_REPARSE_PROJECT}" "${METADATA_REPARSE_CODEX}" "${METADATA_REPARSE_TARGET}"
+  cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" \
+    "${METADATA_REPARSE_PROJECT}/UECommandForgeSample.uproject"
+  "${REPO_ROOT}/tools/release/install_local.sh" \
+    --project "${METADATA_REPARSE_PROJECT}/UECommandForgeSample.uproject" \
+    --plugin-package "${PLUGIN_ZIP}" \
+    --tools-package "${TOOLS_ZIP}" \
+    --codex-home "${METADATA_REPARSE_CODEX}" \
+    --run-commandlet-check false >/dev/null
+  printf 'preserve metadata target %s\n' "${metadata_case}" > "${METADATA_REPARSE_TARGET}/sentinel.txt"
+
+  case "${metadata_case}" in
+    env)
+      METADATA_REPARSE_PATH="${METADATA_REPARSE_CODEX}/UECommandForge/uecommandforge.env"
+      ;;
+    installed)
+      METADATA_REPARSE_PATH="${METADATA_REPARSE_CODEX}/UECommandForge/uecommandforge-installed.json"
+      ;;
+    project)
+      METADATA_REPARSE_PATH="${METADATA_REPARSE_PROJECT}/UECommandForge/uecommandforge-project.json"
+      ;;
+    log)
+      METADATA_REPARSE_PATH="${METADATA_REPARSE_PROJECT}/Saved/UECommandForge/install.log"
+      ;;
+  esac
+
+  rm -f "${METADATA_REPARSE_PATH}"
+  remove_directory_fixture "${METADATA_REPARSE_PATH}"
+  mkdir -p "${METADATA_REPARSE_PATH}"
+  if ! create_directory_link "${METADATA_REPARSE_TARGET}" "${METADATA_REPARSE_PATH}/child"; then
+    echo "could not create metadata reparse fixture: ${metadata_case}" >&2
+    exit 1
+  fi
+  if "${REPO_ROOT}/tools/release/install_local.sh" \
+    --project "${METADATA_REPARSE_PROJECT}/UECommandForgeSample.uproject" \
+    --plugin-package "${PLUGIN_ZIP}" \
+    --tools-package "${TOOLS_ZIP}" \
+    --codex-home "${METADATA_REPARSE_CODEX}" \
+    --run-commandlet-check false >/dev/null 2>&1; then
+    echo "metadata reparse output path should fail: ${metadata_case}" >&2
+    exit 1
+  fi
+  grep -q "preserve metadata target ${metadata_case}" "${METADATA_REPARSE_TARGET}/sentinel.txt"
+done
+
+for metadata_case in env installed project log; do
+  METADATA_HARDLINK_PROJECT="${WORK_DIR}/MetadataHardlinkProject-${metadata_case}"
+  METADATA_HARDLINK_CODEX="${WORK_DIR}/MetadataHardlinkCodex-${metadata_case}"
+  METADATA_HARDLINK_TARGET="${WORK_DIR}/MetadataHardlinkTarget-${metadata_case}.txt"
+  METADATA_HARDLINK_BEFORE="${WORK_DIR}/MetadataHardlinkTarget-${metadata_case}.before"
+  mkdir -p "${METADATA_HARDLINK_PROJECT}" "${METADATA_HARDLINK_CODEX}"
+  cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" \
+    "${METADATA_HARDLINK_PROJECT}/UECommandForgeSample.uproject"
+  "${REPO_ROOT}/tools/release/install_local.sh" \
+    --project "${METADATA_HARDLINK_PROJECT}/UECommandForgeSample.uproject" \
+    --plugin-package "${PLUGIN_ZIP}" \
+    --tools-package "${TOOLS_ZIP}" \
+    --codex-home "${METADATA_HARDLINK_CODEX}" \
+    --run-commandlet-check false >/dev/null
+
+  case "${metadata_case}" in
+    env)
+      METADATA_HARDLINK_PATH="${METADATA_HARDLINK_CODEX}/UECommandForge/uecommandforge.env"
+      ;;
+    installed)
+      METADATA_HARDLINK_PATH="${METADATA_HARDLINK_CODEX}/UECommandForge/uecommandforge-installed.json"
+      ;;
+    project)
+      METADATA_HARDLINK_PATH="${METADATA_HARDLINK_PROJECT}/UECommandForge/uecommandforge-project.json"
+      ;;
+    log)
+      METADATA_HARDLINK_PATH="${METADATA_HARDLINK_PROJECT}/Saved/UECommandForge/install.log"
+      ;;
+  esac
+
+  cp "${METADATA_HARDLINK_PATH}" "${METADATA_HARDLINK_TARGET}"
+  cp "${METADATA_HARDLINK_TARGET}" "${METADATA_HARDLINK_BEFORE}"
+  rm -f "${METADATA_HARDLINK_PATH}"
+  if ! ln "${METADATA_HARDLINK_TARGET}" "${METADATA_HARDLINK_PATH}"; then
+    echo "could not create metadata hardlink fixture: ${metadata_case}" >&2
+    exit 1
+  fi
+  "${REPO_ROOT}/tools/release/install_local.sh" \
+    --project "${METADATA_HARDLINK_PROJECT}/UECommandForgeSample.uproject" \
+    --plugin-package "${PLUGIN_ZIP}" \
+    --tools-package "${TOOLS_ZIP}" \
+    --codex-home "${METADATA_HARDLINK_CODEX}" \
+    --run-commandlet-check false >/dev/null
+  cmp "${METADATA_HARDLINK_TARGET}" "${METADATA_HARDLINK_BEFORE}"
+done
 
 MISSING_CHECKSUM_DIR="${WORK_DIR}/MissingChecksum"
 mkdir -p "${MISSING_CHECKSUM_DIR}"

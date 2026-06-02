@@ -6,7 +6,11 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 # shellcheck disable=SC1091
 source "${SCRIPT_DIR}/common.sh"
 
+uecf_reject_link_ancestors "${REPO_ROOT}" "package_source"
+
 PLUGIN_DESCRIPTOR="${REPO_ROOT}/sample/Plugins/UECommandForge/UECommandForge.uplugin"
+uecf_reject_link_ancestors "${PLUGIN_DESCRIPTOR}" "package_source"
+uecf_reject_link_path "${PLUGIN_DESCRIPTOR}" "package_source"
 VERSION="$(jq -r '.VersionName' "${PLUGIN_DESCRIPTOR}")"
 CHANNEL="local"
 OUT_DIR="${REPO_ROOT}/sample/Saved/Release"
@@ -62,6 +66,7 @@ if [ "${descriptor_version}" != "${VERSION}" ]; then
   exit 2
 fi
 
+uecf_reject_link_ancestors "${OUT_DIR}" "package_source"
 mkdir -p "${OUT_DIR}"
 OUT_DIR="$(cd "${OUT_DIR}" && pwd)"
 PACKAGE_NAME="UECommandForge-${VERSION}-Source"
@@ -77,6 +82,27 @@ case "${PACKAGE_DIR}" in
     ;;
 esac
 
+uecf_reject_link_ancestors "${OUT_DIR}" "package_source"
+uecf_reject_link_ancestors "${PACKAGE_DIR}" "package_source"
+uecf_reject_output_file_path "${ZIP_PATH}" "package_source"
+uecf_reject_output_file_path "${CHECKSUMS_PATH}" "package_source"
+uecf_reject_link_tree "${PACKAGE_DIR}" "package_source"
+uecf_reject_link_ancestors "${REPO_ROOT}/README.md" "package_source"
+uecf_reject_link_path "${REPO_ROOT}/README.md" "package_source"
+uecf_reject_link_ancestors "${REPO_ROOT}/docs" "package_source"
+uecf_reject_link_tree "${REPO_ROOT}/docs" "package_source"
+uecf_reject_link_ancestors "${REPO_ROOT}/specs" "package_source"
+uecf_reject_link_tree "${REPO_ROOT}/specs" "package_source"
+uecf_reject_link_ancestors "${REPO_ROOT}/tools" "package_source"
+uecf_reject_link_tree "${REPO_ROOT}/tools" "package_source"
+uecf_reject_link_ancestors "${REPO_ROOT}/sample/UECommandForgeSample.uproject" "package_source"
+uecf_reject_link_path "${REPO_ROOT}/sample/UECommandForgeSample.uproject" "package_source"
+uecf_reject_link_ancestors "${REPO_ROOT}/sample/Plugins/UECommandForge/UECommandForge.uplugin" "package_source"
+uecf_reject_link_path "${REPO_ROOT}/sample/Plugins/UECommandForge/UECommandForge.uplugin" "package_source"
+uecf_reject_link_ancestors "${REPO_ROOT}/sample/Plugins/UECommandForge/Config" "package_source"
+uecf_reject_link_tree "${REPO_ROOT}/sample/Plugins/UECommandForge/Config" "package_source"
+uecf_reject_link_ancestors "${REPO_ROOT}/sample/Plugins/UECommandForge/Source" "package_source"
+uecf_reject_link_tree "${REPO_ROOT}/sample/Plugins/UECommandForge/Source" "package_source"
 rm -rf "${PACKAGE_DIR}" "${ZIP_PATH}"
 mkdir -p "${PACKAGE_DIR}"
 
@@ -99,10 +125,7 @@ mkdir -p "${PACKAGE_DIR}"
     done
 )
 
-if find "${PACKAGE_DIR}" -type l -print -quit | grep -q .; then
-  echo "[package_source] symlinks are not allowed in release packages" >&2
-  exit 2
-fi
+uecf_reject_link_tree "${PACKAGE_DIR}" "package_source"
 
 cat > "${PACKAGE_DIR}/install.md" <<INSTALL
 # UECommandForge Source Install
@@ -188,7 +211,7 @@ REPORT
   uecf_create_zip "${ZIP_PATH}" ./*
 )
 
-"${SCRIPT_DIR}/write_checksums.sh" "${ZIP_PATH}" > "${CHECKSUMS_PATH}"
+uecf_write_checksums_file "${ZIP_PATH}" "${CHECKSUMS_PATH}" "package_source"
 "${SCRIPT_DIR}/verify_release_package.sh" "${ZIP_PATH}" "${CHECKSUMS_PATH}" >/dev/null
 
 echo "${ZIP_PATH}"

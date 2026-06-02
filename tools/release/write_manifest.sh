@@ -140,6 +140,8 @@ jq -n \
     post_install_checks: (
       if $package_type == "source" then
         ["source package file list", "source package checksum"]
+      elif $package_type == "tools" then
+        ["Hello commandlet", "Codex tools path", "project link manifest", "Blueprint defaults wrapper"]
       else
         ["Hello commandlet", "Codex tools path", "project link manifest"]
       end

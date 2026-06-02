@@ -5,8 +5,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 # shellcheck disable=SC1091
 source "${SCRIPT_DIR}/common.sh"
+
+uecf_reject_link_ancestors "${REPO_ROOT}" "package_plugin"
+
 PLUGIN_DESCRIPTOR="${REPO_ROOT}/sample/Plugins/UECommandForge/UECommandForge.uplugin"
 BUILD_DIR="${REPO_ROOT}/sample/Saved/PluginBuild"
+uecf_reject_link_ancestors "${PLUGIN_DESCRIPTOR}" "package_plugin"
+uecf_reject_link_path "${PLUGIN_DESCRIPTOR}" "package_plugin"
 VERSION="$(jq -r '.VersionName' "${PLUGIN_DESCRIPTOR}")"
 CHANNEL="local"
 OUT_DIR="${REPO_ROOT}/sample/Saved/Release"
@@ -77,6 +82,9 @@ case "${PLATFORM}" in
     ;;
 esac
 
+uecf_reject_link_ancestors "${BUILD_DIR}" "package_plugin"
+uecf_reject_link_tree "${BUILD_DIR}" "package_plugin"
+
 if [ "${SKIP_BUILD}" != true ]; then
   case "${BUILD_DIR}" in
     "${REPO_ROOT}/sample/Saved/PluginBuild") ;;
@@ -128,6 +136,7 @@ if [ ! -d "${BUILD_DIR}/Binaries/${PLATFORM}" ]; then
   exit 2
 fi
 
+uecf_reject_link_ancestors "${OUT_DIR}" "package_plugin"
 mkdir -p "${OUT_DIR}"
 OUT_DIR="$(cd "${OUT_DIR}" && pwd)"
 PACKAGE_NAME="UECommandForge-${VERSION}-UE5.7-${PLATFORM}"
@@ -143,6 +152,12 @@ case "${PACKAGE_DIR}" in
     ;;
 esac
 
+uecf_reject_link_ancestors "${OUT_DIR}" "package_plugin"
+uecf_reject_link_ancestors "${PACKAGE_DIR}" "package_plugin"
+uecf_reject_output_file_path "${ZIP_PATH}" "package_plugin"
+uecf_reject_output_file_path "${CHECKSUMS_PATH}" "package_plugin"
+uecf_reject_link_tree "${PACKAGE_DIR}" "package_plugin"
+uecf_reject_link_tree "${BUILD_DIR}" "package_plugin"
 rm -rf "${PACKAGE_DIR}" "${ZIP_PATH}"
 mkdir -p "${PACKAGE_DIR}"
 
@@ -157,10 +172,7 @@ mkdir -p "${PACKAGE_DIR}"
   tar -xf -
 )
 
-if find "${PACKAGE_DIR}" -type l -print -quit | grep -q .; then
-  echo "[package_plugin] symlinks are not allowed in release packages" >&2
-  exit 2
-fi
+uecf_reject_link_tree "${PACKAGE_DIR}" "package_plugin"
 
 cat > "${PACKAGE_DIR}/install.md" <<INSTALL
 # UECommandForge Plugin Install
@@ -241,7 +253,7 @@ REPORT
   uecf_create_zip "${ZIP_PATH}" ./*
 )
 
-"${SCRIPT_DIR}/write_checksums.sh" "${ZIP_PATH}" > "${CHECKSUMS_PATH}"
+uecf_write_checksums_file "${ZIP_PATH}" "${CHECKSUMS_PATH}" "package_plugin"
 "${SCRIPT_DIR}/verify_release_package.sh" "${ZIP_PATH}" "${CHECKSUMS_PATH}" >/dev/null
 
 echo "${ZIP_PATH}"

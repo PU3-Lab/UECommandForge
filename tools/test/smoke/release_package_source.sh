@@ -3,8 +3,70 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+# shellcheck disable=SC1091
+source "${REPO_ROOT}/tools/release/common.sh"
 WORK_DIR="${REPO_ROOT}/sample/Saved/CodexReports/ReleasePackageSource"
 VERSION="$(jq -r '.VersionName' "${REPO_ROOT}/sample/Plugins/UECommandForge/UECommandForge.uplugin")"
+SOURCE_REPARSE_LINK="${REPO_ROOT}/tools/test/smoke/.source_package_reparse_fixture"
+OUTPUT_REPARSE_LINK=""
+
+remove_reparse_fixture() {
+  local path="$1"
+  if [ -z "${path}" ]; then
+    return 0
+  fi
+
+  if uecf_is_windows_bash && command -v cygpath >/dev/null 2>&1 && command -v powershell.exe >/dev/null 2>&1; then
+    local windows_path
+    windows_path="$(cygpath -w "${path}")"
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \
+      '& {
+        param([string]$Path)
+        $ErrorActionPreference = "Stop"
+        if (Test-Path -LiteralPath $Path) {
+          $Item = Get-Item -LiteralPath $Path -Force
+          if (($Item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+            $Item.Delete()
+          } else {
+            Remove-Item -LiteralPath $Path -Recurse -Force
+          }
+        }
+      }' \
+      "${windows_path}" >/dev/null
+  else
+    rm -rf "${path}"
+  fi
+}
+
+create_reparse_fixture() {
+  local link="$1"
+  local target="$2"
+  remove_reparse_fixture "${link}"
+
+  if uecf_is_windows_bash; then
+    local windows_link
+    local windows_target
+    windows_link="$(cygpath -w "${link}")"
+    windows_target="$(cygpath -w "${target}")"
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \
+      '& {
+        param([string]$Link, [string]$Target)
+        $ErrorActionPreference = "Stop"
+        New-Item -ItemType Junction -Path $Link -Target $Target -Force | Out-Null
+      }' \
+      "${windows_link}" "${windows_target}" >/dev/null
+  else
+    ln -s "${target}" "${link}"
+  fi
+
+  uecf_path_is_reparse_point "${link}"
+}
+
+cleanup() {
+  remove_reparse_fixture "${SOURCE_REPARSE_LINK}"
+  remove_reparse_fixture "${OUTPUT_REPARSE_LINK}"
+}
+trap cleanup EXIT
 
 rm -rf "${WORK_DIR}"
 mkdir -p "${WORK_DIR}"
@@ -104,7 +166,7 @@ mkdir -p "${BAD_SOURCE_DIR}/package/sample/Saved"
 printf 'unexpected\n' > "${BAD_SOURCE_DIR}/package/sample/Saved/leak.txt"
 (
   cd "${BAD_SOURCE_DIR}/package"
-  zip -qr "${BAD_SOURCE_DIR}/saved-leak.zip" ./*
+  uecf_create_zip "${BAD_SOURCE_DIR}/saved-leak.zip" ./*
 )
 if "${REPO_ROOT}/tools/release/verify_release_package.sh" \
   "${BAD_SOURCE_DIR}/saved-leak.zip" >/dev/null 2>&1; then
@@ -118,3 +180,43 @@ if "${REPO_ROOT}/tools/release/package_source.sh" \
   echo "mismatched source package version should fail" >&2
   exit 1
 fi
+
+SOURCE_REPARSE_TARGET="${WORK_DIR}/source-reparse-target"
+SOURCE_REPARSE_OUT="${WORK_DIR}/source-reparse"
+SOURCE_REPARSE_SENTINEL="${SOURCE_REPARSE_OUT}/UECommandForge-${VERSION}-Source/sentinel.txt"
+mkdir -p "${SOURCE_REPARSE_TARGET}" "$(dirname "${SOURCE_REPARSE_SENTINEL}")"
+printf 'preserve source output\n' > "${SOURCE_REPARSE_SENTINEL}"
+if ! create_reparse_fixture "${SOURCE_REPARSE_LINK}" "${SOURCE_REPARSE_TARGET}"; then
+  echo "could not create source package input reparse fixture" >&2
+  exit 1
+fi
+if "${REPO_ROOT}/tools/release/package_source.sh" \
+  --version "${VERSION}" \
+  --channel source-reparse \
+  --out-dir "${SOURCE_REPARSE_OUT}" >/dev/null 2>&1; then
+  echo "source package should reject reparse points in source tree" >&2
+  exit 1
+fi
+grep -q 'preserve source output' "${SOURCE_REPARSE_SENTINEL}"
+remove_reparse_fixture "${SOURCE_REPARSE_LINK}"
+
+OUTPUT_REPARSE_OUT="${WORK_DIR}/output-child-reparse"
+OUTPUT_REPARSE_DIR="${OUTPUT_REPARSE_OUT}/UECommandForge-${VERSION}-Source"
+OUTPUT_REPARSE_TARGET="${WORK_DIR}/output-child-target"
+OUTPUT_REPARSE_LINK="${OUTPUT_REPARSE_DIR}/tools"
+mkdir -p "${OUTPUT_REPARSE_DIR}" "${OUTPUT_REPARSE_TARGET}"
+printf 'preserve source output child target\n' > "${OUTPUT_REPARSE_TARGET}/sentinel.txt"
+if ! create_reparse_fixture "${OUTPUT_REPARSE_LINK}" "${OUTPUT_REPARSE_TARGET}"; then
+  echo "could not create source package output child reparse fixture" >&2
+  exit 1
+fi
+if "${REPO_ROOT}/tools/release/package_source.sh" \
+  --version "${VERSION}" \
+  --channel output-child-reparse \
+  --out-dir "${OUTPUT_REPARSE_OUT}" >/dev/null 2>&1; then
+  echo "source package should reject existing output reparse child" >&2
+  exit 1
+fi
+grep -q 'preserve source output child target' "${OUTPUT_REPARSE_TARGET}/sentinel.txt"
+remove_reparse_fixture "${OUTPUT_REPARSE_LINK}"
+OUTPUT_REPARSE_LINK=""

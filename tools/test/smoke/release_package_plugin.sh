@@ -3,11 +3,73 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+# shellcheck disable=SC1091
+source "${REPO_ROOT}/tools/release/common.sh"
 WORK_DIR="${REPO_ROOT}/sample/Saved/CodexReports/ReleasePackagePlugin"
 VERSION="$(jq -r '.VersionName' "${REPO_ROOT}/sample/Plugins/UECommandForge/UECommandForge.uplugin")"
 PLATFORM="Mac"
 RUNTIME_BINARY="Binaries/Mac/UnrealEditor-UECommandForgeRuntime.dylib"
 EDITOR_BINARY="Binaries/Mac/UnrealEditor-UECommandForgeEditor.dylib"
+BUILD_REPARSE_LINK="${REPO_ROOT}/sample/Saved/PluginBuild/.release_package_reparse_fixture"
+OUTPUT_REPARSE_LINK=""
+
+remove_reparse_fixture() {
+  local path="$1"
+  if [ -z "${path}" ]; then
+    return 0
+  fi
+
+  if uecf_is_windows_bash && command -v cygpath >/dev/null 2>&1 && command -v powershell.exe >/dev/null 2>&1; then
+    local windows_path
+    windows_path="$(cygpath -w "${path}")"
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \
+      '& {
+        param([string]$Path)
+        $ErrorActionPreference = "Stop"
+        if (Test-Path -LiteralPath $Path) {
+          $Item = Get-Item -LiteralPath $Path -Force
+          if (($Item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+            $Item.Delete()
+          } else {
+            Remove-Item -LiteralPath $Path -Recurse -Force
+          }
+        }
+      }' \
+      "${windows_path}" >/dev/null
+  else
+    rm -rf "${path}"
+  fi
+}
+
+create_reparse_fixture() {
+  local link="$1"
+  local target="$2"
+  remove_reparse_fixture "${link}"
+
+  if uecf_is_windows_bash; then
+    local windows_link
+    local windows_target
+    windows_link="$(cygpath -w "${link}")"
+    windows_target="$(cygpath -w "${target}")"
+    powershell.exe -NoProfile -ExecutionPolicy Bypass -Command \
+      '& {
+        param([string]$Link, [string]$Target)
+        $ErrorActionPreference = "Stop"
+        New-Item -ItemType Junction -Path $Link -Target $Target -Force | Out-Null
+      }' \
+      "${windows_link}" "${windows_target}" >/dev/null
+  else
+    ln -s "${target}" "${link}"
+  fi
+
+  uecf_path_is_reparse_point "${link}"
+}
+
+cleanup() {
+  remove_reparse_fixture "${BUILD_REPARSE_LINK}"
+  remove_reparse_fixture "${OUTPUT_REPARSE_LINK}"
+}
+trap cleanup EXIT
 
 case "$(uname -s)" in
   Darwin)
@@ -76,8 +138,8 @@ unzip -p "${PLUGIN_ZIP}" uecommandforge-manifest.json | jq -e \
    and (.checksums["release-notes.md"] | type == "string")
    and (.checksums["validation-report.json"] | type == "string")
    and (.post_install_checks[] | select(. == "Hello commandlet"))' >/dev/null
-jq -e --arg version "${VERSION}" '.VersionName == $version' \
-  <(unzip -p "${PLUGIN_ZIP}" UECommandForge.uplugin) >/dev/null
+unzip -p "${PLUGIN_ZIP}" UECommandForge.uplugin | \
+  jq -e --arg version "${VERSION}" '.VersionName == $version' >/dev/null
 
 unzip -p "${PLUGIN_ZIP}" validation-report.json | jq -e \
   --arg version "${VERSION}" \
@@ -118,3 +180,45 @@ if [ "${PLATFORM}" != "Win64" ]; then
     exit 1
   fi
 fi
+
+BUILD_REPARSE_TARGET="${WORK_DIR}/build-reparse-target"
+BUILD_REPARSE_OUT="${WORK_DIR}/build-reparse"
+BUILD_REPARSE_SENTINEL="${BUILD_REPARSE_OUT}/UECommandForge-${VERSION}-UE5.7-${PLATFORM}/sentinel.txt"
+mkdir -p "${BUILD_REPARSE_TARGET}" "$(dirname "${BUILD_REPARSE_SENTINEL}")"
+printf 'preserve plugin output\n' > "${BUILD_REPARSE_SENTINEL}"
+if ! create_reparse_fixture "${BUILD_REPARSE_LINK}" "${BUILD_REPARSE_TARGET}"; then
+  echo "could not create plugin build reparse fixture" >&2
+  exit 1
+fi
+if "${REPO_ROOT}/tools/release/package_plugin.sh" \
+  --version "${VERSION}" \
+  --channel build-reparse \
+  --out-dir "${BUILD_REPARSE_OUT}" \
+  --skip-build >/dev/null 2>&1; then
+  echo "plugin package should reject reparse points in build tree" >&2
+  exit 1
+fi
+grep -q 'preserve plugin output' "${BUILD_REPARSE_SENTINEL}"
+remove_reparse_fixture "${BUILD_REPARSE_LINK}"
+
+OUTPUT_REPARSE_OUT="${WORK_DIR}/output-child-reparse"
+OUTPUT_REPARSE_DIR="${OUTPUT_REPARSE_OUT}/UECommandForge-${VERSION}-UE5.7-${PLATFORM}"
+OUTPUT_REPARSE_TARGET="${WORK_DIR}/output-child-target"
+OUTPUT_REPARSE_LINK="${OUTPUT_REPARSE_DIR}/Binaries"
+mkdir -p "${OUTPUT_REPARSE_DIR}" "${OUTPUT_REPARSE_TARGET}"
+printf 'preserve plugin output child target\n' > "${OUTPUT_REPARSE_TARGET}/sentinel.txt"
+if ! create_reparse_fixture "${OUTPUT_REPARSE_LINK}" "${OUTPUT_REPARSE_TARGET}"; then
+  echo "could not create plugin output child reparse fixture" >&2
+  exit 1
+fi
+if "${REPO_ROOT}/tools/release/package_plugin.sh" \
+  --version "${VERSION}" \
+  --channel output-child-reparse \
+  --out-dir "${OUTPUT_REPARSE_OUT}" \
+  --skip-build >/dev/null 2>&1; then
+  echo "plugin package should reject existing output reparse child" >&2
+  exit 1
+fi
+grep -q 'preserve plugin output child target' "${OUTPUT_REPARSE_TARGET}/sentinel.txt"
+remove_reparse_fixture "${OUTPUT_REPARSE_LINK}"
+OUTPUT_REPARSE_LINK=""
