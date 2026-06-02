@@ -8,6 +8,7 @@
 - [02. Animation 관련 세팅 자동화 작업 계획](./02_animation_plan.md)
 - [03. StateTree 자동화 작업 계획](./03_statetree_plan.md)
 - [04. Blueprint 반복 작업 자동화 계획](./04_blueprint_plan.md)
+- [04-A. Blueprint 생성 확장 작업 계획](./04_blueprint_creation_extension_plan.md)
 - [05. C++ 클래스 생성 반복 자동화 작업 계획](./05_cpp_class_generation_plan.md)
 - [06. DataAsset / DataTable / Config 관리 자동화 작업 계획](./06_dataasset_datatable_config_plan.md)
 - [07. GameplayTag / Input / Ability 세팅 자동화 작업 계획](./07_gameplaytag_input_ability_plan.md)
