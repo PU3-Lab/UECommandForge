@@ -106,6 +106,17 @@ grep -q '^install-uecommandforge.bat$' "${ZIP_LIST}"
 grep -q '^install-uecommandforge.ps1$' "${ZIP_LIST}"
 grep -q '^uecommandforge-manifest.json$' "${ZIP_LIST}"
 grep -q '^validation-report.json$' "${ZIP_LIST}"
+unzip -Z -v "${TOOLS_ZIP}" install.md release-notes.md validation-report.json uecommandforge-manifest.json \
+  | grep -E 'Unix file attributes' \
+  | awk '{ print $4 }' \
+  | while IFS= read -r mode; do
+    mode="${mode#(}"
+    mode="${mode%,}"
+    if [ "${mode}" != "100644" ]; then
+      echo "release package metadata should be 100644, got ${mode}" >&2
+      exit 1
+    fi
+  done
 
 unzip -p "${TOOLS_ZIP}" uecommandforge-manifest.json | jq -e \
   --arg version "${VERSION}" \
@@ -286,6 +297,46 @@ ln "${CHECKSUM_HARDLINK_TARGET}" "${CHECKSUM_HARDLINK_OUT}/checksums.txt"
   --out-dir "${CHECKSUM_HARDLINK_OUT}" >/dev/null
 grep -q 'preserve checksum hardlink target' "${CHECKSUM_HARDLINK_TARGET}"
 grep -q "UECommandForge-${VERSION}-Tools.zip" "${CHECKSUM_HARDLINK_OUT}/checksums.txt"
+
+CHECKSUM_FAILURE_OUT="${WORK_DIR}/checksum-failure"
+mkdir -p "${CHECKSUM_FAILURE_OUT}"
+printf 'preserve failed checksum output\n' > "${CHECKSUM_FAILURE_OUT}/checksums.txt"
+set +e
+bash -c \
+  'set -euo pipefail; source "$1"; uecf_write_checksums_file "$2" "$3" package_tools_smoke' \
+  _ \
+  "${REPO_ROOT}/tools/release/common.sh" \
+  "${CHECKSUM_FAILURE_OUT}/missing.zip" \
+  "${CHECKSUM_FAILURE_OUT}/checksums.txt" >/dev/null 2>&1
+CHECKSUM_FAILURE_STATUS=$?
+set -e
+if [ "${CHECKSUM_FAILURE_STATUS}" -eq 0 ]; then
+  echo "missing zip checksum write should fail" >&2
+  exit 1
+fi
+grep -q 'preserve failed checksum output' "${CHECKSUM_FAILURE_OUT}/checksums.txt"
+
+MANIFEST_OUTPUT_ROOT="${WORK_DIR}/manifest-output-root"
+MANIFEST_OUTPUT_TARGET="${WORK_DIR}/manifest-output-target.json"
+MANIFEST_OUTPUT_LINK="${WORK_DIR}/manifest-output-link.json"
+mkdir -p "${MANIFEST_OUTPUT_ROOT}/tools" "${MANIFEST_OUTPUT_ROOT}/specs"
+printf '# install\n' > "${MANIFEST_OUTPUT_ROOT}/install.md"
+printf '# notes\n' > "${MANIFEST_OUTPUT_ROOT}/release-notes.md"
+printf '{"status":"pass"}\n' > "${MANIFEST_OUTPUT_ROOT}/validation-report.json"
+printf 'tool\n' > "${MANIFEST_OUTPUT_ROOT}/tools/tool.txt"
+printf 'spec\n' > "${MANIFEST_OUTPUT_ROOT}/specs/spec.txt"
+printf 'preserve manifest target\n' > "${MANIFEST_OUTPUT_TARGET}"
+ln -s "${MANIFEST_OUTPUT_TARGET}" "${MANIFEST_OUTPUT_LINK}"
+if "${REPO_ROOT}/tools/release/write_manifest.sh" \
+  --package-root "${MANIFEST_OUTPUT_ROOT}" \
+  --version "${VERSION}" \
+  --channel manifest-output \
+  --package-type tools \
+  --output "${MANIFEST_OUTPUT_LINK}" >/dev/null 2>&1; then
+  echo "write_manifest should reject symlink output path" >&2
+  exit 1
+fi
+grep -q 'preserve manifest target' "${MANIFEST_OUTPUT_TARGET}"
 
 BAD_ZIP_DIR="${WORK_DIR}/bad-zip"
 mkdir -p "${BAD_ZIP_DIR}"

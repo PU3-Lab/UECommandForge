@@ -78,6 +78,7 @@ LOG_DIR="${PROJECT_DIR}/Saved/UECommandForge"
 LOG_FILE="${LOG_DIR}/install.log"
 CODEX_AGENTS_FILE="${CODEX_HOME}/AGENTS.md"
 CODEX_ENV_FILE="${INSTALL_ROOT}/uecommandforge.env"
+CODEX_SHELL_ENV_FILE="${INSTALL_ROOT}/uecommandforge.env.sh"
 INSTALLED_MANIFEST="${INSTALL_ROOT}/uecommandforge-installed.json"
 PROJECT_MANIFEST="${PROJECT_LINK_DIR}/uecommandforge-project.json"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)-$$"
@@ -95,7 +96,8 @@ require_managed_existing_targets() {
     has_project_state=true
   fi
   if [ -e "${INSTALL_ROOT}/tools" ] || [ -e "${INSTALL_ROOT}/specs" ] \
-    || [ -e "${CODEX_ENV_FILE}" ] || [ -e "${INSTALLED_MANIFEST}" ]; then
+    || [ -e "${CODEX_ENV_FILE}" ] || [ -e "${CODEX_SHELL_ENV_FILE}" ] \
+    || [ -e "${INSTALLED_MANIFEST}" ]; then
     has_codex_state=true
   fi
 
@@ -143,6 +145,7 @@ reject_symlink_path "${INSTALL_ROOT}/tools"
 reject_symlink_path "${INSTALL_ROOT}/specs"
 reject_symlink_path "${CODEX_AGENTS_FILE}"
 uecf_reject_output_file_path "${CODEX_ENV_FILE}" "install_local"
+uecf_reject_output_file_path "${CODEX_SHELL_ENV_FILE}" "install_local"
 uecf_reject_output_file_path "${INSTALLED_MANIFEST}" "install_local"
 uecf_reject_output_file_path "${PROJECT_MANIFEST}" "install_local"
 uecf_reject_output_file_path "${LOG_FILE}" "install_local"
@@ -164,6 +167,23 @@ verify_package() {
     exit 2
   fi
   "${SCRIPT_DIR}/verify_release_package.sh" "${zip_path}" "${checksum_path}" >/dev/null
+}
+
+stage_package_for_install() {
+  local zip_path="$1"
+  local label="$2"
+  local source_checksum_path
+  local staged_dir
+  local staged_zip_path
+
+  source_checksum_path="$(dirname "${zip_path}")/checksums.txt"
+  staged_dir="${WORK_DIR}/${label}-package"
+  mkdir -p "${staged_dir}"
+  staged_zip_path="${staged_dir}/$(basename "${zip_path}")"
+  cp "${zip_path}" "${staged_zip_path}"
+  cp "${source_checksum_path}" "${staged_dir}/checksums.txt"
+  verify_package "${staged_zip_path}"
+  printf '%s\n' "${staged_zip_path}"
 }
 
 copy_tree() {
@@ -259,20 +279,20 @@ AGENTS
   mv "${temp_file}" "${CODEX_AGENTS_FILE}"
 }
 
-verify_package "${PLUGIN_PACKAGE}"
-verify_package "${TOOLS_PACKAGE}"
-
 WORK_DIR="$(mktemp -d)"
 cleanup() {
   rm -rf "${WORK_DIR}"
 }
 trap cleanup EXIT
 
+PLUGIN_STAGED_PACKAGE="$(stage_package_for_install "${PLUGIN_PACKAGE}" "plugin")"
+TOOLS_STAGED_PACKAGE="$(stage_package_for_install "${TOOLS_PACKAGE}" "tools")"
+
 PLUGIN_ROOT="${WORK_DIR}/plugin"
 TOOLS_ROOT="${WORK_DIR}/tools"
 mkdir -p "${PLUGIN_ROOT}" "${TOOLS_ROOT}"
-unzip -q "${PLUGIN_PACKAGE}" -d "${PLUGIN_ROOT}"
-unzip -q "${TOOLS_PACKAGE}" -d "${TOOLS_ROOT}"
+unzip -q "${PLUGIN_STAGED_PACKAGE}" -d "${PLUGIN_ROOT}"
+unzip -q "${TOOLS_STAGED_PACKAGE}" -d "${TOOLS_ROOT}"
 uecf_reject_link_tree "${PLUGIN_ROOT}" "install_local"
 uecf_reject_link_tree "${TOOLS_ROOT}" "install_local"
 
@@ -294,8 +314,14 @@ jq -e \
   '.version == $version' \
   "${PLUGIN_MANIFEST}" >/dev/null
 jq -e \
+  '.package_type == "plugin"' \
+  "${PLUGIN_MANIFEST}" >/dev/null
+jq -e \
   --arg version "${VERSION}" \
   '.version == $version' \
+  "${TOOLS_MANIFEST}" >/dev/null
+jq -e \
+  '.package_type == "tools"' \
   "${TOOLS_MANIFEST}" >/dev/null
 jq -e \
   --slurpfile plugin_manifest "${PLUGIN_MANIFEST}" \
@@ -356,8 +382,16 @@ CODEX_HOME=${CODEX_HOME}
 UECF_INSTALL_ROOT=${INSTALL_ROOT}
 ENV
 
+uecf_reject_output_file_path "${CODEX_SHELL_ENV_FILE}" "install_local"
+uecf_write_file_from_stdin "${CODEX_SHELL_ENV_FILE}" "install_local" <<ENV
+export UECF_PROJECT_FILE=$(uecf_shell_quote "${PROJECT_FILE}")
+export CODEX_HOME=$(uecf_shell_quote "${CODEX_HOME}")
+export UECF_INSTALL_ROOT=$(uecf_shell_quote "${INSTALL_ROOT}")
+ENV
+
 uecf_reject_output_file_path "${INSTALLED_MANIFEST}" "install_local"
-jq -n \
+installed_manifest_temp="$(uecf_prepare_output_temp_file "${INSTALLED_MANIFEST}" "install_local")"
+if ! jq -n \
   --arg installed_at "${STAMP}" \
   --arg version "${VERSION}" \
   --arg project_file "${PROJECT_FILE}" \
@@ -365,6 +399,8 @@ jq -n \
   --arg tools_path "${INSTALL_ROOT}/tools" \
   --arg specs_path "${INSTALL_ROOT}/specs" \
   --arg codex_home "${CODEX_HOME}" \
+  --arg env_path "${CODEX_ENV_FILE}" \
+  --arg shell_env_path "${CODEX_SHELL_ENV_FILE}" \
   --arg source_release "${PLUGIN_PACKAGE}" \
   --arg backup_path "${BACKUP_ROOT}" \
   --slurpfile plugin_manifest "${PLUGIN_MANIFEST}" \
@@ -377,6 +413,8 @@ jq -n \
     tools_path: $tools_path,
     specs_path: $specs_path,
     codex_home: $codex_home,
+    env_path: $env_path,
+    shell_env_path: $shell_env_path,
     source_release: $source_release,
     checksums: {
       plugin: $plugin_manifest[0].checksums,
@@ -384,10 +422,15 @@ jq -n \
     },
     backup_path: $backup_path,
     last_validation_report: null
-  }' | uecf_write_file_from_stdin "${INSTALLED_MANIFEST}" "install_local"
+  }' > "${installed_manifest_temp}"; then
+  rm -f "${installed_manifest_temp}"
+  exit 2
+fi
+uecf_commit_output_temp_file "${installed_manifest_temp}" "${INSTALLED_MANIFEST}" "install_local"
 
 uecf_reject_output_file_path "${PROJECT_MANIFEST}" "install_local"
-jq -n \
+project_manifest_temp="$(uecf_prepare_output_temp_file "${PROJECT_MANIFEST}" "install_local")"
+if ! jq -n \
   --arg project_file "${PROJECT_FILE}" \
   --arg plugin_path "${PLUGIN_DIR}" \
   --arg codex_home "${CODEX_HOME}" \
@@ -396,6 +439,7 @@ jq -n \
   --arg installed_version "${VERSION}" \
   --arg installed_manifest_path "${INSTALLED_MANIFEST}" \
   --arg default_env_path "${CODEX_ENV_FILE}" \
+  --arg shell_env_path "${CODEX_SHELL_ENV_FILE}" \
   '{
     project_file: $project_file,
     plugin_path: $plugin_path,
@@ -404,8 +448,13 @@ jq -n \
     codex_specs_path: $codex_specs_path,
     installed_version: $installed_version,
     installed_manifest_path: $installed_manifest_path,
-    default_env_path: $default_env_path
-  }' | uecf_write_file_from_stdin "${PROJECT_MANIFEST}" "install_local"
+    default_env_path: $default_env_path,
+    shell_env_path: $shell_env_path
+  }' > "${project_manifest_temp}"; then
+  rm -f "${project_manifest_temp}"
+  exit 2
+fi
+uecf_commit_output_temp_file "${project_manifest_temp}" "${PROJECT_MANIFEST}" "install_local"
 
 uecf_reject_output_file_path "${LOG_FILE}" "install_local"
 {

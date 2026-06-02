@@ -127,7 +127,7 @@ mkdir -p "${PACKAGE_DIR}"
 
 uecf_reject_link_tree "${PACKAGE_DIR}" "package_source"
 
-cat > "${PACKAGE_DIR}/install.md" <<INSTALL
+uecf_write_file_from_stdin "${PACKAGE_DIR}/install.md" "package_source" <<INSTALL
 # UECommandForge Source Install
 
 Use this source package to inspect, build, or repack UECommandForge locally.
@@ -151,7 +151,7 @@ Use \`tools/release/install_local.sh\` with a verified plugin package and tools
 package to install project plugin files and Codex-side tools/specs.
 INSTALL
 
-cat > "${PACKAGE_DIR}/release-notes.md" <<NOTES
+uecf_write_file_from_stdin "${PACKAGE_DIR}/release-notes.md" "package_source" <<NOTES
 # UECommandForge ${VERSION} Source
 
 ## Package
@@ -171,7 +171,7 @@ cat > "${PACKAGE_DIR}/release-notes.md" <<NOTES
 - Windows \`.bat\` package wrappers still require Windows host verification.
 NOTES
 
-cat > "${PACKAGE_DIR}/validation-report.json" <<REPORT
+uecf_write_file_from_stdin "${PACKAGE_DIR}/validation-report.json" "package_source" <<REPORT
 {
   "version": "${VERSION}",
   "release_channel": "${CHANNEL}",

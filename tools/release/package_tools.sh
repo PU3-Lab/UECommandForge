@@ -116,7 +116,7 @@ if [ ! -x "${PACKAGE_DIR}/tools/ue/set_blueprint_defaults.sh" ]; then
   exit 2
 fi
 
-cat > "${PACKAGE_DIR}/install.md" <<INSTALL
+uecf_write_file_from_stdin "${PACKAGE_DIR}/install.md" "package_tools" <<INSTALL
 # UECommandForge Tools Install
 
 Install plugin files into the target Unreal project and install Codex tools/specs into:
@@ -131,7 +131,7 @@ Use \`install-uecommandforge.sh\` with a verified plugin package and this tools
 package to install project plugin files and Codex-side tools/specs.
 INSTALL
 
-cat > "${PACKAGE_DIR}/release-notes.md" <<NOTES
+uecf_write_file_from_stdin "${PACKAGE_DIR}/release-notes.md" "package_tools" <<NOTES
 # UECommandForge ${VERSION}
 
 ## Package
@@ -151,7 +151,7 @@ cat > "${PACKAGE_DIR}/release-notes.md" <<NOTES
 - Windows installer behavior still requires Windows host verification.
 NOTES
 
-cat > "${PACKAGE_DIR}/validation-report.json" <<REPORT
+uecf_write_file_from_stdin "${PACKAGE_DIR}/validation-report.json" "package_tools" <<REPORT
 {
   "version": "${VERSION}",
   "release_channel": "${CHANNEL}",

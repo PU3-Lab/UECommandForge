@@ -81,6 +81,11 @@ path_is_directory_link() {
   uecf_path_is_reparse_point "$1"
 }
 
+shell_quote() {
+  local value="$1"
+  printf "'%s'" "$(printf '%s' "${value}" | sed "s/'/'\\\\''/g")"
+}
+
 create_directory_link() {
   local target="$1"
   local link="$2"
@@ -194,6 +199,7 @@ test -f "${CODEX_HOME}/UECommandForge/specs/examples/blueprint_defaults.json"
 test -x "${CODEX_HOME}/UECommandForge/tools/ue/run_commandlet.sh"
 test -x "${CODEX_HOME}/UECommandForge/tools/ue/set_blueprint_defaults.sh"
 test -f "${CODEX_HOME}/UECommandForge/uecommandforge.env"
+test -f "${CODEX_HOME}/UECommandForge/uecommandforge.env.sh"
 test -f "${CODEX_HOME}/UECommandForge/uecommandforge-installed.json"
 test -f "${PROJECT_DIR}/UECommandForge/uecommandforge-project.json"
 test -f "${PROJECT_DIR}/Saved/UECommandForge/install.log"
@@ -229,8 +235,19 @@ jq -e \
    and (.checksums | type == "object")' \
   "${CODEX_HOME}/UECommandForge/uecommandforge-installed.json" >/dev/null
 
-grep -q "^UECF_PROJECT_FILE=${PROJECT_FILE}$" \
+grep -Fqx "UECF_PROJECT_FILE=${PROJECT_FILE}" \
   "${CODEX_HOME}/UECommandForge/uecommandforge.env"
+grep -Fqx "CODEX_HOME=${CODEX_HOME}" \
+  "${CODEX_HOME}/UECommandForge/uecommandforge.env"
+grep -Fqx "export UECF_PROJECT_FILE=$(shell_quote "${PROJECT_FILE}")" \
+  "${CODEX_HOME}/UECommandForge/uecommandforge.env.sh"
+grep -Fqx "export CODEX_HOME=$(shell_quote "${CODEX_HOME}")" \
+  "${CODEX_HOME}/UECommandForge/uecommandforge.env.sh"
+sh -c '. "$1"; test "$UECF_PROJECT_FILE" = "$2"; test "$CODEX_HOME" = "$3"' \
+  _ \
+  "${CODEX_HOME}/UECommandForge/uecommandforge.env.sh" \
+  "${PROJECT_FILE}" \
+  "${CODEX_HOME}"
 
 "${REPO_ROOT}/tools/release/uninstall.sh" \
   --project "${PROJECT_FILE}" \
@@ -240,6 +257,7 @@ test ! -e "${PROJECT_DIR}/Plugins/UECommandForge"
 test -e "${CODEX_HOME}/UECommandForge/tools"
 test -e "${CODEX_HOME}/UECommandForge/specs"
 test -f "${CODEX_HOME}/UECommandForge/uecommandforge.env"
+test -f "${CODEX_HOME}/UECommandForge/uecommandforge.env.sh"
 test -f "${CODEX_HOME}/UECommandForge/uecommandforge-installed.json"
 test ! -e "${PROJECT_DIR}/UECommandForge/uecommandforge-project.json"
 
@@ -263,6 +281,7 @@ test ! -e "${PROJECT_DIR}/Plugins/UECommandForge"
 test ! -e "${CODEX_HOME}/UECommandForge/tools"
 test ! -e "${CODEX_HOME}/UECommandForge/specs"
 test ! -e "${CODEX_HOME}/UECommandForge/uecommandforge.env"
+test ! -e "${CODEX_HOME}/UECommandForge/uecommandforge.env.sh"
 test ! -e "${CODEX_HOME}/UECommandForge/uecommandforge-installed.json"
 test ! -e "${PROJECT_DIR}/UECommandForge/uecommandforge-project.json"
 test -f "${PROJECT_DIR}/Saved/UECommandForge/uninstall.log"
@@ -438,6 +457,85 @@ if "${REPO_ROOT}/tools/release/install_local.sh" \
   echo "mismatched plugin/tools release channels should fail" >&2
   exit 1
 fi
+
+MISMATCH_TYPE_PLUGIN_OUT="${WORK_DIR}/MismatchedTypePluginPackage"
+MISMATCH_TYPE_PLUGIN_PACKAGE="${MISMATCH_TYPE_PLUGIN_OUT}/package"
+mkdir -p "${MISMATCH_TYPE_PLUGIN_PACKAGE}"
+unzip -q "${PLUGIN_ZIP}" -d "${MISMATCH_TYPE_PLUGIN_PACKAGE}"
+jq '.package_type = "tools"' \
+  "${MISMATCH_TYPE_PLUGIN_PACKAGE}/uecommandforge-manifest.json" \
+  > "${MISMATCH_TYPE_PLUGIN_PACKAGE}/uecommandforge-manifest.json.tmp"
+mv "${MISMATCH_TYPE_PLUGIN_PACKAGE}/uecommandforge-manifest.json.tmp" \
+  "${MISMATCH_TYPE_PLUGIN_PACKAGE}/uecommandforge-manifest.json"
+(
+  cd "${MISMATCH_TYPE_PLUGIN_PACKAGE}"
+  uecf_create_zip "${MISMATCH_TYPE_PLUGIN_OUT}/$(basename "${PLUGIN_ZIP}")" ./*
+)
+uecf_write_checksums_file \
+  "${MISMATCH_TYPE_PLUGIN_OUT}/$(basename "${PLUGIN_ZIP}")" \
+  "${MISMATCH_TYPE_PLUGIN_OUT}/checksums.txt" \
+  "release_package_install_smoke"
+if "${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${PROJECT_FILE}" \
+  --plugin-package "${MISMATCH_TYPE_PLUGIN_OUT}/$(basename "${PLUGIN_ZIP}")" \
+  --tools-package "${TOOLS_ZIP}" \
+  --codex-home "${WORK_DIR}/MismatchedTypePluginCodex" \
+  --run-commandlet-check false >/dev/null 2>&1; then
+  echo "mismatched plugin package type should fail" >&2
+  exit 1
+fi
+
+MISMATCH_TYPE_TOOLS_OUT="${WORK_DIR}/MismatchedTypeToolsPackage"
+MISMATCH_TYPE_TOOLS_PACKAGE="${MISMATCH_TYPE_TOOLS_OUT}/package"
+mkdir -p "${MISMATCH_TYPE_TOOLS_PACKAGE}"
+unzip -q "${TOOLS_ZIP}" -d "${MISMATCH_TYPE_TOOLS_PACKAGE}"
+jq '.package_type = "plugin"' \
+  "${MISMATCH_TYPE_TOOLS_PACKAGE}/uecommandforge-manifest.json" \
+  > "${MISMATCH_TYPE_TOOLS_PACKAGE}/uecommandforge-manifest.json.tmp"
+mv "${MISMATCH_TYPE_TOOLS_PACKAGE}/uecommandforge-manifest.json.tmp" \
+  "${MISMATCH_TYPE_TOOLS_PACKAGE}/uecommandforge-manifest.json"
+(
+  cd "${MISMATCH_TYPE_TOOLS_PACKAGE}"
+  uecf_create_zip "${MISMATCH_TYPE_TOOLS_OUT}/UECommandForge-${VERSION}-Tools.zip" ./*
+)
+uecf_write_checksums_file \
+  "${MISMATCH_TYPE_TOOLS_OUT}/UECommandForge-${VERSION}-Tools.zip" \
+  "${MISMATCH_TYPE_TOOLS_OUT}/checksums.txt" \
+  "release_package_install_smoke"
+if "${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${PROJECT_FILE}" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${MISMATCH_TYPE_TOOLS_OUT}/UECommandForge-${VERSION}-Tools.zip" \
+  --codex-home "${WORK_DIR}/MismatchedTypeToolsCodex" \
+  --run-commandlet-check false >/dev/null 2>&1; then
+  echo "mismatched tools package type should fail" >&2
+  exit 1
+fi
+
+ENV_QUOTE_PROJECT="${WORK_DIR}/Env Quote \$Project"
+ENV_QUOTE_CODEX="${WORK_DIR}/Env Quote \$Codex"
+mkdir -p "${ENV_QUOTE_PROJECT}" "${ENV_QUOTE_CODEX}"
+cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" \
+  "${ENV_QUOTE_PROJECT}/UECommandForgeSample.uproject"
+"${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${ENV_QUOTE_PROJECT}/UECommandForgeSample.uproject" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${TOOLS_ZIP}" \
+  --codex-home "${ENV_QUOTE_CODEX}" \
+  --run-commandlet-check false >/dev/null
+grep -Fqx "UECF_PROJECT_FILE=${ENV_QUOTE_PROJECT}/UECommandForgeSample.uproject" \
+  "${ENV_QUOTE_CODEX}/UECommandForge/uecommandforge.env"
+grep -Fqx "CODEX_HOME=${ENV_QUOTE_CODEX}" \
+  "${ENV_QUOTE_CODEX}/UECommandForge/uecommandforge.env"
+grep -Fqx "export UECF_PROJECT_FILE=$(shell_quote "${ENV_QUOTE_PROJECT}/UECommandForgeSample.uproject")" \
+  "${ENV_QUOTE_CODEX}/UECommandForge/uecommandforge.env.sh"
+grep -Fqx "export CODEX_HOME=$(shell_quote "${ENV_QUOTE_CODEX}")" \
+  "${ENV_QUOTE_CODEX}/UECommandForge/uecommandforge.env.sh"
+sh -c '. "$1"; test "$UECF_PROJECT_FILE" = "$2"; test "$CODEX_HOME" = "$3"' \
+  _ \
+  "${ENV_QUOTE_CODEX}/UECommandForge/uecommandforge.env.sh" \
+  "${ENV_QUOTE_PROJECT}/UECommandForgeSample.uproject" \
+  "${ENV_QUOTE_CODEX}"
 
 SYMLINK_PROJECT="${WORK_DIR}/SymlinkProject"
 SYMLINK_TARGET="${WORK_DIR}/SymlinkTarget"
@@ -620,7 +718,7 @@ if "${REPO_ROOT}/tools/release/install_local.sh" \
 fi
 grep -q 'preserve backup target' "${BACKUP_REPARSE_TARGET}/sentinel.txt"
 
-for metadata_case in env installed project log; do
+for metadata_case in env shell_env installed project log; do
   METADATA_REPARSE_PROJECT="${WORK_DIR}/MetadataReparseProject-${metadata_case}"
   METADATA_REPARSE_CODEX="${WORK_DIR}/MetadataReparseCodex-${metadata_case}"
   METADATA_REPARSE_TARGET="${WORK_DIR}/MetadataReparseTarget-${metadata_case}"
@@ -638,6 +736,9 @@ for metadata_case in env installed project log; do
   case "${metadata_case}" in
     env)
       METADATA_REPARSE_PATH="${METADATA_REPARSE_CODEX}/UECommandForge/uecommandforge.env"
+      ;;
+    shell_env)
+      METADATA_REPARSE_PATH="${METADATA_REPARSE_CODEX}/UECommandForge/uecommandforge.env.sh"
       ;;
     installed)
       METADATA_REPARSE_PATH="${METADATA_REPARSE_CODEX}/UECommandForge/uecommandforge-installed.json"
@@ -669,7 +770,7 @@ for metadata_case in env installed project log; do
   grep -q "preserve metadata target ${metadata_case}" "${METADATA_REPARSE_TARGET}/sentinel.txt"
 done
 
-for metadata_case in env installed project log; do
+for metadata_case in env shell_env installed project log; do
   METADATA_HARDLINK_PROJECT="${WORK_DIR}/MetadataHardlinkProject-${metadata_case}"
   METADATA_HARDLINK_CODEX="${WORK_DIR}/MetadataHardlinkCodex-${metadata_case}"
   METADATA_HARDLINK_TARGET="${WORK_DIR}/MetadataHardlinkTarget-${metadata_case}.txt"
@@ -687,6 +788,9 @@ for metadata_case in env installed project log; do
   case "${metadata_case}" in
     env)
       METADATA_HARDLINK_PATH="${METADATA_HARDLINK_CODEX}/UECommandForge/uecommandforge.env"
+      ;;
+    shell_env)
+      METADATA_HARDLINK_PATH="${METADATA_HARDLINK_CODEX}/UECommandForge/uecommandforge.env.sh"
       ;;
     installed)
       METADATA_HARDLINK_PATH="${METADATA_HARDLINK_CODEX}/UECommandForge/uecommandforge-installed.json"
@@ -714,6 +818,37 @@ for metadata_case in env installed project log; do
     --run-commandlet-check false >/dev/null
   cmp "${METADATA_HARDLINK_TARGET}" "${METADATA_HARDLINK_BEFORE}"
 done
+
+UNINSTALL_CHILD_REPARSE_PROJECT="${WORK_DIR}/UninstallChildReparseProject"
+UNINSTALL_CHILD_REPARSE_CODEX="${WORK_DIR}/UninstallChildReparseCodex"
+UNINSTALL_CHILD_REPARSE_TARGET="${WORK_DIR}/UninstallChildReparseTarget"
+mkdir -p "${UNINSTALL_CHILD_REPARSE_PROJECT}" \
+  "${UNINSTALL_CHILD_REPARSE_CODEX}" \
+  "${UNINSTALL_CHILD_REPARSE_TARGET}"
+cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" \
+  "${UNINSTALL_CHILD_REPARSE_PROJECT}/UECommandForgeSample.uproject"
+"${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${UNINSTALL_CHILD_REPARSE_PROJECT}/UECommandForgeSample.uproject" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${TOOLS_ZIP}" \
+  --codex-home "${UNINSTALL_CHILD_REPARSE_CODEX}" \
+  --run-commandlet-check false >/dev/null
+printf 'preserve uninstall child target\n' > "${UNINSTALL_CHILD_REPARSE_TARGET}/sentinel.txt"
+remove_directory_fixture "${UNINSTALL_CHILD_REPARSE_CODEX}/UECommandForge/tools/ue"
+if ! create_directory_link "${UNINSTALL_CHILD_REPARSE_TARGET}" \
+  "${UNINSTALL_CHILD_REPARSE_CODEX}/UECommandForge/tools/ue"; then
+  echo "could not create uninstall child reparse fixture" >&2
+  exit 1
+fi
+if "${REPO_ROOT}/tools/release/uninstall.sh" \
+  --project "${UNINSTALL_CHILD_REPARSE_PROJECT}/UECommandForgeSample.uproject" \
+  --codex-home "${UNINSTALL_CHILD_REPARSE_CODEX}" \
+  --remove-codex-tools true \
+  --remove-specs true >/dev/null 2>&1; then
+  echo "uninstall target with reparse child should fail" >&2
+  exit 1
+fi
+grep -q 'preserve uninstall child target' "${UNINSTALL_CHILD_REPARSE_TARGET}/sentinel.txt"
 
 MISSING_CHECKSUM_DIR="${WORK_DIR}/MissingChecksum"
 mkdir -p "${MISSING_CHECKSUM_DIR}"

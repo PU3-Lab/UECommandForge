@@ -262,33 +262,57 @@ uecf_reject_output_file_path() {
   return 0
 }
 
-uecf_write_file_from_stdin() {
+uecf_prepare_output_temp_file() {
   local output_path="$1"
   local owner="$2"
   local output_dir
-  local temp_file
 
   output_dir="$(dirname "${output_path}")"
   uecf_reject_link_ancestors "${output_dir}" "${owner}" || return 2
   uecf_reject_output_file_path "${output_path}" "${owner}" || return 2
-  temp_file="$(mktemp "${output_dir}/.$(basename "${output_path}").XXXXXX")"
+  mktemp "${output_dir}/.$(basename "${output_path}").XXXXXX"
+}
+
+uecf_commit_output_temp_file() {
+  local temp_file="$1"
+  local output_path="$2"
+  local owner="$3"
+  local output_mode="0644"
+
+  uecf_reject_output_file_path "${output_path}" "${owner}" || {
+    rm -f "${temp_file}"
+    return 2
+  }
+  if [ -f "${output_path}" ]; then
+    if command -v stat >/dev/null 2>&1; then
+      output_mode="$(stat -f '%Lp' "${output_path}" 2>/dev/null \
+        || stat -c '%a' "${output_path}" 2>/dev/null \
+        || printf '0644')"
+    fi
+  fi
+  chmod "${output_mode}" "${temp_file}" 2>/dev/null || chmod 0644 "${temp_file}"
+  mv "${temp_file}" "${output_path}"
+}
+
+uecf_write_file_from_stdin() {
+  local output_path="$1"
+  local owner="$2"
+  local temp_file
+
+  temp_file="$(uecf_prepare_output_temp_file "${output_path}" "${owner}")" || return 2
   if ! cat > "${temp_file}"; then
     rm -f "${temp_file}"
     return 2
   fi
-  mv "${temp_file}" "${output_path}"
+  uecf_commit_output_temp_file "${temp_file}" "${output_path}" "${owner}"
 }
 
 uecf_append_file_from_stdin() {
   local output_path="$1"
   local owner="$2"
-  local output_dir
   local temp_file
 
-  output_dir="$(dirname "${output_path}")"
-  uecf_reject_link_ancestors "${output_dir}" "${owner}" || return 2
-  uecf_reject_output_file_path "${output_path}" "${owner}" || return 2
-  temp_file="$(mktemp "${output_dir}/.$(basename "${output_path}").XXXXXX")"
+  temp_file="$(uecf_prepare_output_temp_file "${output_path}" "${owner}")" || return 2
   if [ -f "${output_path}" ] && ! cat "${output_path}" > "${temp_file}"; then
     rm -f "${temp_file}"
     return 2
@@ -297,16 +321,26 @@ uecf_append_file_from_stdin() {
     rm -f "${temp_file}"
     return 2
   fi
-  mv "${temp_file}" "${output_path}"
+  uecf_commit_output_temp_file "${temp_file}" "${output_path}" "${owner}"
 }
 
 uecf_write_checksums_file() {
   local zip_path="$1"
   local checksums_path="$2"
   local owner="$3"
+  local temp_file
 
-  "$(dirname "${BASH_SOURCE[0]}")/write_checksums.sh" "${zip_path}" \
-    | uecf_write_file_from_stdin "${checksums_path}" "${owner}"
+  temp_file="$(uecf_prepare_output_temp_file "${checksums_path}" "${owner}")" || return 2
+  if ! "$(dirname "${BASH_SOURCE[0]}")/write_checksums.sh" "${zip_path}" > "${temp_file}"; then
+    rm -f "${temp_file}"
+    return 2
+  fi
+  uecf_commit_output_temp_file "${temp_file}" "${checksums_path}" "${owner}"
+}
+
+uecf_shell_quote() {
+  local value="$1"
+  printf "'%s'" "$(printf '%s' "${value}" | sed "s/'/'\\\\''/g")"
 }
 
 uecf_create_zip() {

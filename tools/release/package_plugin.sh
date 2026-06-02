@@ -174,7 +174,7 @@ mkdir -p "${PACKAGE_DIR}"
 
 uecf_reject_link_tree "${PACKAGE_DIR}" "package_plugin"
 
-cat > "${PACKAGE_DIR}/install.md" <<INSTALL
+uecf_write_file_from_stdin "${PACKAGE_DIR}/install.md" "package_plugin" <<INSTALL
 # UECommandForge Plugin Install
 
 Install this package into the target Unreal project:
@@ -190,7 +190,7 @@ Codex-side tools and specs are installed separately into:
 \`\`\`
 INSTALL
 
-cat > "${PACKAGE_DIR}/release-notes.md" <<NOTES
+uecf_write_file_from_stdin "${PACKAGE_DIR}/release-notes.md" "package_plugin" <<NOTES
 # UECommandForge ${VERSION} Plugin
 
 ## Package
@@ -212,7 +212,7 @@ cat > "${PACKAGE_DIR}/release-notes.md" <<NOTES
 - Windows \`.bat\` package wrappers still require Windows host verification.
 NOTES
 
-cat > "${PACKAGE_DIR}/validation-report.json" <<REPORT
+uecf_write_file_from_stdin "${PACKAGE_DIR}/validation-report.json" "package_plugin" <<REPORT
 {
   "version": "${VERSION}",
   "release_channel": "${CHANNEL}",

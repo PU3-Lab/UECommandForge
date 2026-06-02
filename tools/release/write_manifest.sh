@@ -58,6 +58,10 @@ if [ ! -d "${PACKAGE_ROOT}" ]; then
   exit 2
 fi
 
+uecf_reject_link_ancestors "${PACKAGE_ROOT}" "write_manifest"
+uecf_reject_link_tree "${PACKAGE_ROOT}" "write_manifest"
+uecf_reject_output_file_path "${OUTPUT}" "write_manifest"
+
 TMP_DIR="$(mktemp -d)"
 cleanup() {
   rm -rf "${TMP_DIR}"
@@ -117,7 +121,8 @@ printf '%s\n' "${INSTALL_COMMANDS}" > "${install_commands_path}"
       '
 ) > "${checksums_path}"
 
-jq -n \
+manifest_temp="$(uecf_prepare_output_temp_file "${OUTPUT}" "write_manifest")"
+if ! jq -n \
   --arg version "${VERSION}" \
   --arg engine_version "${ENGINE_VERSION}" \
   --arg release_channel "${CHANNEL}" \
@@ -149,4 +154,8 @@ jq -n \
     known_limits: [
       "Windows wrapper execution requires verification on a Windows host."
     ]
-  }' > "${OUTPUT}"
+  }' > "${manifest_temp}"; then
+  rm -f "${manifest_temp}"
+  exit 2
+fi
+uecf_commit_output_temp_file "${manifest_temp}" "${OUTPUT}" "write_manifest"

@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "${SCRIPT_DIR}/common.sh"
+
 PROJECT_FILE="${UECF_PROJECT:-${PROJECT_FILE:-}}"
 CODEX_HOME="${CODEX_HOME:-${HOME}/.codex}"
 REMOVE_CODEX_TOOLS=false
@@ -39,6 +43,9 @@ if [ -z "${PROJECT_FILE}" ] || [ ! -f "${PROJECT_FILE}" ]; then
   exit 2
 fi
 
+uecf_reject_link_ancestors "${PROJECT_FILE}" "uninstall"
+uecf_reject_link_ancestors "$(dirname "${PROJECT_FILE}")" "uninstall"
+uecf_reject_link_ancestors "${CODEX_HOME}" "uninstall"
 PROJECT_FILE="$(cd "$(dirname "${PROJECT_FILE}")" && pwd)/$(basename "${PROJECT_FILE}")"
 PROJECT_DIR="$(cd "$(dirname "${PROJECT_FILE}")" && pwd)"
 CODEX_HOME="$(mkdir -p "${CODEX_HOME}" && cd "${CODEX_HOME}" && pwd)"
@@ -48,11 +55,7 @@ LOG_FILE="${LOG_DIR}/uninstall.log"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 
 reject_symlink_path() {
-  local path="$1"
-  if [ -L "${path}" ]; then
-    echo "[uninstall] refusing to operate on symlink path: ${path}" >&2
-    exit 2
-  fi
+  uecf_reject_link_path "$1" "uninstall"
 }
 
 PROJECT_LINK_DIR="${PROJECT_DIR}/UECommandForge"
@@ -68,6 +71,17 @@ reject_symlink_path "${LOG_DIR}"
 reject_symlink_path "${INSTALL_ROOT}"
 reject_symlink_path "${INSTALL_ROOT}/tools"
 reject_symlink_path "${INSTALL_ROOT}/specs"
+uecf_reject_link_ancestors "${PLUGIN_DIR}" "uninstall"
+uecf_reject_link_ancestors "${INSTALL_ROOT}/tools" "uninstall"
+uecf_reject_link_ancestors "${INSTALL_ROOT}/specs" "uninstall"
+uecf_reject_link_tree "${PLUGIN_DIR}" "uninstall"
+uecf_reject_link_tree "${INSTALL_ROOT}/tools" "uninstall"
+uecf_reject_link_tree "${INSTALL_ROOT}/specs" "uninstall"
+uecf_reject_output_file_path "${PROJECT_MANIFEST}" "uninstall"
+uecf_reject_output_file_path "${INSTALLED_MANIFEST}" "uninstall"
+uecf_reject_output_file_path "${INSTALL_ROOT}/uecommandforge.env" "uninstall"
+uecf_reject_output_file_path "${INSTALL_ROOT}/uecommandforge.env.sh" "uninstall"
+uecf_reject_output_file_path "${LOG_FILE}" "uninstall"
 
 if [ ! -f "${PROJECT_MANIFEST}" ] || [ ! -f "${INSTALLED_MANIFEST}" ]; then
   echo "[uninstall] managed install metadata not found; refusing to uninstall" >&2
@@ -91,26 +105,36 @@ jq -e \
   "${INSTALLED_MANIFEST}" >/dev/null
 
 mkdir -p "${LOG_DIR}"
+uecf_reject_link_tree "${PLUGIN_DIR}" "uninstall"
+uecf_reject_output_file_path "${PROJECT_MANIFEST}" "uninstall"
 
 rm -rf "${PLUGIN_DIR}"
 rm -f "${PROJECT_MANIFEST}"
 rmdir "${PROJECT_LINK_DIR}" 2>/dev/null || true
 
 if [ "${REMOVE_CODEX_TOOLS}" = true ]; then
+  uecf_reject_link_tree "${INSTALL_ROOT}/tools" "uninstall"
   rm -rf "${INSTALL_ROOT}/tools"
 fi
 if [ "${REMOVE_SPECS}" = true ]; then
+  uecf_reject_link_tree "${INSTALL_ROOT}/specs" "uninstall"
   rm -rf "${INSTALL_ROOT}/specs"
 fi
 if [ "${REMOVE_CODEX_TOOLS}" = true ] && [ "${REMOVE_SPECS}" = true ]; then
-  rm -f "${INSTALL_ROOT}/uecommandforge.env" "${INSTALLED_MANIFEST}"
+  uecf_reject_output_file_path "${INSTALL_ROOT}/uecommandforge.env" "uninstall"
+  uecf_reject_output_file_path "${INSTALL_ROOT}/uecommandforge.env.sh" "uninstall"
+  uecf_reject_output_file_path "${INSTALLED_MANIFEST}" "uninstall"
+  rm -f "${INSTALL_ROOT}/uecommandforge.env" \
+    "${INSTALL_ROOT}/uecommandforge.env.sh" \
+    "${INSTALLED_MANIFEST}"
 fi
 
+uecf_reject_output_file_path "${LOG_FILE}" "uninstall"
 {
   echo "uninstalled_at=${STAMP}"
   echo "project_file=${PROJECT_FILE}"
   echo "removed_codex_tools=${REMOVE_CODEX_TOOLS}"
   echo "removed_specs=${REMOVE_SPECS}"
-} >> "${LOG_FILE}"
+} | uecf_append_file_from_stdin "${LOG_FILE}" "uninstall"
 
 echo "${LOG_FILE}"
