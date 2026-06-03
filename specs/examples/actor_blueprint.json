@@ -1,0 +1,10 @@
+{
+  "version": "1",
+  "kind": "blueprint",
+  "transaction_id": "tx-create-actor-blueprint",
+  "asset_path": "/Game/Actors/BP_Door",
+  "parent_class": "/Script/Engine.Actor",
+  "compile": true,
+  "save": true,
+  "allow_replace": true
+}
