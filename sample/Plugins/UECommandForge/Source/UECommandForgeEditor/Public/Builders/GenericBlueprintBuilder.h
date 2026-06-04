@@ -13,6 +13,11 @@ namespace UECommandForge
     {
         FString FieldPrefix = TEXT("Blueprint");
         TArray<FString> ParentClassModules;
+        bool bAllowReplace = true;
+        bool bRequireActorParent = true;
+        bool bRequireBlueprintable = true;
+        bool bCompile = true;
+        bool bSave = true;
     };
 
     class FGenericBlueprintBuilder

@@ -5,7 +5,7 @@
 
 namespace UECommandForge
 {
-    bool FBlueprintCreateSpecParser::Parse(const FString& Json, FCommandForgeBlueprintCreateSpec& OutSpec,
+    bool FBlueprintCreateSpecParser::Parse(const FString& Json, FBlueprintSpec& OutSpec,
                                            TArray<FCommandForgeError>& OutErrors)
     {
         const int32 InitialErrorCount = OutErrors.Num();
@@ -42,3 +42,4 @@ namespace UECommandForge
         return OutErrors.Num() == InitialErrorCount;
     }
 }
+

@@ -6,6 +6,10 @@ if "%~1"=="" (
   exit /b 2
 )
 for %%I in ("%~1") do set "SPEC_FILE=%%~fI"
+if not exist "%SPEC_FILE%" (
+  echo 에러: 지정한 Spec 파일이 디렉토리에 존재하지 않습니다: %SPEC_FILE% 1>&2
+  exit /b 1
+)
 shift /1
 set "EXTRA_ARGS="
 :collect_args

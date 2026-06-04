@@ -30,8 +30,9 @@ fi
 echo "=== Generic Blueprint Create Smoke Test ==="
 echo ""
 
-# 임시 spec 파일 경로
+# 임시 파일 경로
 TEMP_SPEC="${SAMPLE_DIR}/Saved/TempSpec.json"
+TEMP_OUT="${SAMPLE_DIR}/Saved/TempOut.log"
 mkdir -p "$(dirname "${TEMP_SPEC}")"
 
 # 1. 정상 케이스 생성 테스트
@@ -49,8 +50,8 @@ cat <<EOF > "${TEMP_SPEC}"
 }
 EOF
 
-"${UE_TOOLS}/create_blueprint.sh" "${TEMP_SPEC}"
-REPORT_FILE="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/CreateBlueprint_"*.json | head -1)"
+"${UE_TOOLS}/create_blueprint.sh" "${TEMP_SPEC}" > "${TEMP_OUT}"
+REPORT_FILE="$(tail -1 "${TEMP_OUT}")"
 echo "Report: ${REPORT_FILE}"
 
 OK=$(jq -r '.ok' "${REPORT_FILE}")
@@ -84,8 +85,8 @@ cat <<EOF > "${TEMP_SPEC}"
 EOF
 
 # 실패 케이스이므로 쉘의 set -e에 의해 스크립트가 죽지 않도록 || true 처리
-"${UE_TOOLS}/create_blueprint.sh" "${TEMP_SPEC}" || true
-REPORT_FILE="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/CreateBlueprint_"*.json | head -1)"
+"${UE_TOOLS}/create_blueprint.sh" "${TEMP_SPEC}" > "${TEMP_OUT}" || true
+REPORT_FILE="$(tail -1 "${TEMP_OUT}")"
 
 OK=$(jq -r '.ok' "${REPORT_FILE}")
 ERR_CODE=$(jq -r '.errors[0].code' "${REPORT_FILE}")
@@ -110,8 +111,8 @@ cat <<EOF > "${TEMP_SPEC}"
 }
 EOF
 
-"${UE_TOOLS}/create_blueprint.sh" "${TEMP_SPEC}" || true
-REPORT_FILE="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/CreateBlueprint_"*.json | head -1)"
+"${UE_TOOLS}/create_blueprint.sh" "${TEMP_SPEC}" > "${TEMP_OUT}" || true
+REPORT_FILE="$(tail -1 "${TEMP_OUT}")"
 
 OK=$(jq -r '.ok' "${REPORT_FILE}")
 ERR_CODE=$(jq -r '.errors[0].code' "${REPORT_FILE}")
@@ -136,8 +137,8 @@ cat <<EOF > "${TEMP_SPEC}"
 }
 EOF
 
-"${UE_TOOLS}/create_blueprint.sh" "${TEMP_SPEC}" || true
-REPORT_FILE="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/CreateBlueprint_"*.json | head -1)"
+"${UE_TOOLS}/create_blueprint.sh" "${TEMP_SPEC}" > "${TEMP_OUT}" || true
+REPORT_FILE="$(tail -1 "${TEMP_OUT}")"
 
 OK=$(jq -r '.ok' "${REPORT_FILE}")
 ERR_CODE=$(jq -r '.errors[0].code' "${REPORT_FILE}")
@@ -148,8 +149,9 @@ check "error.code == PARENT_CLASS_NOT_FOUND" "$([ "${ERR_CODE}" = "PARENT_CLASS_
 echo ""
 echo "=== 결과: PASS ${PASS} / FAIL ${FAIL} ==="
 
-rm -f "${TEMP_SPEC}"
+rm -f "${TEMP_SPEC}" "${TEMP_OUT}"
 
 if [ "${FAIL}" -gt 0 ]; then
     exit 1
 fi
+
