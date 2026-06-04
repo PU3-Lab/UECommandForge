@@ -296,3 +296,47 @@ Options.bAllowReplace = true;   // 하드코딩 (N2 되돌려짐, 5차 참조)
 
 ## 결론
 커밋 `a34ee5a`는 **1~4차 리뷰 지적을 정확히 해소했고 신규 회귀·빌드 깨짐 없음.** 스모크 grep 변경도 견고성 개선으로 타당. 남은 것은 R1(테스트 3파일의 무효 라인 3줄)뿐이며 머지를 막지 않음.
+
+---
+
+# 8차 검증 — 커밋 `c0ba72e` (R1 데드코드 제거)
+
+- **대상 커밋:** `c0ba72e` (`refactor(tests): remove deadcode bAllowReplace assignments`)
+- **작성자/일시:** kimkyungpyo, 2026-06-04 12:12
+- **범위:** R1(빌더-경로 테스트의 무효 `Spec.*.bAllowReplace`) 제거 정확성
+
+## 제거 정확성 ✓
+데드코드 `Spec.*.bAllowReplace = true`를 빌더-경로 테스트 3종에서 정확히 제거:
+- `AIFlowBindingTest` — Character + AIController 2줄
+- `CharacterBlueprintBuilderTest` — 1줄
+- `CreateAIFlowCommandletTest` — 2개 테스트 × 2 = 4줄
+
+## 불변식 보존 검증 (핵심) ✓
+| 항목 | 상태 | 판정 |
+|------|------|------|
+| 빌더 `Options.bAllowReplace = true` (line 13×2) | 유지 | replace 동작 변화 없음 → 제거가 진짜 no-op |
+| `BlueprintDefaultsCommandletTest` `Options.bAllowReplace = true` (line 100·130) | 유지 | 유효한 Options-레벨 세팅(예외)을 오삭제하지 않음 |
+
+R1에서 "유효하므로 유지 필요"라 지목했던 `BlueprintDefaultsCommandletTest` 두 라인은 건드리지 않고, 무효한 spec-레벨 라인만 제거. diff의 index 해시가 `a34ee5a` 추가분의 정확한 역(`e92d68f→e5bb521` 등)이라 해당 라인이 `128bf35` 상태로 깔끔히 복원됨.
+
+## 부수 효과
+- 빌더 `true` 하드코딩이라 테스트 재실행 시 에셋 덮어쓰기 유지 → **테스트 동작 불변, 회귀 없음.**
+- 테스트가 production 동작(빌더 멱등 덮어쓰기)을 정확 반영 → "스펙 필드가 replace 제어"라는 오해 소지 제거.
+
+## 결론
+R1 정리는 **정확하고 완전.** 무효 라인만 제거, 유효 라인 보존, 동작 불변, 신규 결함 없음.
+
+---
+
+# 전체 리뷰 사이클 종결 요약
+
+| 단계 | 대상 | 지적 | 처리 |
+|------|------|------|------|
+| 1차 | 브랜치 diff (`3307a90`) | 1~5 (빌더 우회·스펙 중복·smoke `ls -t`·`/dev/null`·`.bat`) | 커밋 `128bf35`에서 해소 |
+| 2차 | 커밋 `128bf35` | A·B·C·D (blueprintable 오기록·exit code·기본값·포맷) | 커밋 `a34ee5a`에서 해소 |
+| 3·4·5차 | 미커밋 수정 | N1·N2 → **N2 회귀** 발견 → 권장안 #1 복원 | 커밋 `a34ee5a`(N2 롤백) |
+| 6차 | 외부 HIGH/MEDIUM | CreateAIFlow allow_replace | 현 코드 기준 stale, 옵션 #2 한정 유효로 정리 |
+| 7차 | 커밋 `a34ee5a` | 스모크 grep 개선 확인 + R1 잔존 | 타당 |
+| 8차 | 커밋 `c0ba72e` | R1 데드코드 제거 | 해소 |
+
+**최종 상태:** 모든 코드 이슈 해소/처리 완료. 남은 live 결함 없음. 옵션 #2(`FAIFlowSpecParser` nested replace 파싱)는 향후 스키마 일관성을 제품 요구로 삼을 경우의 선택 과제로만 보류.
