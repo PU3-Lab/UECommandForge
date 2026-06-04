@@ -10,6 +10,7 @@ namespace UECommandForge
         FGenericBlueprintBuildOptions Options;
         Options.FieldPrefix = TEXT("AIController");
         Options.ParentClassModules = { TEXT("AIModule"), TEXT("Engine") };
+        Options.bAllowReplace = true;
         return FGenericBlueprintBuilder::Build(Spec, Options, OutErrors, OutValidation);
     }
 }

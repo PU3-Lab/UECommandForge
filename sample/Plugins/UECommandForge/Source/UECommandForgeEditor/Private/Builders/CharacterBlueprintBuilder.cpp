@@ -10,6 +10,7 @@ namespace UECommandForge
         FGenericBlueprintBuildOptions Options;
         Options.FieldPrefix = TEXT("Character");
         Options.ParentClassModules = { TEXT("Engine") };
+        Options.bAllowReplace = true;
         return FGenericBlueprintBuilder::Build(Spec, Options, OutErrors, OutValidation);
     }
 }

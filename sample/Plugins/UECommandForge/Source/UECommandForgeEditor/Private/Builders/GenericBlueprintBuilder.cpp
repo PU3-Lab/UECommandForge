@@ -7,8 +7,10 @@
 #include "Kismet2/KismetEditorUtilities.h"
 #include "Misc/PackageName.h"
 #include "Misc/Paths.h"
+#include "Misc/ScopeExit.h"
 #include "ObjectTools.h"
 #include "UObject/GarbageCollection.h"
+#include "GameFramework/Actor.h"
 
 namespace UECommandForge
 {
@@ -89,6 +91,7 @@ namespace UECommandForge
             ? TEXT("Blueprint.ParentClass")
             : Options.FieldPrefix + TEXT(".ParentClass");
 
+        // 1. 부모 클래스 로드 및 검증
         UClass* ParentClass = ResolveParentClass(Spec.ParentClass, Options.ParentClassModules);
         if (!ParentClass)
         {
@@ -98,15 +101,71 @@ namespace UECommandForge
             return false;
         }
 
-        if (!DeleteExistingBlueprint(Spec.AssetPath, Field, OutErrors))
+        OutValidation.Add(TEXT("parent_class_loaded"), TEXT("true"));
+
+        if (Options.bRequireActorParent && !ParentClass->IsChildOf(AActor::StaticClass()))
         {
+            OutErrors.Add({ TEXT("PARENT_CLASS_NOT_ACTOR"),
+                FString::Printf(TEXT("부모 클래스가 Actor 계층이 아닙니다: %s"), *ParentClass->GetName()),
+                ParentField });
+            return false;
+        }
+
+        if (Options.bRequireBlueprintable)
+        {
+            if (!FKismetEditorUtilities::CanCreateBlueprintOfClass(ParentClass))
+            {
+                OutErrors.Add({ TEXT("PARENT_CLASS_NOT_BLUEPRINTABLE"),
+                    FString::Printf(TEXT("부모 클래스로부터 Blueprint를 생성할 수 없습니다: %s"), *ParentClass->GetName()),
+                    ParentField });
+                return false;
+            }
+            OutValidation.Add(TEXT("parent_class_blueprintable"), TEXT("true"));
+        }
+        else
+        {
+            OutValidation.Add(TEXT("parent_class_blueprintable"), TEXT("skipped"));
+        }
+
+        // 2. 에셋 존재 여부 및 allow_replace 검사
+        const FString FileName = FPaths::ConvertRelativePathToFull(
+            FPackageName::LongPackageNameToFilename(Spec.AssetPath, FPackageName::GetAssetPackageExtension()));
+        IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+        UPackage* ExistingPackage = FindPackage(nullptr, *Spec.AssetPath);
+        const bool bAssetExists = ExistingPackage || PlatformFile.FileExists(*FileName);
+
+        if (bAssetExists)
+        {
+            if (!Options.bAllowReplace)
+            {
+                OutErrors.Add({ TEXT("BP_ALREADY_EXISTS"),
+                    FString::Printf(TEXT("에셋이 이미 존재하며 allow_replace가 false입니다: %s"), *Spec.AssetPath),
+                    Field });
+                return false;
+            }
+            else
+            {
+                if (!DeleteExistingBlueprint(Spec.AssetPath, Field, OutErrors))
+                {
+                    return false;
+                }
+            }
+        }
+
+        // 3. 블루프린트 생성
+        UPackage* Package = CreatePackage(*Spec.AssetPath);
+        if (!Package)
+        {
+            OutErrors.Add({ TEXT("PACKAGE_CREATE_FAILED"),
+                FString::Printf(TEXT("패키지 생성에 실패했습니다: %s"), *Spec.AssetPath),
+                Field });
             return false;
         }
 
         const FString AssetName = FPackageName::GetLongPackageAssetName(Spec.AssetPath);
         UBlueprint* Blueprint = FKismetEditorUtilities::CreateBlueprint(
             ParentClass,
-            CreatePackage(*Spec.AssetPath),
+            Package,
             *AssetName,
             BPTYPE_Normal,
             UBlueprint::StaticClass(),
@@ -120,8 +179,54 @@ namespace UECommandForge
             return false;
         }
 
+        // GC 보호 강제 등록 및 해제 가드
+        Blueprint->AddToRoot();
+        Package->AddToRoot();
+
+        ON_SCOPE_EXIT
+        {
+            if (Blueprint)
+            {
+                Blueprint->RemoveFromRoot();
+            }
+            if (Package)
+            {
+                Package->RemoveFromRoot();
+            }
+        };
+
+        OutValidation.Add(TEXT("asset_created"), TEXT("true"));
         OutValidation.Add(TEXT("parent_class"), ParentClass->GetPathName());
-        return FBlueprintValidationRunner::CompileSaveAndValidate(
-            Blueprint, Spec.AssetPath, Field, OutErrors, OutValidation);
+
+        // 4. 컴파일 및 저장 검증
+        bool bSuccess = true;
+
+        if (Options.bCompile)
+        {
+            if (!FBlueprintValidationRunner::Compile(Blueprint, Spec.AssetPath, Field, OutErrors, OutValidation))
+            {
+                bSuccess = false;
+            }
+        }
+        else
+        {
+            OutValidation.Add(TEXT("compile_status"), TEXT("skipped"));
+        }
+
+        if (bSuccess && Options.bSave)
+        {
+            if (!FBlueprintValidationRunner::Save(Blueprint, Spec.AssetPath, Field, OutErrors, OutValidation))
+            {
+                bSuccess = false;
+            }
+        }
+        else if (!Options.bSave)
+        {
+            OutValidation.Add(TEXT("asset_on_disk"), TEXT("skipped"));
+            OutValidation.Add(TEXT("asset_in_registry"), TEXT("skipped"));
+        }
+
+        return bSuccess;
     }
 }
+

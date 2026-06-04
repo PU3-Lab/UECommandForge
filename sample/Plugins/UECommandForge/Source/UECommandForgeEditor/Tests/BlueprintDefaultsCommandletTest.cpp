@@ -97,6 +97,7 @@ bool FGenericBlueprintBuilderCreatesActorTest::RunTest(const FString& Parameters
     UECommandForge::FGenericBlueprintBuildOptions Options;
     Options.FieldPrefix = TEXT("Blueprint");
     Options.ParentClassModules = { TEXT("Engine") };
+    Options.bAllowReplace = true;
 
     TArray<FCommandForgeError> Errors;
     TMap<FString, FString> Validation;
@@ -126,6 +127,7 @@ bool FSetBlueprintDefaultsCommandletTest::RunTest(const FString& Parameters)
     UECommandForge::FGenericBlueprintBuildOptions Options;
     Options.FieldPrefix = TEXT("Blueprint");
     Options.ParentClassModules = { TEXT("Engine") };
+    Options.bAllowReplace = true;
 
     TArray<FCommandForgeError> BuildErrors;
     TMap<FString, FString> BuildValidation;
