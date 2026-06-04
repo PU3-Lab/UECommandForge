@@ -17,6 +17,7 @@ bool FCharacterBlueprintBuilderTest::RunTest(const FString& Parameters)
     Spec.AssetPath   = TEXT("/Game/Tests/BP_TestCharacter");
     Spec.ParentClass = TEXT("Character");
     Spec.DisplayName = TEXT("TestCharacter");
+    Spec.bAllowReplace = true;
 
     TArray<FCommandForgeError> Errors;
     TMap<FString, FString> Validation;

@@ -92,7 +92,9 @@ int32 UCreateBlueprintCommandlet::Main(const FString& Params)
         if (BuildErrors.Num() > 0)
         {
             const FString& FirstErrCode = BuildErrors[0].Code;
-            if (FirstErrCode.Contains(TEXT("PARENT_CLASS")))
+            if (FirstErrCode == TEXT("PARENT_CLASS_NOT_FOUND") ||
+                FirstErrCode == TEXT("PARENT_CLASS_NOT_ACTOR") ||
+                FirstErrCode == TEXT("PARENT_CLASS_NOT_BLUEPRINTABLE"))
             {
                 ExitCode = ECommandForgeExitCode::ValidationFailed;
             }

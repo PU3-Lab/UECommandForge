@@ -21,9 +21,11 @@ bool FCreateAIFlowCommandletTest::RunTest(const FString& Parameters)
     Spec.Character.AssetPath = TEXT("/Game/Tests/Workflow/BP_Guard");
     Spec.Character.ParentClass = TEXT("Character");
     Spec.Character.DisplayName = TEXT("GuardCharacter");
+    Spec.Character.bAllowReplace = true;
     Spec.AIController.AssetPath = TEXT("/Game/Tests/Workflow/BP_GuardCtrl");
     Spec.AIController.ParentClass = TEXT("AIController");
     Spec.AIController.DisplayName = TEXT("GuardController");
+    Spec.AIController.bAllowReplace = true;
     Spec.StateTree.AssetPath = TEXT("/Game/Tests/Workflow/ST_Guard");
     Spec.StateTree.Tasks.Add({ TEXT("Wait"), TEXT("Idle") });
     Spec.StateTree.Tasks.Add({ TEXT("MoveTo"), TEXT("Patrol") });
@@ -66,9 +68,11 @@ bool FCreateAIFlowCommandletWriteFailureTest::RunTest(const FString& Parameters)
     Spec.Character.AssetPath = TEXT("/Game/Tests/Workflow/BP_GuardWriteFailure");
     Spec.Character.ParentClass = TEXT("Character");
     Spec.Character.DisplayName = TEXT("GuardCharacterWriteFailure");
+    Spec.Character.bAllowReplace = true;
     Spec.AIController.AssetPath = TEXT("/Game/Tests/Workflow/BP_GuardCtrlWriteFailure");
     Spec.AIController.ParentClass = TEXT("AIController");
     Spec.AIController.DisplayName = TEXT("GuardControllerWriteFailure");
+    Spec.AIController.bAllowReplace = true;
     Spec.StateTree.AssetPath = TEXT("/Game/Tests/Workflow/ST_GuardWriteFailure");
     Spec.StateTree.Tasks.Add({ TEXT("Wait"), TEXT("Idle") });
     Spec.Placement.MapPath = TEXT("/Game/Tests/Workflow/TestMapWriteFailure");

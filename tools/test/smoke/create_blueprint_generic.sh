@@ -51,7 +51,7 @@ cat <<EOF > "${TEMP_SPEC}"
 EOF
 
 "${UE_TOOLS}/create_blueprint.sh" "${TEMP_SPEC}" > "${TEMP_OUT}"
-REPORT_FILE="$(tail -1 "${TEMP_OUT}")"
+REPORT_FILE="$(grep -E '\.json$' "${TEMP_OUT}" | tail -1)"
 echo "Report: ${REPORT_FILE}"
 
 OK=$(jq -r '.ok' "${REPORT_FILE}")
@@ -86,7 +86,7 @@ EOF
 
 # 실패 케이스이므로 쉘의 set -e에 의해 스크립트가 죽지 않도록 || true 처리
 "${UE_TOOLS}/create_blueprint.sh" "${TEMP_SPEC}" > "${TEMP_OUT}" || true
-REPORT_FILE="$(tail -1 "${TEMP_OUT}")"
+REPORT_FILE="$(grep -E '\.json$' "${TEMP_OUT}" | tail -1)"
 
 OK=$(jq -r '.ok' "${REPORT_FILE}")
 ERR_CODE=$(jq -r '.errors[0].code' "${REPORT_FILE}")
@@ -112,7 +112,7 @@ cat <<EOF > "${TEMP_SPEC}"
 EOF
 
 "${UE_TOOLS}/create_blueprint.sh" "${TEMP_SPEC}" > "${TEMP_OUT}" || true
-REPORT_FILE="$(tail -1 "${TEMP_OUT}")"
+REPORT_FILE="$(grep -E '\.json$' "${TEMP_OUT}" | tail -1)"
 
 OK=$(jq -r '.ok' "${REPORT_FILE}")
 ERR_CODE=$(jq -r '.errors[0].code' "${REPORT_FILE}")
@@ -138,7 +138,7 @@ cat <<EOF > "${TEMP_SPEC}"
 EOF
 
 "${UE_TOOLS}/create_blueprint.sh" "${TEMP_SPEC}" > "${TEMP_OUT}" || true
-REPORT_FILE="$(tail -1 "${TEMP_OUT}")"
+REPORT_FILE="$(grep -E '\.json$' "${TEMP_OUT}" | tail -1)"
 
 OK=$(jq -r '.ok' "${REPORT_FILE}")
 ERR_CODE=$(jq -r '.errors[0].code' "${REPORT_FILE}")

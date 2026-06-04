@@ -60,3 +60,31 @@ Report: /Users/kimkyungpyo/Workspaces/projects/UECommandForge/sample/Saved/Codex
 
 === 결과: PASS 11 / FAIL 0 ===
 ```
+
+---
+
+## 2차 코드 리뷰 피드백 반영 사항
+
+2차 코드 리뷰에서 식별된 안정성 및 정확성 문제를 다음과 같이 수정했습니다:
+
+- **검증 스킵 시 리포트 정확성 개선**: `bRequireBlueprintable=false`인 경우 검증을 스킵하고 리포트에 `parent_class_blueprintable: skipped`로 정확히 보고하도록 수정했습니다.
+- **Exit Code 판정의 견고성 강화**: 에러 코드의 부분 문자열 비교(`Contains(PARENT_CLASS)`) 방식에서 구체적인 에러 코드들(`PARENT_CLASS_NOT_FOUND`, `PARENT_CLASS_NOT_ACTOR`, `PARENT_CLASS_NOT_BLUEPRINTABLE`)을 1:1로 정확하게 대조하여 매핑하는 방식으로 보완했습니다.
+- **기본값 안전 지향 설계(풋건 방지)**: `FGenericBlueprintBuildOptions::bAllowReplace`의 기본값을 `true`에서 `false`로 수정하여 명시적인 파괴 허용 없이 덮어씌워지지 않도록 정렬했습니다. 동시에 기존 동작이 강제 덮어쓰기였던 `CharacterBlueprintBuilder.cpp`와 `AIControllerBlueprintBuilder.cpp` 헬퍼에는 `Options.bAllowReplace = true`를 명시적으로 부여하여 회귀를 방지했습니다.
+
+### 2차 검증 결과
+모든 수정 반영 후 컴파일 빌드 및 스모크 테스트(`tools/test/smoke/create_blueprint_generic.sh`)를 재실행하였고, 전체 **11개 검사 항목 모두 동일하게 PASS**되었습니다.
+
+---
+
+## 3차 코드 리뷰 피드백 반영 사항
+
+3차 코드 리뷰에서 식별된 자동화 테스트 및 스펙 일관성 이슈를 다음과 같이 수정했습니다:
+
+- **자동화 테스트 에셋 충돌 방지 (N1 해결)**: `BlueprintDefaultsCommandletTest.cpp`, `CharacterBlueprintBuilderTest.cpp`, `AIFlowBindingTest.cpp`, `CreateAIFlowCommandletTest.cpp` 등 여러 자동화 테스트 코드 내에서 `Build` 호출 시 기존 찌꺼기 파일로 인해 `BP_ALREADY_EXISTS` 에러가 발생하지 않도록 명시적으로 `bAllowReplace = true` 설정을 지정하여 테스트 실행의 견고성을 확보했습니다.
+- **Character/AIController의 스펙 필드 존중 (N2 해결)**: `CharacterBlueprintBuilder.cpp`와 `AIControllerBlueprintBuilder.cpp` 헬퍼 빌더가 하드코딩된 `true` 대신 역직렬화된 단일 스펙 `Spec.bAllowReplace` 값을 따르도록 연동하여 스키마 구조의 일관성을 맞추었습니다.
+
+### 3차 검증 결과
+모든 수정 반영 후 컴파일 빌드를 성공적으로 진행했으며, 스모크 테스트와 Unreal Engine 에디터 내부의 자동화 테스트(`tools/test/automation/run.sh`)를 재실행한 결과:
+* **스모크 테스트**: 11개 검증 케이스 모두 PASS
+* **에디터 자동화 테스트**: 53개 전체 테스트 케이스 모두 성공 및 **통과 (EXIT CODE: 0)**
+비정상적인 회귀 없이 완벽하게 정상 동작함을 검증하였습니다.

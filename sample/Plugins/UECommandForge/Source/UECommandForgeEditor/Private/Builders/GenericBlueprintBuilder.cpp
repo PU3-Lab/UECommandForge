@@ -111,15 +111,21 @@ namespace UECommandForge
             return false;
         }
 
-        if (Options.bRequireBlueprintable && !FKismetEditorUtilities::CanCreateBlueprintOfClass(ParentClass))
+        if (Options.bRequireBlueprintable)
         {
-            OutErrors.Add({ TEXT("PARENT_CLASS_NOT_BLUEPRINTABLE"),
-                FString::Printf(TEXT("부모 클래스로부터 Blueprint를 생성할 수 없습니다: %s"), *ParentClass->GetName()),
-                ParentField });
-            return false;
+            if (!FKismetEditorUtilities::CanCreateBlueprintOfClass(ParentClass))
+            {
+                OutErrors.Add({ TEXT("PARENT_CLASS_NOT_BLUEPRINTABLE"),
+                    FString::Printf(TEXT("부모 클래스로부터 Blueprint를 생성할 수 없습니다: %s"), *ParentClass->GetName()),
+                    ParentField });
+                return false;
+            }
+            OutValidation.Add(TEXT("parent_class_blueprintable"), TEXT("true"));
         }
-
-        OutValidation.Add(TEXT("parent_class_blueprintable"), TEXT("true"));
+        else
+        {
+            OutValidation.Add(TEXT("parent_class_blueprintable"), TEXT("skipped"));
+        }
 
         // 2. 에셋 존재 여부 및 allow_replace 검사
         const FString FileName = FPaths::ConvertRelativePathToFull(
