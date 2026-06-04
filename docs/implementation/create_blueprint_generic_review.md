@@ -227,3 +227,72 @@ N1·N2 기계적 반영은 정확하나, **N2는 현 상태로 채택하면 안 
 
 ## 결론
 4차 핵심 회귀는 권장안 #1로 **해소됨.** 현재 배선은 멱등 흐름(빌더 하드코딩)과 안전 흐름(커맨드릿 스펙 존중)을 의도대로 분리한다. 남은 R1은 데드코드 정리 수준의 선택 항목으로 머지를 막지 않는다.
+
+---
+
+# 6차 검증 — 외부 HIGH/MEDIUM 지적 평가 (CreateAIFlow allow_replace)
+
+- **대상:** 외부 리뷰 지적 2건 (CreateAIFlow의 nested `allow_replace` 미반영 / smoke·profile 반복성)
+- **리뷰 일자:** 2026-06-04
+- **결론 요약:** 두 지적 모두 **현재 코드 기준 stale(무효)** — 전제(빌더가 `Spec.bAllowReplace`를 따름)가 5차에서 되돌려짐. 단 HIGH가 가리킨 **파서 스키마 불일치는 실재**하며 옵션 #2 채택 시에만 유효.
+
+## 전제 검증
+지적은 *"이번 변경으로 빌더가 `Spec.bAllowReplace`를 따른다"*를 전제하나, 실제 현재 코드는:
+```cpp
+// CharacterBlueprintBuilder.cpp:13 / AIControllerBlueprintBuilder.cpp:13
+Options.bAllowReplace = true;   // 하드코딩 (N2 되돌려짐, 5차 참조)
+```
+→ 빌더는 `Spec.bAllowReplace`를 보지 않고 **항상 덮어씀.**
+
+## HIGH 평가 — 🟡 현재 무효, 옵션 #2 한정 유효
+- **현재:** 빌더 `true` 하드코딩 → CreateAIFlow/Character/AIController는 항상 덮어쓰기 → 기존 `BP_Guard`/`BP_GuardController`가 있어도 `BP_ALREADY_EXISTS` 미발생. 지적이 묘사한 회귀는 현 코드에 없음.
+- **단, 실재하는 부분 — 파서 스키마 불일치:**
+  - `AIFlowSpecParser.cpp:9` → `FJsonObjectConverter::JsonObjectStringToUStruct` = UPROPERTY 이름 기반 **PascalCase** 자동 매핑. `specs/examples/guard_ai.json`도 PascalCase(`AssetPath`/`ParentClass`).
+  - `BlueprintCreateSpecParser.cpp:31` → `allow_replace` **snake_case 수동 매핑**.
+  - 옵션 #2로 전환 시 AIFlow opt-in 키는 `Character.AllowReplace`(PascalCase)여야 함. **지적이 제안한 `Character.allow_replace`는 JsonObjectConverter가 매핑조차 못 함** — "opt-in 불가" 진단은 맞으나 제안 키는 그 스키마에서 부정확.
+
+## MEDIUM 평가 — 🟢 현재 무효
+- *"기본값 false라 guard_ai.json 재실행 시 실패"* → 빌더 `true` 하드코딩이므로 smoke/프로파일 반복 실행은 멱등 유지. 전제(기본 false 적용)가 성립 안 함.
+
+## 요약 표
+| 지적 | 현 코드(빌더 `true` 하드코딩) | 옵션 #2(파서 배선) 채택 시 |
+|------|------------------------------|----------------------------|
+| HIGH — CreateAIFlow opt-in 불가 | 무효(항상 덮어쓰기) | **유효** + 제안 키 PascalCase(`AllowReplace`)로 정정 |
+| MEDIUM — smoke 반복성 | 무효(멱등 유지) | 유효 |
+
+## 결론
+현재 채택된 해법(권장안 #1: 빌더 `true` 하드코딩)에서 두 지적은 live 이슈가 아님. **옵션 #2(`FAIFlowSpecParser`가 스펙 존중)로 전환할 경우의 선결 과제**로서만 유효하며, 그때는 (a) nested replace 키를 **PascalCase**로 명시 파싱, (b) 파서 테스트로 허용 키 고정이 필요. 현 상태 머지는 무방.
+
+---
+
+# 7차 검증 — 커밋 `a34ee5a` 코드 리뷰
+
+- **대상 커밋:** `a34ee5a` (`fix(editor): address 4th code review feedback and roll back N2`)
+- **작성자/일시:** kimkyungpyo, 2026-06-04 12:02
+- **범위:** 1~4차 지적 해소분을 커밋으로 묶은 결과 + 신규 변경(스모크 grep) 점검
+
+## 기존 검증 항목 (모두 정확 ✓)
+
+| 변경 | 내용 | 평가 |
+|------|------|------|
+| **A** | `GenericBlueprintBuilder.cpp` — blueprintable 미검사 시 `parent_class_blueprintable=skipped` | ✓ |
+| **B** | `CreateBlueprintCommandlet.cpp` — exit code 3개 코드 정확 `==` 비교 | ✓ |
+| **C** | `GenericBlueprintBuilder.h` — `bAllowReplace` 기본값 `false` | ✓ |
+| **N2 revert** | 두 빌더 `Options.bAllowReplace = true` 명시 → 멱등 복원 | ✓ 회귀 해소 |
+| **N1** | `BlueprintDefaultsCommandletTest` Options에 `=true`(헤더 기본 `false` 상쇄) | ✓ 유효 |
+
+## 신규 변경 평가 — 스모크 `grep` 필터 🟢
+
+```diff
+- REPORT_FILE="$(tail -1 "${TEMP_OUT}")"
++ REPORT_FILE="$(grep -E '\.json$' "${TEMP_OUT}" | tail -1)"
+```
+- **타당한 견고성 개선.** 직전 `tail -1`은 래퍼가 리포트 경로를 출력한 뒤 **UE 에디터 종료 로그가 마지막 줄로 끼어들면** 엉뚱한 줄을 잡았음(커밋 메시지의 "종료 로그 간섭"). `.json`으로 끝나는 줄만 필터 후 마지막 것을 취해, `run_commandlet.sh:138`이 에디터 종료 후 마지막에 echo하는 `..._<UTC>.json` 경로를 안정 추출. 4개 단계 일관 적용.
+- 매칭 실패 시 `REPORT_FILE`이 비어 `jq`가 실패→테스트가 시끄럽게 실패 → stale 오탐보다 안전.
+- **잔여 미세 위험:** stdout에 `.json`으로 끝나는 다른 로그 줄이 최종 echo 이후 나타나면 오선택 가능하나, 해당 echo는 에디터 `wait` 종료 후 마지막 stdout이라 실질적으로 마지막 `.json` 줄 → 현실적 안전.
+
+## 잔여 항목 (회귀 아님)
+- **R1 (5차에서 문서화)** — 빌더-경로 테스트 3종(`AIFlowBindingTest`, `CharacterBlueprintBuilderTest`, `CreateAIFlowCommandletTest`)의 `Spec.*.bAllowReplace = true`는 빌더가 `true` 하드코딩으로 스펙을 무시 → **no-op 데드코드**. 무해하나 "스펙이 replace 제어"라는 오해 소지. (`BlueprintDefaultsCommandletTest`는 `Options` 직접 세팅이라 유효 — 예외.)
+
+## 결론
+커밋 `a34ee5a`는 **1~4차 리뷰 지적을 정확히 해소했고 신규 회귀·빌드 깨짐 없음.** 스모크 grep 변경도 견고성 개선으로 타당. 남은 것은 R1(테스트 3파일의 무효 라인 3줄)뿐이며 머지를 막지 않음.

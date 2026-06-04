@@ -27,10 +27,8 @@ bool FAIFlowBindingTest::RunTest(const FString& Parameters)
     FAIFlowSpec Spec;
     Spec.Character.AssetPath = TEXT("/Game/Tests/BP_TestCharacter");
     Spec.Character.ParentClass = TEXT("Character");
-    Spec.Character.bAllowReplace = true;
     Spec.AIController.AssetPath = TEXT("/Game/Tests/BP_TestController");
     Spec.AIController.ParentClass = TEXT("AIController");
-    Spec.AIController.bAllowReplace = true;
     Spec.StateTree.AssetPath = TEXT("/Game/Tests/ST_TestTree");
     Spec.StateTree.Tasks.Add({ TEXT("Wait"), TEXT("Idle") });
     Spec.StateTree.Tasks.Add({ TEXT("MoveTo"), TEXT("Patrol") });

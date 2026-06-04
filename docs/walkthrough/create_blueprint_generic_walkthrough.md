@@ -63,28 +63,56 @@ Report: /Users/kimkyungpyo/Workspaces/projects/UECommandForge/sample/Saved/Codex
 
 ---
 
-## 2차 코드 리뷰 피드백 반영 사항
+## 4차 리뷰 피드백 반영 사항
 
-2차 코드 리뷰에서 식별된 안정성 및 정확성 문제를 다음과 같이 수정했습니다:
+### 1. `bAllowReplace = true` 강제 롤백 (회귀 방지 - N2)
+- **대상**: `Builders/CharacterBlueprintBuilder.cpp`, `Builders/AIControllerBlueprintBuilder.cpp`
+- **배경**: AI 관련 스펙 파서(`FAIFlowSpecParser`)에서 구조적으로 JSON 스키마에 `allow_replace` 속성이 정의되어 있지 않아, 파싱 결과가 항상 `false`가 되는 구조적 한계가 존재했습니다. 이로 인해 Character 및 AIController 블루프린트 생성 시 덮어쓰기가 비활성화되는 버그가 유발되었습니다.
+- **해결**: 기존의 Character 및 AIController 블루프린트 생성 멱등성을 보장하기 위해 빌더 내부에서 `Options.bAllowReplace = true` 설정을 항상 사용하도록 롤백했습니다.
 
-- **검증 스킵 시 리포트 정확성 개선**: `bRequireBlueprintable=false`인 경우 검증을 스킵하고 리포트에 `parent_class_blueprintable: skipped`로 정확히 보고하도록 수정했습니다.
-- **Exit Code 판정의 견고성 강화**: 에러 코드의 부분 문자열 비교(`Contains(PARENT_CLASS)`) 방식에서 구체적인 에러 코드들(`PARENT_CLASS_NOT_FOUND`, `PARENT_CLASS_NOT_ACTOR`, `PARENT_CLASS_NOT_BLUEPRINTABLE`)을 1:1로 정확하게 대조하여 매핑하는 방식으로 보완했습니다.
-- **기본값 안전 지향 설계(풋건 방지)**: `FGenericBlueprintBuildOptions::bAllowReplace`의 기본값을 `true`에서 `false`로 수정하여 명시적인 파괴 허용 없이 덮어씌워지지 않도록 정렬했습니다. 동시에 기존 동작이 강제 덮어쓰기였던 `CharacterBlueprintBuilder.cpp`와 `AIControllerBlueprintBuilder.cpp` 헬퍼에는 `Options.bAllowReplace = true`를 명시적으로 부여하여 회귀를 방지했습니다.
+### 2. 자동화 테스트 코드 내 `bAllowReplace` 명시적 설정 부여 (N1)
+- **대상**:
+  - `BlueprintDefaultsCommandletTest.cpp`
+  - `CharacterBlueprintBuilderTest.cpp`
+  - `AIFlowBindingTest.cpp`
+  - `CreateAIFlowCommandletTest.cpp`
+- **해결**: 테스트 가동 시 이전 테스트에서 남은 Stale 에셋 찌꺼기가 있는 상태에서 빌더가 실패하는 오작동(N1)을 격리하고 멱등성을 확보하기 위해, 테스트 설정의 `bAllowReplace = true`를 명시적으로 세팅했습니다.
 
-### 2차 검증 결과
-모든 수정 반영 후 컴파일 빌드 및 스모크 테스트(`tools/test/smoke/create_blueprint_generic.sh`)를 재실행하였고, 전체 **11개 검사 항목 모두 동일하게 PASS**되었습니다.
+### 3. 스모크 테스트 래퍼 개선 (추출 불안정성)
+- **대상**: `tools/test/smoke/create_blueprint_generic.sh`
+- **해결**: Unreal 에디터가 종료되면서 ZenServer 등 백그라운드 프로세스의 로그가 stdout에 섞여 나와 `tail -1` 만으로 JSON 리포트 파일명을 정확히 파싱하지 못하던 문제를 해결하기 위해, `grep -E '\.json$'` 파이핑 필터를 추가하여 JSON 경로만을 안정적으로 추출하도록 처리했습니다.
 
 ---
 
-## 3차 코드 리뷰 피드백 반영 사항
+## 4차 검증 결과
 
-3차 코드 리뷰에서 식별된 자동화 테스트 및 스펙 일관성 이슈를 다음과 같이 수정했습니다:
+### 1. 스모크 테스트 (`create_blueprint_generic.sh`)
+- 4개의 시나리오, 11개 검증 검사 모두 성공적으로 통과 (`PASS 11 / FAIL 0`)
 
-- **자동화 테스트 에셋 충돌 방지 (N1 해결)**: `BlueprintDefaultsCommandletTest.cpp`, `CharacterBlueprintBuilderTest.cpp`, `AIFlowBindingTest.cpp`, `CreateAIFlowCommandletTest.cpp` 등 여러 자동화 테스트 코드 내에서 `Build` 호출 시 기존 찌꺼기 파일로 인해 `BP_ALREADY_EXISTS` 에러가 발생하지 않도록 명시적으로 `bAllowReplace = true` 설정을 지정하여 테스트 실행의 견고성을 확보했습니다.
-- **Character/AIController의 스펙 필드 존중 (N2 해결)**: `CharacterBlueprintBuilder.cpp`와 `AIControllerBlueprintBuilder.cpp` 헬퍼 빌더가 하드코딩된 `true` 대신 역직렬화된 단일 스펙 `Spec.bAllowReplace` 값을 따르도록 연동하여 스키마 구조의 일관성을 맞추었습니다.
+### 2. Unreal 에디터 내부 자동화 테스트 (성공)
+- `tools/test/automation/run.sh`를 활용한 53개 Automation Test 검증이 모두 성공적으로 통과되었습니다.
+  - **결과**: PASS: 53, FAIL: 0, SKIP: 0 (EXIT CODE: 0)
 
-### 3차 검증 결과
-모든 수정 반영 후 컴파일 빌드를 성공적으로 진행했으며, 스모크 테스트와 Unreal Engine 에디터 내부의 자동화 테스트(`tools/test/automation/run.sh`)를 재실행한 결과:
-* **스모크 테스트**: 11개 검증 케이스 모두 PASS
-* **에디터 자동화 테스트**: 53개 전체 테스트 케이스 모두 성공 및 **통과 (EXIT CODE: 0)**
-비정상적인 회귀 없이 완벽하게 정상 동작함을 검증하였습니다.
+---
+
+## 7차 리뷰 피드백 반영 사항
+
+### 1. 테스트 코드 3종 내 무효한 `bAllowReplace` 명시 제거 (R1 데드코드 정리)
+- **대상**:
+  - [CharacterBlueprintBuilderTest.cpp](file:///Users/kimkyungpyo/Workspaces/projects/UECommandForge/sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/CharacterBlueprintBuilderTest.cpp#L20)
+  - [AIFlowBindingTest.cpp](file:///Users/kimkyungpyo/Workspaces/projects/UECommandForge/sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/AIFlowBindingTest.cpp#L30)
+  - [CreateAIFlowCommandletTest.cpp](file:///Users/kimkyungpyo/Workspaces/projects/UECommandForge/sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/CreateAIFlowCommandletTest.cpp#L24)
+- **이유**: `CharacterBlueprintBuilder` 및 `AIControllerBlueprintBuilder`는 의도된 멱등 생성을 보장하기 위해 빌더 내부에서 `Options.bAllowReplace = true` 로 강제 복원(N2 revert)되었습니다. 이에 따라, 위의 빌더를 직접 호출하는 테스트 3종에서 세팅하던 `Spec.bAllowReplace = true` 등의 옵션 값은 실제 빌더 내부에서 완전히 무시되는 데드코드로 작동하고 있었습니다.
+- **조치**: 코드 가동성에 무해하나 "스펙 필드가 replace 옵션을 실질적으로 제어한다"는 오해를 줄 수 있어, 해당 라인들을 모두 제거하여 코드 가독성 및 명확성을 높였습니다.
+
+---
+
+## 7차 재검증 결과
+
+데드코드 정리 후, 전체 자동화 테스트 및 스모크 테스트를 재가동하여 빌드 깨짐 및 기능상 결함이 없음을 완벽히 확인했습니다.
+
+### 1. 스모크 테스트 (`create_blueprint_generic.sh`)
+- **결과**: `PASS 11 / FAIL 0` (모두 통과)
+
+### 2. Unreal 에디터 내부 자동화 테스트 (`run.sh`)
+- **결과**: `PASS: 53, FAIL: 0, SKIP: 0` (전원 통과)
