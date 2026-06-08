@@ -148,6 +148,16 @@ int32 UCreateBlueprintBatchCommandlet::Main(const FString& Params)
         Options.bCompile = false;
         Options.bSave = false;
         Options.ParentClassModules = { TEXT("Engine"), TEXT("AIModule") };
+        if (Item.ParentClass.StartsWith(TEXT("/Script/")))
+        {
+            FString StripScript = Item.ParentClass.RightChop(8);
+            FString ModuleName;
+            FString ClassName;
+            if (StripScript.Split(TEXT("."), &ModuleName, &ClassName))
+            {
+                Options.ParentClassModules.AddUnique(ModuleName);
+            }
+        }
 
         TMap<FString, FString> StepValidation;
         if (!UECommandForge::FGenericBlueprintBuilder::Build(CreateSpec, Options, Report.Errors, StepValidation))
@@ -238,6 +248,8 @@ int32 UCreateBlueprintBatchCommandlet::Main(const FString& Params)
 
     if (!bBatchSuccess)
     {
+        TArray<FString> FailedRestoreBackupPaths;
+
         for (const FAssetBackupInfo& Backup : Backups)
         {
             TArray<FCommandForgeError> DeleteErrors;
@@ -247,7 +259,13 @@ int32 UCreateBlueprintBatchCommandlet::Main(const FString& Params)
             {
                 if (PlatformFile.FileExists(*Backup.BackupFilePath))
                 {
-                    PlatformFile.CopyFile(*Backup.OriginalFilePath, *Backup.BackupFilePath);
+                    if (!PlatformFile.CopyFile(*Backup.OriginalFilePath, *Backup.BackupFilePath))
+                    {
+                        Report.Errors.Add({ TEXT("ROLLBACK_RESTORE_FAILED"),
+                            FString::Printf(TEXT("에셋 복구 실패: %s (백업 파일: %s)"), *Backup.OriginalFilePath, *Backup.BackupFilePath),
+                            TEXT("") });
+                        FailedRestoreBackupPaths.Add(Backup.BackupFilePath);
+                    }
                 }
             }
         }
@@ -256,7 +274,10 @@ int32 UCreateBlueprintBatchCommandlet::Main(const FString& Params)
         {
             if (Backup.bExistedBefore && PlatformFile.FileExists(*Backup.BackupFilePath))
             {
-                PlatformFile.DeleteFile(*Backup.BackupFilePath);
+                if (!FailedRestoreBackupPaths.Contains(Backup.BackupFilePath))
+                {
+                    PlatformFile.DeleteFile(*Backup.BackupFilePath);
+                }
             }
         }
 

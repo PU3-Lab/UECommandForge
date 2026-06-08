@@ -38,11 +38,11 @@
 | **3. C++ 포함 배치 (방안 1)** | 2회 | 포함 (11초) | **21초** | **36.3% 단축 (C++ 필수 시)** |
 | **4. Blueprint-Only 배치 (최종)** | **1회** | 제외 | **6초** | **81.8% 극적 단축 (최종)** |
 
-### 2.2 실측 검증 및 2차 코드 리뷰 조치 완료 내용
-*   **H1 (실행 플래그 필터링):** 셰이더가 필요한 커맨드렛(`CreateBlueprint*`, `SetBlueprintDefaults` 등) 실행 시에만 `-NoShaderCompile` 및 `-SkipShaderCompile`를 비활성화하도록 `run_commandlet.sh`를 동적으로 조건부 필터링 처리하여 안정성을 확보했습니다.
-*   **H2 (트랜잭션/롤백 보장):** `CreateBlueprintBatchCommandlet` 실행 시, 아이템 처리 시작 전에 프로젝트 `Saved/TmpBackup/`에 에셋 스냅샷을 생성하고 실패 시 기존 에셋의 상태를 완벽히 롤백하는 복구 트랜잭션 로직을 구현했습니다.
-*   **H3 (Automation Test 추가):** 파서에 대한 예외 검증 단위 테스트 및 배치 롤백에 대한 테스트 케이스 2종(`BlueprintBatchSpecParserTest.cpp`, `CreateBlueprintBatchCommandletTest.cpp`)을 작성하여 전체 54개 자동화 테스트를 100% 통과(EXIT CODE: 0) 게이트를 통과했습니다.
-*   **M1 & M2 & L1 (기타 결함 보정):** 벤치 임시 산출물 `.gitignore` 등록(M1), 파서 내 `version` 필드 값 유효성 및 TryGetStringField 검증 로직 구현(M2), Windows 플랫폼 대응용 플랫폼 독립적 널 경로(`NullDevice`) 분기 처리(L1)를 완수했습니다.
+### 2.2 실측 검증 및 2차/3차 코드 리뷰 조치 완료 내용
+*   **H1 (실행 플래그 필터링):** 셰이더가 필요한 커맨드렛 기동 시에만 `-NoShaderCompile` 및 `-SkipShaderCompile`를 비활성화하도록 `run_commandlet.sh`를 동적으로 조건부 필터링 처리하여 안정성을 확보했습니다.
+*   **H2 & N1 (트랜잭션/롤백 및 복원 검증 보강):** `CreateBlueprintBatchCommandlet` 실행 시, 아이템 처리 전 프로젝트 `Saved/TmpBackup/`에 에셋 스냅샷을 백업하고 실패 시 기존 에셋의 상태를 완벽히 롤백하는 로직을 구축했습니다. 복원 시 `CopyFile` 반환값을 검증하여 실패 시 `ROLLBACK_RESTORE_FAILED`를 보고하고 백업 파일을 보존하도록 안전장치(N1)를 강화했습니다.
+*   **H3 (Automation Test 추가):** 파서에 대한 예외 검증 단위 테스트 및 배치 롤백/성공 시나리오 검증 테스트 케이스 2종을 작성하여 전체 54개 자동화 테스트를 100% 통과(EXIT CODE: 0) 시켰습니다.
+*   **M1 & M2 & L1 & N2 (기타 결함 보정 및 모듈 동적 분석):** 벤치 임시 산출물 `.gitignore` 등록(M1), 파서 내 `version` 및 필수 필드 TryGetStringField 엄격 검증(M2), Windows 플랫폼 호환 널 디바이스 분기 처리(L1)를 적용했습니다. 추가로, 부모 클래스 스크립트 경로(`/Script/ModuleName.ClassName`)에서 모듈명을 동적으로 파싱하여 하드코딩 없이 모듈 의존성을 해결(N2)하도록 개선했습니다.
 *   **배치 처리의 성능 이득:** 기존에 CreateBlueprint(10초) 및 SetBlueprintDefaults(10초)를 따로 실행할 때 기동 비용을 포함해 총 20초 걸리던 조작 단계가, 단일 기동 배치(`CreateBlueprintBatch`)로 병합되며 단 **6초** 만에 처리 완료되었습니다.
 *   **최종 이득:** C++ 빌드가 생략되는 일반적인 변경 경로에서는 기존 **33초**에서 단 **6초**로 시간이 단축되는 **81.8%의 성능 개선**을 실현했습니다.
 
