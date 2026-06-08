@@ -24,3 +24,6 @@ sample/Config/DefaultEngine.ini
 
 # Antigravity CLI 내부 상태
 .antigravitycli/*.json
+
+# Benchmark assets
+sample/Content/AI/Characters/BP_BenchCharacter*.uasset

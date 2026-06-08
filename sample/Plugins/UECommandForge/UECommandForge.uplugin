@@ -1,43 +1,43 @@
 {
-  "FileVersion": 3,
-  "Version": 8,
-  "VersionName": "0.8.0",
-  "FriendlyName": "UECommandForge",
-  "Description": "LLM-driven Unreal automation bridge: Commandlets + Builders + Validators.",
-  "Category": "Editor",
-  "CreatedBy": "UECommandForge",
-  "CreatedByURL": "",
-  "DocsURL": "",
-  "MarketplaceURL": "",
-  "SupportURL": "",
-  "EnabledByDefault": true,
-  "CanContainContent": false,
-  "IsBetaVersion": true,
-  "Installed": false,
-  "Modules": [
-    {
-      "Name": "UECommandForgeRuntime",
-      "Type": "Runtime",
-      "LoadingPhase": "Default"
-    },
-    {
-      "Name": "UECommandForgeEditor",
-      "Type": "Editor",
-      "LoadingPhase": "Default"
-    }
-  ],
-  "Plugins": [
-    {
-      "Name": "EditorScriptingUtilities",
-      "Enabled": true
-    },
-    {
-      "Name": "StateTree",
-      "Enabled": true
-    },
-    {
-      "Name": "GameplayStateTree",
-      "Enabled": true
-    }
-  ]
+	"FileVersion": 3,
+	"Version": 8,
+	"VersionName": "0.8.0",
+	"FriendlyName": "UECommandForge",
+	"Description": "LLM-driven Unreal automation bridge: Commandlets + Builders + Validators.",
+	"Category": "Editor",
+	"CreatedBy": "UECommandForge",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"EngineVersion": "5.7.0",
+	"CanContainContent": false,
+	"IsBetaVersion": true,
+	"Installed": true,
+	"Modules": [
+		{
+			"Name": "UECommandForgeRuntime",
+			"Type": "Runtime",
+			"LoadingPhase": "Default"
+		},
+		{
+			"Name": "UECommandForgeEditor",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "EditorScriptingUtilities",
+			"Enabled": true
+		},
+		{
+			"Name": "StateTree",
+			"Enabled": true
+		},
+		{
+			"Name": "GameplayStateTree",
+			"Enabled": true
+		}
+	]
 }

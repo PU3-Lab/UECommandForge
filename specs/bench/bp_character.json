@@ -1,0 +1,10 @@
+{
+  "version": "1",
+  "kind": "blueprint",
+  "transaction_id": "tx-bench-bp-char",
+  "asset_path": "/Game/AI/Characters/BP_BenchCharacter",
+  "parent_class": "/Script/UECommandForgeRuntime.CFBenchCharacter",
+  "compile": true,
+  "save": true,
+  "allow_replace": true
+}

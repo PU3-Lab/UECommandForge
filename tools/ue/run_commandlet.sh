@@ -94,11 +94,36 @@ reject_unreal_python_args "$@"
 mkdir -p "${REPORT_DIR}"
 
 run_unreal_commandlet() {
+  local start_epoch
+  start_epoch=$(date +%s)
+  echo "[run_commandlet] [PERF] ${COMMANDLET} 시작 시각: $(date -u +%Y-%m-%dT%H:%M:%SZ) (${start_epoch})" >&2
+
+  local need_shaders=false
+  case "${COMMANDLET}" in
+    CreateBlueprint*|SetBlueprintDefaults|CompileBlueprints|CreateAIFlow|ValidateAIFlow|PlaceActor)
+      need_shaders=true
+      ;;
+  esac
+
+  local extra_flags=("-NoSound")
+  if [ "${need_shaders}" = false ]; then
+    extra_flags+=("-NoShaderCompile" "-SkipShaderCompile")
+  fi
+
   "${UNREAL_EDITOR_CMD}" "${PROJECT_FILE}" \
     -run="${COMMANDLET}" \
     -Output="${OUTPUT_JSON}" \
     -unattended -nop4 -nosplash -nullrhi -log -stdout -FullStdOutLogOutput \
+    "${extra_flags[@]}" \
     "$@"
+  local exit_code=$?
+
+  local end_epoch
+  end_epoch=$(date +%s)
+  local duration=$((end_epoch - start_epoch))
+  echo "[run_commandlet] [PERF] ${COMMANDLET} 종료 시각: $(date -u +%Y-%m-%dT%H:%M:%SZ) (${end_epoch}) | 소요시간: ${duration}초 | ExitCode: ${exit_code}" >&2
+
+  return ${exit_code}
 }
 
 set +e

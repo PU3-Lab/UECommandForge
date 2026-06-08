@@ -1,0 +1,26 @@
+{
+  "version": "1",
+  "kind": "blueprint_batch",
+  "transaction_id": "tx-bench-bp-batch-only",
+  "compile": true,
+  "save": true,
+  "items": [
+    {
+      "asset_path": "/Game/AI/Characters/BP_BenchCharacterOnly",
+      "parent_class": "/Script/Engine.Character",
+      "allow_replace": true,
+      "components": [
+        {
+          "name": "BenchSceneComponent",
+          "class": "SceneComponent"
+        }
+      ],
+      "defaults": [
+        {
+          "property": "bHidden",
+          "value": "False"
+        }
+      ]
+    }
+  ]
+}

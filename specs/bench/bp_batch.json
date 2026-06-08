@@ -1,0 +1,26 @@
+{
+  "version": "1",
+  "kind": "blueprint_batch",
+  "transaction_id": "tx-bench-bp-batch",
+  "compile": true,
+  "save": true,
+  "items": [
+    {
+      "asset_path": "/Game/AI/Characters/BP_BenchCharacter",
+      "parent_class": "/Script/UECommandForgeRuntime.CFBenchCharacter",
+      "allow_replace": true,
+      "components": [
+        {
+          "name": "BenchSceneComponent",
+          "class": "SceneComponent"
+        }
+      ],
+      "defaults": [
+        {
+          "property": "bHidden",
+          "value": "False"
+        }
+      ]
+    }
+  ]
+}

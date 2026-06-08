@@ -1,0 +1,12 @@
+{
+  "project_file": "/Users/kimkyungpyo/Workspaces/projests/UECommandForge/sample/UECommandForgeSample.uproject",
+  "plugin_path": "/Users/kimkyungpyo/Workspaces/projests/UECommandForge/sample/Plugins/UECommandForge",
+  "codex_home": "/Users/kimkyungpyo/.codex",
+  "codex_tools_path": "/Users/kimkyungpyo/.codex/UECommandForge/tools",
+  "codex_specs_path": "/Users/kimkyungpyo/.codex/UECommandForge/specs",
+  "codex_skill_path": "/Users/kimkyungpyo/.codex/skills/uecommandforge",
+  "installed_version": "0.8.0",
+  "installed_manifest_path": "/Users/kimkyungpyo/.codex/UECommandForge/uecommandforge-installed.json",
+  "default_env_path": "/Users/kimkyungpyo/.codex/UECommandForge/uecommandforge.env",
+  "shell_env_path": "/Users/kimkyungpyo/.codex/UECommandForge/uecommandforge.env.sh"
+}

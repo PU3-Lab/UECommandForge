@@ -1,0 +1,26 @@
+{
+  "version": "1",
+  "kind": "cpp_class",
+  "transaction_id": "tx-bench-cpp-char",
+  "class": {
+    "name": "CFBenchCharacter",
+    "type": "Actor",
+    "module": "UECommandForgeRuntime",
+    "output_path": "Generated/Characters",
+    "base_class": "ACharacter",
+    "blueprint_type": true,
+    "tick": true
+  },
+  "includes": [
+    "CoreMinimal.h",
+    "GameFramework/Character.h"
+  ],
+  "build_dependencies": {
+    "public": [
+      "Core",
+      "CoreUObject",
+      "Engine"
+    ],
+    "private": []
+  }
+}
