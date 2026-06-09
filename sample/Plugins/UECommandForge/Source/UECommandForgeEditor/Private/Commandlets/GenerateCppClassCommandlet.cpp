@@ -718,6 +718,239 @@ namespace UECommandForge::GenerateCppClassPrivate
     }
 }
 
+bool UGenerateCppClassCommandlet::GenerateSingleClass(
+    const FCommandForgeCppClassSpec& Spec,
+    bool bApply,
+    bool bApplyBuildCs,
+    FCommandForgeReport& OutReport,
+    FString& OutHeaderPath,
+    FString& OutSourcePath
+)
+{
+    using namespace UECommandForge::GenerateCppClassPrivate;
+
+    // Spec 사본을 생성하여 전처리 진행
+    FCommandForgeCppClassSpec LocalSpec = Spec;
+    LocalSpec.TransactionId = LocalSpec.TransactionId.TrimStartAndEnd();
+    LocalSpec.ClassInfo.Name = LocalSpec.ClassInfo.Name.TrimStartAndEnd();
+    LocalSpec.ClassInfo.Type = LocalSpec.ClassInfo.Type.TrimStartAndEnd();
+    LocalSpec.ClassInfo.Module = LocalSpec.ClassInfo.Module.TrimStartAndEnd();
+    LocalSpec.ClassInfo.OutputPath = NormalizeRelativePath(LocalSpec.ClassInfo.OutputPath);
+    LocalSpec.ClassInfo.BaseClass = LocalSpec.ClassInfo.BaseClass.TrimStartAndEnd().IsEmpty()
+        ? DefaultBaseClass(LocalSpec.ClassInfo.Type)
+        : LocalSpec.ClassInfo.BaseClass.TrimStartAndEnd();
+
+    if (!IsValidIdentifier(LocalSpec.ClassInfo.Name))
+    {
+        AddIssue(OutReport, TEXT("INVALID_CLASS_NAME"), TEXT("class name은 C++ identifier여야 합니다."),
+            TEXT("class.name"), TEXT(""), TEXT("예: HealthComponent"));
+    }
+    if (LocalSpec.ClassInfo.Module.IsEmpty())
+    {
+        AddIssue(OutReport, TEXT("REQUIRED_MODULE"), TEXT("module은 필수입니다."),
+            TEXT("class.module"), TEXT(""), TEXT("대상 UE module 이름을 지정하세요."));
+    }
+    if (LocalSpec.ClassInfo.OutputPath.IsEmpty() || FPaths::IsRelative(LocalSpec.ClassInfo.OutputPath) == false ||
+        LocalSpec.ClassInfo.OutputPath.Contains(TEXT("..")) || ContainsWildcard(LocalSpec.ClassInfo.OutputPath))
+    {
+        AddIssue(OutReport, TEXT("OUTPUT_PATH_OUTSIDE_MODULE"),
+            TEXT("output_path는 module root 내부의 상대 경로여야 합니다."),
+            TEXT("class.output_path"), LocalSpec.ClassInfo.OutputPath,
+            TEXT("예: Components 또는 Public 하위가 아닌 기능 폴더 이름을 사용하세요."));
+    }
+    ValidateSpecTokens(LocalSpec, OutReport);
+
+    const FString ModuleRoot = UECommandForge::BuildCs::ResolveModuleRoot(LocalSpec.ClassInfo.Module);
+    if (ModuleRoot.IsEmpty())
+    {
+        AddIssue(OutReport, TEXT("MODULE_NOT_FOUND"), TEXT("대상 module root를 찾을 수 없습니다."),
+            TEXT("class.module"), LocalSpec.ClassInfo.Module,
+            TEXT("sample Source 또는 plugin Source 아래의 module 이름을 사용하세요."));
+    }
+
+    const FString HeaderFileStem = LocalSpec.ClassInfo.Name;
+    const FString ClassSymbol = EnsureUnrealClassSymbol(LocalSpec.ClassInfo.Name, LocalSpec.ClassInfo.Type);
+    OutHeaderPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(
+        ModuleRoot, TEXT("Public"), LocalSpec.ClassInfo.OutputPath, HeaderFileStem + TEXT(".h")));
+    OutSourcePath = FPaths::ConvertRelativePathToFull(FPaths::Combine(
+        ModuleRoot, TEXT("Private"), LocalSpec.ClassInfo.OutputPath, HeaderFileStem + TEXT(".cpp")));
+
+    if (!ModuleRoot.IsEmpty() &&
+        (!IsPathInsideDirectory(OutHeaderPath, ModuleRoot) || !IsPathInsideDirectory(OutSourcePath, ModuleRoot)))
+    {
+        AddIssue(OutReport, TEXT("OUTPUT_PATH_OUTSIDE_MODULE"),
+            TEXT("생성 대상 파일이 module root 밖으로 나갑니다."),
+            TEXT("class.output_path"), LocalSpec.ClassInfo.OutputPath,
+            TEXT("상대 경로에서 '..'와 절대 경로를 제거하세요."));
+    }
+
+    if (FPaths::FileExists(OutHeaderPath) || FPaths::FileExists(OutSourcePath))
+    {
+        AddIssue(OutReport, TEXT("CPP_CLASS_FILE_EXISTS"),
+            TEXT("생성 대상 .h/.cpp 파일이 이미 존재합니다."),
+            TEXT("class.name"), OutHeaderPath,
+            TEXT("다른 class name 또는 output_path를 사용하세요."));
+    }
+
+    const UECommandForge::BuildCs::FBuildCsDependencyCheck BuildCsCheck =
+        UECommandForge::BuildCs::CheckDependencies(LocalSpec.ClassInfo.Module,
+            LocalSpec.BuildDependencies.PublicDependencies, LocalSpec.BuildDependencies.PrivateDependencies);
+
+    const FString HeaderIncludePath = LocalSpec.ClassInfo.OutputPath / (HeaderFileStem + TEXT(".h"));
+    const FString HeaderPreview = BuildHeader(LocalSpec, ClassSymbol, HeaderFileStem);
+    const FString SourcePreview = BuildSource(LocalSpec, ClassSymbol, HeaderIncludePath);
+
+    OutReport.Validation.Add(TEXT("module"), LocalSpec.ClassInfo.Module);
+    OutReport.Validation.Add(TEXT("class_name"), LocalSpec.ClassInfo.Name);
+    OutReport.Validation.Add(TEXT("class_symbol"), ClassSymbol);
+    OutReport.Validation.Add(TEXT("header_path"), OutHeaderPath);
+    OutReport.Validation.Add(TEXT("source_path"), OutSourcePath);
+    OutReport.Validation.Add(TEXT("header_preview"), HeaderPreview);
+    OutReport.Validation.Add(TEXT("source_preview"), SourcePreview);
+    OutReport.Validation.Add(TEXT("header_sha1"), Sha1ForString(HeaderPreview));
+    OutReport.Validation.Add(TEXT("source_sha1"), Sha1ForString(SourcePreview));
+    OutReport.Validation.Add(TEXT("buildcs_path"), BuildCsCheck.BuildCsPath);
+    OutReport.Validation.Add(TEXT("buildcs_apply_requested"), bApplyBuildCs ? TEXT("true") : TEXT("false"));
+    OutReport.Validation.Add(TEXT("buildcs_changed"), BuildCsCheck.bChanged ? TEXT("true") : TEXT("false"));
+    OutReport.Validation.Add(TEXT("buildcs_missing_public"),
+        FString::Join(BuildCsCheck.MissingPublicDependencies, TEXT(",")));
+    OutReport.Validation.Add(TEXT("buildcs_missing_private"),
+        FString::Join(BuildCsCheck.MissingPrivateDependencies, TEXT(",")));
+
+    if (!LocalSpec.BuildDependencies.PublicDependencies.IsEmpty())
+    {
+        OutReport.Validation.Add(TEXT("public_dependencies"),
+            FString::Join(LocalSpec.BuildDependencies.PublicDependencies, TEXT(",")));
+    }
+    if (!LocalSpec.BuildDependencies.PrivateDependencies.IsEmpty())
+    {
+        OutReport.Validation.Add(TEXT("private_dependencies"),
+            FString::Join(LocalSpec.BuildDependencies.PrivateDependencies, TEXT(",")));
+    }
+
+    if (bApplyBuildCs && !BuildCsCheck.bBuildCsExists)
+    {
+        AddIssue(OutReport, TEXT("BUILDCS_NOT_FOUND"),
+            TEXT("module Build.cs 파일을 찾을 수 없습니다."),
+            TEXT("class.module"), LocalSpec.ClassInfo.Module,
+            TEXT("module 이름과 plugin/project Source 경로를 확인하세요."));
+    }
+
+    if (HasErrorIssue(OutReport.ValidationIssues))
+    {
+        return false;
+    }
+
+    if (bApply)
+    {
+        IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
+        bool bBuildCsWritten = false;
+
+        if (bApplyBuildCs && BuildCsCheck.bChanged)
+        {
+            if (UECommandForge::BuildCs::WriteUpdatedBuildCs(BuildCsCheck))
+            {
+                OutReport.ChangedFiles.Add(BuildCsCheck.BuildCsPath);
+                bBuildCsWritten = true;
+            }
+            else
+            {
+                AddIssue(OutReport, TEXT("BUILDCS_WRITE_FAILED"),
+                    TEXT("Build.cs dependency update를 저장할 수 없습니다."),
+                    TEXT("build_dependencies"), BuildCsCheck.BuildCsPath,
+                    TEXT("Build.cs 경로와 파일 권한을 확인하세요."));
+            }
+        }
+
+        if (!HasErrorIssue(OutReport.ValidationIssues))
+        {
+            PlatformFile.CreateDirectoryTree(*FPaths::GetPath(OutHeaderPath));
+            PlatformFile.CreateDirectoryTree(*FPaths::GetPath(OutSourcePath));
+
+            const bool bHeaderWritten = FFileHelper::SaveStringToFile(
+                HeaderPreview, *OutHeaderPath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+            const bool bSourceWritten = FFileHelper::SaveStringToFile(
+                SourcePreview, *OutSourcePath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+
+            if (!bHeaderWritten || !bSourceWritten)
+            {
+                bool bCleanupFailed = false;
+                TArray<FString> FailedCleanupFiles;
+
+                if (FPaths::FileExists(OutHeaderPath))
+                {
+                    if (IFileManager::Get().Delete(*OutHeaderPath) == false && FPaths::FileExists(OutHeaderPath))
+                    {
+                        bCleanupFailed = true;
+                        FailedCleanupFiles.Add(OutHeaderPath);
+                    }
+                }
+
+                if (FPaths::FileExists(OutSourcePath))
+                {
+                    if (IFileManager::Get().Delete(*OutSourcePath) == false && FPaths::FileExists(OutSourcePath))
+                    {
+                        bCleanupFailed = true;
+                        FailedCleanupFiles.Add(OutSourcePath);
+                    }
+                }
+
+                if (bBuildCsWritten)
+                {
+                    if (FFileHelper::SaveStringToFile(BuildCsCheck.OriginalContent, *BuildCsCheck.BuildCsPath,
+                        FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM) == false)
+                    {
+                        bCleanupFailed = true;
+                        FailedCleanupFiles.Add(BuildCsCheck.BuildCsPath);
+                    }
+                    else
+                    {
+                        OutReport.ChangedFiles.Remove(BuildCsCheck.BuildCsPath);
+                    }
+                }
+
+                if (bCleanupFailed)
+                {
+                    OutReport.Validation.Add(TEXT("cleanup_failed"), TEXT("true"));
+                    for (const FString& FailedFile : FailedCleanupFiles)
+                    {
+                        OutReport.ChangedFiles.AddUnique(FailedFile);
+
+                        FCommandForgeValidationIssue CleanupIssue;
+                        CleanupIssue.Severity = TEXT("error");
+                        CleanupIssue.Code = TEXT("CLEANUP_FAILED");
+                        CleanupIssue.Message = FString::Printf(TEXT("쓰기 실패 후 부분 생성물 정리(Cleanup)에 실패했습니다: %s"), *FailedFile);
+                        CleanupIssue.Field = TEXT("cleanup");
+                        CleanupIssue.FilePath = FailedFile;
+                        OutReport.ValidationIssues.Add(CleanupIssue);
+                    }
+                }
+                else
+                {
+                    OutReport.Validation.Add(TEXT("cleanup_failed"), TEXT("false"));
+                }
+
+                AddIssue(OutReport, TEXT("CPP_CLASS_WRITE_FAILED"),
+                    TEXT("생성된 C++ 파일을 저장할 수 없습니다."),
+                    TEXT("class.output_path"), LocalSpec.ClassInfo.OutputPath,
+                    TEXT("디스크 권한과 module Source 경로를 확인하세요."));
+                return false;
+            }
+            else
+            {
+                OutReport.ChangedFiles.Add(OutHeaderPath);
+                OutReport.ChangedFiles.Add(OutSourcePath);
+            }
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 int32 UGenerateCppClassCommandlet::Main(const FString& Params)
 {
     using namespace UECommandForge::GenerateCppClassPrivate;
@@ -784,176 +1017,14 @@ int32 UGenerateCppClassCommandlet::Main(const FString& Params)
         ? FString::Printf(TEXT("tx-%s"), *FDateTime::UtcNow().ToString(TEXT("%Y%m%dT%H%M%SZ")))
         : Spec.TransactionId;
 
-    Spec.ClassInfo.Name = Spec.ClassInfo.Name.TrimStartAndEnd();
-    Spec.ClassInfo.Type = Spec.ClassInfo.Type.TrimStartAndEnd();
-    Spec.ClassInfo.Module = Spec.ClassInfo.Module.TrimStartAndEnd();
-    Spec.ClassInfo.OutputPath = NormalizeRelativePath(Spec.ClassInfo.OutputPath);
-    Spec.ClassInfo.BaseClass = Spec.ClassInfo.BaseClass.TrimStartAndEnd().IsEmpty()
-        ? DefaultBaseClass(Spec.ClassInfo.Type)
-        : Spec.ClassInfo.BaseClass.TrimStartAndEnd();
-
-    if (!IsValidIdentifier(Spec.ClassInfo.Name))
-    {
-        AddIssue(Report, TEXT("INVALID_CLASS_NAME"), TEXT("class name은 C++ identifier여야 합니다."),
-            TEXT("class.name"), TEXT(""), TEXT("예: HealthComponent"));
-    }
-    if (Spec.ClassInfo.Module.IsEmpty())
-    {
-        AddIssue(Report, TEXT("REQUIRED_MODULE"), TEXT("module은 필수입니다."),
-            TEXT("class.module"), TEXT(""), TEXT("대상 UE module 이름을 지정하세요."));
-    }
-    if (Spec.ClassInfo.OutputPath.IsEmpty() || FPaths::IsRelative(Spec.ClassInfo.OutputPath) == false ||
-        Spec.ClassInfo.OutputPath.Contains(TEXT("..")) || ContainsWildcard(Spec.ClassInfo.OutputPath))
-    {
-        AddIssue(Report, TEXT("OUTPUT_PATH_OUTSIDE_MODULE"),
-            TEXT("output_path는 module root 내부의 상대 경로여야 합니다."),
-            TEXT("class.output_path"), Spec.ClassInfo.OutputPath,
-            TEXT("예: Components 또는 Public 하위가 아닌 기능 폴더 이름을 사용하세요."));
-    }
-    ValidateSpecTokens(Spec, Report);
-
-    const FString ModuleRoot = UECommandForge::BuildCs::ResolveModuleRoot(Spec.ClassInfo.Module);
-    if (ModuleRoot.IsEmpty())
-    {
-        AddIssue(Report, TEXT("MODULE_NOT_FOUND"), TEXT("대상 module root를 찾을 수 없습니다."),
-            TEXT("class.module"), Spec.ClassInfo.Module,
-            TEXT("sample Source 또는 plugin Source 아래의 module 이름을 사용하세요."));
-    }
-
-    const FString HeaderFileStem = Spec.ClassInfo.Name;
-    const FString ClassSymbol = EnsureUnrealClassSymbol(Spec.ClassInfo.Name, Spec.ClassInfo.Type);
-    const FString HeaderPath = FPaths::ConvertRelativePathToFull(FPaths::Combine(
-        ModuleRoot, TEXT("Public"), Spec.ClassInfo.OutputPath, HeaderFileStem + TEXT(".h")));
-    const FString SourcePath = FPaths::ConvertRelativePathToFull(FPaths::Combine(
-        ModuleRoot, TEXT("Private"), Spec.ClassInfo.OutputPath, HeaderFileStem + TEXT(".cpp")));
-
-    if (!ModuleRoot.IsEmpty() &&
-        (!IsPathInsideDirectory(HeaderPath, ModuleRoot) || !IsPathInsideDirectory(SourcePath, ModuleRoot)))
-    {
-        AddIssue(Report, TEXT("OUTPUT_PATH_OUTSIDE_MODULE"),
-            TEXT("생성 대상 파일이 module root 밖으로 나갑니다."),
-            TEXT("class.output_path"), Spec.ClassInfo.OutputPath,
-            TEXT("상대 경로에서 '..'와 절대 경로를 제거하세요."));
-    }
-
-    if (FPaths::FileExists(HeaderPath) || FPaths::FileExists(SourcePath))
-    {
-        AddIssue(Report, TEXT("CPP_CLASS_FILE_EXISTS"),
-            TEXT("생성 대상 .h/.cpp 파일이 이미 존재합니다."),
-            TEXT("class.name"), HeaderPath,
-            TEXT("다른 class name 또는 output_path를 사용하세요."));
-    }
-
-    const UECommandForge::BuildCs::FBuildCsDependencyCheck BuildCsCheck =
-        UECommandForge::BuildCs::CheckDependencies(Spec.ClassInfo.Module,
-            Spec.BuildDependencies.PublicDependencies, Spec.BuildDependencies.PrivateDependencies);
-
-    const FString HeaderIncludePath = Spec.ClassInfo.OutputPath / (HeaderFileStem + TEXT(".h"));
-    const FString HeaderPreview = BuildHeader(Spec, ClassSymbol, HeaderFileStem);
-    const FString SourcePreview = BuildSource(Spec, ClassSymbol, HeaderIncludePath);
-
     Report.Validation.Add(TEXT("spec"), SpecPath);
-    Report.Validation.Add(TEXT("module"), Spec.ClassInfo.Module);
-    Report.Validation.Add(TEXT("class_name"), Spec.ClassInfo.Name);
-    Report.Validation.Add(TEXT("class_symbol"), ClassSymbol);
-    Report.Validation.Add(TEXT("header_path"), HeaderPath);
-    Report.Validation.Add(TEXT("source_path"), SourcePath);
-    Report.Validation.Add(TEXT("header_preview"), HeaderPreview);
-    Report.Validation.Add(TEXT("source_preview"), SourcePreview);
-    Report.Validation.Add(TEXT("header_sha1"), Sha1ForString(HeaderPreview));
-    Report.Validation.Add(TEXT("source_sha1"), Sha1ForString(SourcePreview));
-    Report.Validation.Add(TEXT("buildcs_path"), BuildCsCheck.BuildCsPath);
-    Report.Validation.Add(TEXT("buildcs_apply_requested"), bApplyBuildCs ? TEXT("true") : TEXT("false"));
-    Report.Validation.Add(TEXT("buildcs_changed"), BuildCsCheck.bChanged ? TEXT("true") : TEXT("false"));
-    Report.Validation.Add(TEXT("buildcs_missing_public"),
-        FString::Join(BuildCsCheck.MissingPublicDependencies, TEXT(",")));
-    Report.Validation.Add(TEXT("buildcs_missing_private"),
-        FString::Join(BuildCsCheck.MissingPrivateDependencies, TEXT(",")));
 
-    if (!Spec.BuildDependencies.PublicDependencies.IsEmpty())
-    {
-        Report.Validation.Add(TEXT("public_dependencies"),
-            FString::Join(Spec.BuildDependencies.PublicDependencies, TEXT(",")));
-    }
-    if (!Spec.BuildDependencies.PrivateDependencies.IsEmpty())
-    {
-        Report.Validation.Add(TEXT("private_dependencies"),
-            FString::Join(Spec.BuildDependencies.PrivateDependencies, TEXT(",")));
-    }
-
-    if (bApplyBuildCs && !BuildCsCheck.bBuildCsExists)
-    {
-        AddIssue(Report, TEXT("BUILDCS_NOT_FOUND"),
-            TEXT("module Build.cs 파일을 찾을 수 없습니다."),
-            TEXT("class.module"), Spec.ClassInfo.Module,
-            TEXT("module 이름과 plugin/project Source 경로를 확인하세요."));
-    }
-
-    if (HasErrorIssue(Report.ValidationIssues))
-    {
-        Report.Validation.Add(TEXT("issue_count"), FString::FromInt(Report.ValidationIssues.Num()));
-        Report.bOk = false;
-        UECommandForge::FJsonReportWriter::Write(OutPath, Report);
-        return static_cast<int32>(ECommandForgeExitCode::ValidationFailed);
-    }
-
-    if (bApply)
-    {
-        IPlatformFile& PlatformFile = FPlatformFileManager::Get().GetPlatformFile();
-        bool bBuildCsWritten = false;
-
-        if (bApplyBuildCs && BuildCsCheck.bChanged)
-        {
-            if (UECommandForge::BuildCs::WriteUpdatedBuildCs(BuildCsCheck))
-            {
-                Report.ChangedFiles.Add(BuildCsCheck.BuildCsPath);
-                bBuildCsWritten = true;
-            }
-            else
-            {
-                AddIssue(Report, TEXT("BUILDCS_WRITE_FAILED"),
-                    TEXT("Build.cs dependency update를 저장할 수 없습니다."),
-                    TEXT("build_dependencies"), BuildCsCheck.BuildCsPath,
-                    TEXT("Build.cs 경로와 파일 권한을 확인하세요."));
-            }
-        }
-
-        if (!HasErrorIssue(Report.ValidationIssues))
-        {
-            PlatformFile.CreateDirectoryTree(*FPaths::GetPath(HeaderPath));
-            PlatformFile.CreateDirectoryTree(*FPaths::GetPath(SourcePath));
-
-            const bool bHeaderWritten = FFileHelper::SaveStringToFile(
-                HeaderPreview, *HeaderPath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
-            const bool bSourceWritten = FFileHelper::SaveStringToFile(
-                SourcePreview, *SourcePath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
-
-            if (!bHeaderWritten || !bSourceWritten)
-            {
-                IFileManager::Get().Delete(*HeaderPath);
-                IFileManager::Get().Delete(*SourcePath);
-                if (bBuildCsWritten)
-                {
-                    FFileHelper::SaveStringToFile(BuildCsCheck.OriginalContent, *BuildCsCheck.BuildCsPath,
-                        FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
-                    Report.ChangedFiles.Remove(BuildCsCheck.BuildCsPath);
-                }
-                AddIssue(Report, TEXT("CPP_CLASS_WRITE_FAILED"),
-                    TEXT("생성된 C++ 파일을 저장할 수 없습니다."),
-                    TEXT("class.output_path"), Spec.ClassInfo.OutputPath,
-                    TEXT("디스크 권한과 module Source 경로를 확인하세요."));
-            }
-            else
-            {
-                Report.ChangedFiles.Add(HeaderPath);
-                Report.ChangedFiles.Add(SourcePath);
-            }
-        }
-    }
+    FString HeaderPath, SourcePath;
+    const bool bSuccess = GenerateSingleClass(Spec, bApply, bApplyBuildCs, Report, HeaderPath, SourcePath);
 
     Report.Validation.Add(TEXT("issue_count"), FString::FromInt(Report.ValidationIssues.Num()));
     Report.bApplied = bApply && !Report.ChangedFiles.IsEmpty();
-    Report.bOk = Report.Errors.IsEmpty() && !HasErrorIssue(Report.ValidationIssues);
+    Report.bOk = bSuccess && Report.Errors.IsEmpty() && !HasErrorIssue(Report.ValidationIssues);
 
     const bool bWrote = UECommandForge::FJsonReportWriter::Write(OutPath, Report);
     if (!bWrote)

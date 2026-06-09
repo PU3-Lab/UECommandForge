@@ -28,6 +28,28 @@
 - Unreal Editor/에셋/Blueprint 자동화 작업을 수행하기 전에 `specs/codex/unreal-automation-agents.md`를 읽고 그대로 따른다.
 - 설치 스크립트는 위 파일의 내용을 `~/.codex/AGENTS.md`의 UECommandForge managed block에 삽입한다. 지침 본문을 shell heredoc에 중복 작성하지 않는다.
 
+### UECommandForge 실행 속도 규칙
+
+- 반복 생성 작업은 단건 wrapper보다 batch wrapper를 우선 사용한다.
+  - Blueprint 여러 개: `tools/ue/create_blueprint_batch.*`
+  - Blueprint 생성과 기본 컴포넌트/기본값 적용: batch spec의 `components`와 defaults 기능을 우선 검토한다.
+- `CreateBlueprint` 또는 `CreateBlueprintBatch` Result JSON에 `compile_status: ok`, `asset_on_disk: true`, `asset_in_registry: true`가 있으면 같은 턴에서 `CompileBlueprints`를 반복 실행하지 않는다.
+- C++ 새 클래스 생성 후 Blueprint 생성은 반드시 UHT/build 또는 reflection 검증 뒤 새 Unreal 프로세스에서 실행한다.
+- Result 확인은 전체 로그보다 최신 `Saved/CodexReports/*.json`의 `ok`, `errors`, `issues`, `validation`을 우선한다.
+
+### UECommandForge 생성 작업 결정 트리
+
+1. Blueprint만 여러 개 만들면 `create_blueprint_batch.*`를 사용한다.
+2. C++ 클래스만 여러 개 만들면 `generate_cpp_class_batch.*`를 사용한다.
+3. 새 C++ 부모 클래스 기반 Blueprint를 만들면 다음 순서를 지킨다.
+   - `generate_cpp_class_batch.*` 또는 `generate_cpp_class.*`
+   - Unreal build/UHT 또는 `validate_cpp_reflection.*`
+   - `create_blueprint_batch.*` 또는 `create_blueprint.*`
+4. `CreateBlueprint*` Result JSON이 compile/save/registry 검증을 통과하면 같은 턴의 `compile_blueprints.*`는 생략한다.
+5. 실패하면 임시 Python 우회 없이 Result JSON, project log, crash report를 먼저 확인한다.
+
+
+
 ## 코드 리뷰 규칙
 
 - **Codex CLI에서 서브에이전트 도구가 제공되면 `reviewer` 서브에이전트로 코드 리뷰를 수행한다.**
