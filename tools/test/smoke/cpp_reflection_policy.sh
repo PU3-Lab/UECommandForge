@@ -4,14 +4,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 SAMPLE_DIR="${REPO_ROOT}/sample"
-WORK_DIR="${SAMPLE_DIR}/Saved/CodexReports/ReflectionSmoke"
+WORK_DIR="${SAMPLE_DIR}/Saved/UECommandForge/Reports/ReflectionSmoke"
 HEADER_PATH="${WORK_DIR}/BrokenReflectionComponent.h"
 POLICY_PATH="${WORK_DIR}/cpp_reflection_policy.json"
 
 export UE_COMMANDLET_TIMEOUT="${UE_COMMANDLET_TIMEOUT:-90}"
 
 mkdir -p "${WORK_DIR}"
-rm -f "${SAMPLE_DIR}/Saved/CodexReports/ValidateCppReflection_"*.json
+rm -f "${SAMPLE_DIR}/Saved/UECommandForge/Reports/ValidateCppReflection_"*.json
 
 cat > "${HEADER_PATH}" <<'HEADER'
 #pragma once
@@ -60,7 +60,7 @@ EXIT_CODE=$?
 set -e
 
 test "${EXIT_CODE}" -eq 4
-REPORT="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/ValidateCppReflection_"*.json | head -1)"
+REPORT="$(ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/ValidateCppReflection_"*.json | head -1)"
 
 test -f "${REPORT}"
 jq -e '.ok == false' "${REPORT}" >/dev/null

@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 SAMPLE_DIR="${REPO_ROOT}/sample"
 UE_TOOLS="${REPO_ROOT}/tools/ue"
-FIXTURE_DIR="${SAMPLE_DIR}/Saved/CodexReports/prototype_automation_smoke"
+FIXTURE_DIR="${SAMPLE_DIR}/Saved/UECommandForge/Reports/prototype_automation_smoke"
 REPORT_DIR="${FIXTURE_DIR}/reports"
 
 export UE_COMMANDLET_TIMEOUT="${UE_COMMANDLET_TIMEOUT:-120}"

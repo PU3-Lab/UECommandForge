@@ -8,7 +8,7 @@ SAMPLE_DIR="${REPO_ROOT}/sample"
 "${REPO_ROOT}/tools/ue/validate_asset_rules.sh" \
   "${REPO_ROOT}/specs/policies/assets.policy.json" \
   -RootPaths=/Game/Tests
-REPORT="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/ValidateAssetRules_"*.json | head -1)"
+REPORT="$(ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/ValidateAssetRules_"*.json | head -1)"
 
 test -f "${REPORT}"
 jq -e '.ok == true' "${REPORT}" >/dev/null

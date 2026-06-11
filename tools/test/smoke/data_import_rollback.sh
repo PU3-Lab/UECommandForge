@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 SAMPLE_DIR="${REPO_ROOT}/sample"
 UE_TOOLS="${REPO_ROOT}/tools/ue"
-FIXTURE_DIR="${SAMPLE_DIR}/Saved/CodexReports/data_import_rollback_smoke"
+FIXTURE_DIR="${SAMPLE_DIR}/Saved/UECommandForge/Reports/data_import_rollback_smoke"
 SMOKE_ID="$(date -u +%Y%m%dT%H%M%SZ)_$$"
 TARGET_PACKAGE="/Game/Tests/DataImportSmoke/DT_SmokeImport_${SMOKE_ID}"
 TARGET_FILE="${SAMPLE_DIR}/Content/Tests/DataImportSmoke/DT_SmokeImport_${SMOKE_ID}.uasset"
@@ -19,7 +19,7 @@ SOURCE_PATH="${FIXTURE_DIR}/import_source_${SMOKE_ID}.csv"
 
 latest_report() {
   local commandlet="$1"
-  ls -t "${SAMPLE_DIR}/Saved/CodexReports/${commandlet}_"*.json | head -1
+  ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/${commandlet}_"*.json | head -1
 }
 
 cat >"${SCHEMA_PATH}" <<JSON

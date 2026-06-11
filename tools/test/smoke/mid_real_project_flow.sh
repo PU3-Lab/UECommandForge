@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 SAMPLE_DIR="${REPO_ROOT}/sample"
 PROJECT_FILE="${SAMPLE_DIR}/UECommandForgeSample.uproject"
-WORK_DIR="${SAMPLE_DIR}/Saved/CodexReports/MidRealProject"
+WORK_DIR="${SAMPLE_DIR}/Saved/UECommandForge/Reports/MidRealProject"
 CODEX_HOME="${WORK_DIR}/codex-home"
 CODEX_APP="${CODEX_HOME}/UECommandForge"
 REPORT_MD="${WORK_DIR}/mid_real_project_flow.md"
@@ -45,7 +45,7 @@ record_pass() {
 LAST_REPORT=""
 
 extract_report_path() {
-  awk '/Saved\/CodexReports\/.*\.json$/ { line = $0 } END { print line }'
+  awk '/Saved\/UECommandForge\/Reports\/.*\.json$/ { line = $0 } END { print line }'
 }
 
 run_expect_ok() {

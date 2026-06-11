@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
-WORK_DIR="${REPO_ROOT}/sample/Saved/CodexReports/InstallerInstallUpdateUninstall"
+WORK_DIR="${REPO_ROOT}/sample/Saved/UECommandForge/Reports/InstallerInstallUpdateUninstall"
 VERSION="$(jq -r '.VersionName' "${REPO_ROOT}/sample/Plugins/UECommandForge/UECommandForge.uplugin")"
 PROJECT_DIR="${WORK_DIR}/Project"
 CODEX_HOME="${WORK_DIR}/CodexHome"

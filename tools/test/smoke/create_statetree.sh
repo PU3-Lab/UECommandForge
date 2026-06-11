@@ -29,7 +29,7 @@ echo "Spec: ${SPEC_FILE}"
 echo ""
 
 "${UE_TOOLS}/create_statetree.sh" "${SPEC_FILE}"
-REPORT="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/CreateStateTree_"*.json | head -1)"
+REPORT="$(ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/CreateStateTree_"*.json | head -1)"
 
 OK=$(jq -r '.ok' "${REPORT}")
 COMPILE=$(jq -r '.validation.compile_status // "missing"' "${REPORT}")

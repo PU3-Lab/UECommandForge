@@ -21,12 +21,12 @@ cleanup() {
   for file in "${CLEANUP_FILES[@]}"; do
     rm -f "$file"
   done
-  rm -f "${SAMPLE_DIR}/Saved/CodexReports/GenerateCppClassBatch_"*.json
+  rm -f "${SAMPLE_DIR}/Saved/UECommandForge/Reports/GenerateCppClassBatch_"*.json
 }
 
 cleanup
 
-REPORT_DIR="${SAMPLE_DIR}/Saved/CodexReports"
+REPORT_DIR="${SAMPLE_DIR}/Saved/UECommandForge/Reports"
 mkdir -p "${REPORT_DIR}"
 
 SPEC_FILE="${REPORT_DIR}/smoke_cpp_class_batch.json"
@@ -86,7 +86,7 @@ echo ">>> [RUN] generate_cpp_class_batch.sh 실행..."
 
 # 3. 리포트 및 생성 파일 검증
 echo ">>> [VERIFY] 결과 검증..."
-OUTPUT_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/GenerateCppClassBatch_"*.json | head -1)"
+OUTPUT_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/GenerateCppClassBatch_"*.json | head -1)"
 
 if [ ! -f "${OUTPUT_REPORT}" ]; then
   echo "FAIL: 리포트 파일이 생성되지 않았습니다." >&2

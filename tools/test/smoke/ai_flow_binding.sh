@@ -32,7 +32,7 @@ echo ""
 "${UE_TOOLS}/create_statetree.sh" "${SPEC_FILE}" >/dev/null
 
 "${UE_TOOLS}/bind_ai_flow.sh" "${SPEC_FILE}"
-BIND_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/BindAIFlow_"*.json | head -1)"
+BIND_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/BindAIFlow_"*.json | head -1)"
 
 BIND_OK=$(jq -r '.ok' "${BIND_REPORT}")
 BIND_CTRL=$(jq -r '.validation.ai_controller_class // "missing"' "${BIND_REPORT}")
@@ -47,7 +47,7 @@ check "bind statetree_component == ok" "$([ "${BIND_ST}" = "ok" ] && echo true |
 echo ""
 
 "${UE_TOOLS}/validate_ai_flow.sh" "${SPEC_FILE}"
-VALIDATE_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/ValidateAIFlow_"*.json | head -1)"
+VALIDATE_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/ValidateAIFlow_"*.json | head -1)"
 
 VALIDATE_OK=$(jq -r '.ok' "${VALIDATE_REPORT}")
 VALIDATE_CTRL=$(jq -r '.validation.ai_controller_class // "missing"' "${VALIDATE_REPORT}")

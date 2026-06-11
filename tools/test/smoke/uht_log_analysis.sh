@@ -4,14 +4,14 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 SAMPLE_DIR="${REPO_ROOT}/sample"
-WORK_DIR="${SAMPLE_DIR}/Saved/CodexReports/UhtLogSmoke"
+WORK_DIR="${SAMPLE_DIR}/Saved/UECommandForge/Reports/UhtLogSmoke"
 LOG_PATH="${WORK_DIR}/uht_errors.log"
 MARKDOWN_PATH="${WORK_DIR}/uht_errors.md"
 
 export UE_COMMANDLET_TIMEOUT="${UE_COMMANDLET_TIMEOUT:-90}"
 
 mkdir -p "${WORK_DIR}"
-rm -f "${SAMPLE_DIR}/Saved/CodexReports/AnalyzeUhtLog_"*.json
+rm -f "${SAMPLE_DIR}/Saved/UECommandForge/Reports/AnalyzeUhtLog_"*.json
 rm -f "${MARKDOWN_PATH}"
 
 cat > "${LOG_PATH}" <<'LOG'
@@ -27,7 +27,7 @@ EXIT_CODE=$?
 set -e
 
 test "${EXIT_CODE}" -eq 4
-REPORT="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/AnalyzeUhtLog_"*.json | head -1)"
+REPORT="$(ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/AnalyzeUhtLog_"*.json | head -1)"
 
 test -f "${REPORT}"
 test -f "${MARKDOWN_PATH}"

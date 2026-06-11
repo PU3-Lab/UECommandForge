@@ -15,7 +15,7 @@ compile_commands.json
 .DS_Store
 Thumbs.db
 
-# But keep CodexReports examples
+# But keep UECommandForge/Reports examples
 !sample/Saved/.gitkeep
 
 # UE 에디터 자동 생성 Config (프로젝트 범위 외)
