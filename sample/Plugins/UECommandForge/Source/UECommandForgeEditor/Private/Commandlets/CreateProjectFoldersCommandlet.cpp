@@ -6,6 +6,7 @@
 #include "Misc/PackageName.h"
 #include "Misc/Paths.h"
 #include "Reports/JsonReportWriter.h"
+#include "Reports/ReportPaths.h"
 #include "Reports/RollbackPlanWriter.h"
 #include "Specs/CommandForgePolicyParser.h"
 
@@ -85,7 +86,7 @@ namespace UECommandForge::CreateProjectFoldersPrivate
 
     FString RollbackReportDirectory()
     {
-        return FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("CodexReports"));
+        return UECommandForge::GetReportsDir();
     }
 
     FString RollbackPlanPathForTransaction(const FString& TransactionId)

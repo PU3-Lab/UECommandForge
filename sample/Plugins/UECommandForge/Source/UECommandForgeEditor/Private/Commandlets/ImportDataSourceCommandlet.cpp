@@ -9,6 +9,7 @@
 #include "Misc/Paths.h"
 #include "Misc/SecureHash.h"
 #include "Reports/JsonReportWriter.h"
+#include "Reports/ReportPaths.h"
 #include "Reports/RollbackPlanWriter.h"
 #include "Specs/DataSchemaSpec.h"
 #include "Specs/DataSchemaSpecParser.h"
@@ -165,11 +166,7 @@ namespace UECommandForge::ImportDataSourcePrivate
 
     FString RollbackReportDirectory()
     {
-        FString ReportsDir = FPaths::ConvertRelativePathToFull(
-            FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("CodexReports")));
-        FPaths::NormalizeDirectoryName(ReportsDir);
-        FPaths::CollapseRelativeDirectories(ReportsDir);
-        return ReportsDir;
+        return UECommandForge::GetReportsDir();
     }
 
     bool IsAbsoluteFilePath(const FString& Path)
@@ -216,7 +213,7 @@ namespace UECommandForge::ImportDataSourcePrivate
         if (!Candidate.StartsWith(ReportsPrefix, ESearchCase::IgnoreCase))
         {
             AddError(Report, TEXT("ROLLBACK_PATH_OUTSIDE_REPORT_DIR"),
-                TEXT("rollback_plan은 Saved/CodexReports 아래에만 쓸 수 있습니다."),
+                TEXT("rollback_plan은 Saved/UECommandForge/Reports 아래에만 쓸 수 있습니다."),
                 TEXT("RollbackPlan"));
             return false;
         }
