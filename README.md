@@ -239,7 +239,7 @@ GitHub Actions의 `C++ Static Analysis` workflow는 push/PR에서 `cppcheck`와 
 
 ## Result JSON
 
-모든 commandlet은 `sample/Saved/CodexReports/<Commandlet>_<UTC>.json`에 기록한다. `PrototypeAutomation`은 child commandlet report를 함께 남기고, 통합 JSON과 같은 basename의 Markdown 요약 리포트도 생성한다. 종료 코드:
+모든 commandlet은 `sample/Saved/UECommandForge/Reports/<Commandlet>_<UTC>.json`에 기록한다. `PrototypeAutomation`은 child commandlet report를 함께 남기고, 통합 JSON과 같은 basename의 Markdown 요약 리포트도 생성한다. 종료 코드:
 
 | 코드 | 의미 |
 |---|---|

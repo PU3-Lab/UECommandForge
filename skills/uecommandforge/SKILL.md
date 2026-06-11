@@ -7,7 +7,7 @@ description: Use when Codex needs to automate Unreal Engine work through UEComma
 
 ## 핵심 원칙
 
-Unreal Editor, asset, Blueprint, C++ reflection 작업은 직접 Unreal Python으로 처리하지 않는다. 설치된 UECommandForge commandlet wrapper를 사용하고, 실행 후 대상 프로젝트의 `Saved/CodexReports`에서 Result JSON을 확인한다.
+Unreal Editor, asset, Blueprint, C++ reflection 작업은 직접 Unreal Python으로 처리하지 않는다. 설치된 UECommandForge commandlet wrapper를 사용하고, 실행 후 대상 프로젝트의 `Saved/UECommandForge/Reports`에서 Result JSON을 확인한다.
 
 AGENTS의 안전 규칙을 따른다. `import unreal`, `-ExecutePythonScript`, PythonScriptPlugin, Editor Utility, 원격 Python 실행, 임시 `.py` 우회는 사용하지 않는다.
 
@@ -102,14 +102,14 @@ create_blueprint_batch
 Result JSON 위치:
 
 ```text
-<Project>/Saved/CodexReports
+<Project>/Saved/UECommandForge/Reports
 ```
 
 ## 실패 처리
 
 wrapper 실패 시 먼저 다음을 수집한다.
 
-- `<Project>/Saved/CodexReports`
+- `<Project>/Saved/UECommandForge/Reports`
 - `<Project>/Saved/Logs`
 - `<Project>/Saved/Crashes`
 - `%LOCALAPPDATA%\CrashReportClient\Saved\Crashes`

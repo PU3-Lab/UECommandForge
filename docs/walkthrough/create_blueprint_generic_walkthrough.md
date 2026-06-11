@@ -39,7 +39,7 @@
 === Generic Blueprint Create Smoke Test ===
 
 [1] Create Standard Actor Blueprint (allow_replace=true)
-Report: /Users/kimkyungpyo/Workspaces/projects/UECommandForge/sample/Saved/CodexReports/CreateBlueprint_20260604T021742Z.json
+Report: /Users/kimkyungpyo/Workspaces/projects/UECommandForge/sample/Saved/UECommandForge/Reports/CreateBlueprint_20260604T021742Z.json
   PASS: ok == true
   PASS: compile_status == ok
   PASS: asset_on_disk == true

@@ -431,11 +431,11 @@ git commit -m "feat: AIFlowSpecValidator — 필수 필드·경로 접두사·Ta
 
 # 3. guard_ai.json 파서 통합 확인
 ./tools/ue/run_commandlet.sh ParseSpecCheck -SpecFile="${PWD}/specs/examples/guard_ai.json"
-jq -e '.ok == true' "$(ls -t Saved/CodexReports/ParseSpecCheck_*.json | head -1)"
+jq -e '.ok == true' "$(ls -t Saved/UECommandForge/Reports/ParseSpecCheck_*.json | head -1)"
 
 # 4. broken JSON 거부 확인
 ./tools/ue/run_commandlet.sh ParseSpecCheck -SpecFile="${PWD}/specs/examples/guard_ai_broken.json"
-jq -e '.ok == false and (.errors | length) > 0' "$(ls -t Saved/CodexReports/ParseSpecCheck_*.json | head -1)"
+jq -e '.ok == false and (.errors | length) > 0' "$(ls -t Saved/UECommandForge/Reports/ParseSpecCheck_*.json | head -1)"
 ```
 
 Phase 2 완료 조건: `guard_ai.json` 파싱 성공 + `guard_ai_broken.json` 거부 + 구조화 오류 Result JSON 반환.

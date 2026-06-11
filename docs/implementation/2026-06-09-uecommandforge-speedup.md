@@ -6,7 +6,7 @@
 
 **아키텍처:** Unreal 접근은 계속 UECommandForge C++ commandlet과 `tools/ue/` wrapper 안에서만 수행한다. Blueprint 생성은 기존 `CreateBlueprintBatch`를 기본 fast path로 사용하고, C++ 클래스 여러 개 생성에는 새 `GenerateCppClassBatch` commandlet을 추가한다. 작업자는 단건 wrapper보다 batch wrapper를 먼저 검토하도록 운영 규칙을 갱신한다.
 
-**기술 스택:** Unreal Engine 5.7, UECommandForge Editor commandlet, C++ automation test, Windows `.bat` wrapper, Git Bash smoke script, `Saved/CodexReports` Result JSON.
+**기술 스택:** Unreal Engine 5.7, UECommandForge Editor commandlet, C++ automation test, Windows `.bat` wrapper, Git Bash smoke script, `Saved/UECommandForge/Reports` Result JSON.
 
 ---
 
@@ -26,7 +26,7 @@
 1. C++ 파일을 생성한다.
 2. UHT/build 또는 reflection 검증을 수행한다.
 3. 새 Unreal 프로세스에서 Blueprint를 생성한다.
-4. `Saved/CodexReports`의 최신 Result JSON을 확인한다.
+4. `Saved/UECommandForge/Reports`의 최신 Result JSON을 확인한다.
 
 ## 현재 문제
 
@@ -90,7 +90,7 @@ Unreal 자동화 규칙 아래에 다음 섹션을 추가한다.
   - Blueprint 생성과 기본 컴포넌트/기본값 적용: batch spec의 `components`와 defaults 기능을 우선 검토한다.
 - `CreateBlueprint` 또는 `CreateBlueprintBatch` Result JSON에 `compile_status: ok`, `asset_on_disk: true`, `asset_in_registry: true`가 있으면 같은 턴에서 `CompileBlueprints`를 반복 실행하지 않는다.
 - C++ 새 클래스 생성 후 Blueprint 생성은 반드시 UHT/build 또는 reflection 검증 뒤 새 Unreal 프로세스에서 실행한다.
-- Result 확인은 전체 로그보다 최신 `Saved/CodexReports/*.json`의 `ok`, `errors`, `issues`, `validation`을 우선한다.
+- Result 확인은 전체 로그보다 최신 `Saved/UECommandForge/Reports/*.json`의 `ok`, `errors`, `issues`, `validation`을 우선한다.
 ```
 
 - [ ] **2단계: 문서 diff 확인**
@@ -315,7 +315,7 @@ call "%SCRIPT_DIR%run_commandlet.bat" GenerateCppClassBatch -Spec="%SPEC_PATH%" 
 
 - [ ] **1단계: smoke test 작성**
 
-smoke test는 `Saved/CodexReports/smoke_cpp_class_batch.json`에 spec을 만들고 `generate_cpp_class_batch.sh -Apply`를 실행한다.
+smoke test는 `Saved/UECommandForge/Reports/smoke_cpp_class_batch.json`에 spec을 만들고 `generate_cpp_class_batch.sh -Apply`를 실행한다.
 
 검증 항목:
 
@@ -402,7 +402,7 @@ git diff -- AGENTS.md
 - [ ] `-ExecutePythonScript`를 추가하지 않았다.
 - [ ] PythonScriptPlugin 자동화를 추가하지 않았다.
 - [ ] 프로젝트 루트에 임시 `.py`, `.bat`, `.ps1`, `.json` 파일을 남기지 않았다.
-- [ ] smoke test spec은 `Saved/CodexReports` 아래에만 생성한다.
+- [ ] smoke test spec은 `Saved/UECommandForge/Reports` 아래에만 생성한다.
 - [ ] 기존 `GenerateCppClass` 테스트가 계속 통과한다.
 - [ ] 새 `GenerateCppClassBatch` 테스트가 통과한다.
 - [ ] Blueprint fast path는 기존 `create_blueprint_batch`를 우선 사용한다.

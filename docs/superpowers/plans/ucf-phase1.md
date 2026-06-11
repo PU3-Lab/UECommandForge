@@ -2,7 +2,7 @@
 
 > **에이전트 작업자:** REQUIRED SUB-SKILL: `superpowers:subagent-driven-development` (권장) 또는 `superpowers:executing-plans`로 태스크 단위 실행. 각 스텝은 체크박스(`- [ ]`) 구문으로 진행 상태를 추적한다.
 
-**목표:** `UnrealEditor-Cmd`를 헤드리스로 부팅하여 `Hello` Commandlet을 실행하고, 계약 준수 Result JSON을 `Saved/CodexReports/`에 기록하는 완전한 실행 하네스를 구축한다.
+**목표:** `UnrealEditor-Cmd`를 헤드리스로 부팅하여 `Hello` Commandlet을 실행하고, 계약 준수 Result JSON을 `Saved/UECommandForge/Reports/`에 기록하는 완전한 실행 하네스를 구축한다.
 
 **아키텍처:** Shell 래퍼(`tools/ue/`) → `UnrealEditor-Cmd` → `UHelloCommandlet` → `FJsonReportWriter::Write` → Result JSON. 런타임 모듈은 POD 타입만 보유; 에디터 모듈이 Commandlet·리포트 작성기·테스트를 담당한다.
 
@@ -23,7 +23,7 @@
 ./tools/ue/hello.sh
 
 # 4. Result JSON 계약 확인
-jq -e '.ok and .commandlet == "Hello"' "$(ls -t sample/Saved/CodexReports/Hello_*.json | head -1)"
+jq -e '.ok and .commandlet == "Hello"' "$(ls -t sample/Saved/UECommandForge/Reports/Hello_*.json | head -1)"
 ```
 
 ---
@@ -90,7 +90,7 @@ Saved/
 .DS_Store
 Thumbs.db
 
-# But keep CodexReports examples
+# But keep UECommandForge/Reports examples
 !Saved/.gitkeep
 ```
 
@@ -150,7 +150,7 @@ LLM 기반 Unreal Engine 자동화 브리지. 전체 설계는 `ue_commandlet_ba
 
 ## Result JSON
 
-모든 commandlet은 `Saved/CodexReports/<Commandlet>_<UTC>.json`에 기록한다. 종료 코드:
+모든 commandlet은 `Saved/UECommandForge/Reports/<Commandlet>_<UTC>.json`에 기록한다. 종료 코드:
 
 | 코드 | 의미 |
 |---|---|
@@ -244,7 +244,7 @@ resolve_ue_cmd
 ```bash
 #!/usr/bin/env bash
 # 사용법: run_commandlet.sh <CommandletName> [extra-args...]
-# Result JSON은 항상 Saved/CodexReports/<Commandlet>_<UTC>.json에 기록된다.
+# Result JSON은 항상 Saved/UECommandForge/Reports/<Commandlet>_<UTC>.json에 기록된다.
 
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -259,7 +259,7 @@ fi
 COMMANDLET="$1"
 shift
 
-REPORT_DIR="${REPO_ROOT}/sample/Saved/CodexReports"
+REPORT_DIR="${REPO_ROOT}/sample/Saved/UECommandForge/Reports"
 mkdir -p "${REPORT_DIR}"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)"
 OUTPUT_JSON="${REPORT_DIR}/${COMMANDLET}_${STAMP}.json"
@@ -574,7 +574,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 bool FUECommandForgeJsonReportWriterTest::RunTest(const FString& Parameters)
 {
     const FString OutPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_writer.json"));
+        TEXT("UECommandForge/Reports"), TEXT("test_writer.json"));
     IFileManager::Get().Delete(*OutPath);
 
     FCommandForgeReport Report;
@@ -805,13 +805,13 @@ int32 UHelloCommandlet::Main(const FString& Params)
 ./tools/ue/hello.sh
 ```
 
-예상 결과: `Saved/CodexReports/Hello_<UTC>.json` 경로를 출력하고 종료 코드 0으로 종료.
+예상 결과: `Saved/UECommandForge/Reports/Hello_<UTC>.json` 경로를 출력하고 종료 코드 0으로 종료.
 
 - [x] **스텝 5: Result JSON 계약 검증**
 
 ```bash
 jq -e '.ok == true and .commandlet == "Hello" and .validation.engine_boot == "ok"' \
-  "$(ls -t sample/Saved/CodexReports/Hello_*.json | head -1)"
+  "$(ls -t sample/Saved/UECommandForge/Reports/Hello_*.json | head -1)"
 ```
 
 예상 결과: `true` 출력 후 종료 코드 0.
@@ -847,7 +847,7 @@ git commit -m "feat: HelloCommandlet — end-to-end Result JSON smoke"
 ./tools/ue/hello.sh
 
 # 4. Result JSON 계약 확인
-jq -e '.ok and .commandlet == "Hello"' "$(ls -t sample/Saved/CodexReports/Hello_*.json | head -1)"
+jq -e '.ok and .commandlet == "Hello"' "$(ls -t sample/Saved/UECommandForge/Reports/Hello_*.json | head -1)"
 ```
 
 **Phase 1 인도물:** 이후 모든 Phase는 "동작하는 Commandlet이 있어서 계약 준수 Result JSON을 기록할 수 있다; 내가 할 일은 그것을 확장하는 것뿐이다"라는 전제 아래 시작할 수 있다.

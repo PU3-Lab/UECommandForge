@@ -71,7 +71,7 @@
 | `./tools/ue/build_plugin.sh` | PASS |
 | `./tools/test/automation/run.sh` | PASS 15 / FAIL 0 / SKIP 0 |
 | `./tools/ue/create_ai_flow.sh specs/examples/guard_ai.json` | PASS |
-| `jq -e '.ok == true and (.steps \| length == 5) and .validation.actor_placed == "ok"' sample/Saved/CodexReports/CreateAIFlow_20260528T003339Z.json` | PASS |
+| `jq -e '.ok == true and (.steps \| length == 5) and .validation.actor_placed == "ok"' sample/Saved/UECommandForge/Reports/CreateAIFlow_20260528T003339Z.json` | PASS |
 
 현재 리포트 작성 전 재검증:
 
@@ -81,7 +81,7 @@
 | `git diff --check 1e8cc13..HEAD` | PASS |
 | `./tools/test/smoke/windows_command_wrappers.sh` | PASS |
 | `bash -n tools/test/smoke/create_ai_flow.sh tools/test/smoke/windows_command_wrappers.sh tools/ue/run_commandlet.sh tools/ue/create_ai_flow.sh tools/ue/setup_npc_character.sh tools/ue/setup_patrol_ai.sh` | PASS |
-| `jq -e '.ok == true and (.steps \| length == 5) and .validation.actor_placed == "ok"' sample/Saved/CodexReports/CreateAIFlow_20260528T003339Z.json` | PASS |
+| `jq -e '.ok == true and (.steps \| length == 5) and .validation.actor_placed == "ok"' sample/Saved/UECommandForge/Reports/CreateAIFlow_20260528T003339Z.json` | PASS |
 
 리포트 요약:
 

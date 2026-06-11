@@ -551,7 +551,7 @@ echo ""
 # --- Character Blueprint ---
 echo "[1] CreateCharacterBlueprint"
 "${UE_TOOLS}/create_character_bp.sh" "${SPEC_FILE}"
-CHAR_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/CreateCharacterBlueprint_"*.json | head -1)"
+CHAR_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/CreateCharacterBlueprint_"*.json | head -1)"
 
 CHAR_OK=$(jq -r '.ok' "${CHAR_REPORT}")
 CHAR_COMPILE=$(jq -r '.validation.compile_status // "missing"' "${CHAR_REPORT}")
@@ -571,7 +571,7 @@ echo ""
 # --- AIController Blueprint ---
 echo "[2] CreateAIControllerBlueprint"
 "${UE_TOOLS}/create_ai_controller.sh" "${SPEC_FILE}"
-AI_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/CreateAIControllerBlueprint_"*.json | head -1)"
+AI_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/CreateAIControllerBlueprint_"*.json | head -1)"
 
 AI_OK=$(jq -r '.ok' "${AI_REPORT}")
 AI_COMPILE=$(jq -r '.validation.compile_status // "missing"' "${AI_REPORT}")
@@ -621,7 +621,7 @@ git commit -m "test: Phase 3 smoke test 스크립트 추가 (tools/smoke/)"
 # 3. Character BP 생성
 ./tools/ue/create_character_bp.sh specs/examples/guard_ai.json
 
-CHAR_REPORT="$(ls -t Saved/CodexReports/CreateCharacterBlueprint_*.json | head -1)"
+CHAR_REPORT="$(ls -t Saved/UECommandForge/Reports/CreateCharacterBlueprint_*.json | head -1)"
 jq -e '.ok
   and (.validation.compile_status == "ok")
   and (.validation.asset_on_disk == "true")' "$CHAR_REPORT"
@@ -633,7 +633,7 @@ test -f "sample/${CHAR_ASSET_PATH}.uasset" && echo "Character .uasset 존재"
 # 4. AIController BP 생성
 ./tools/ue/create_ai_controller.sh specs/examples/guard_ai.json
 
-AI_REPORT="$(ls -t Saved/CodexReports/CreateAIControllerBlueprint_*.json | head -1)"
+AI_REPORT="$(ls -t Saved/UECommandForge/Reports/CreateAIControllerBlueprint_*.json | head -1)"
 jq -e '.ok
   and (.validation.compile_status == "ok")
   and (.validation.asset_on_disk == "true")' "$AI_REPORT"

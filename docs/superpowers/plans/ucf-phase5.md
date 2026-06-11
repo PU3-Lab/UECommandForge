@@ -377,12 +377,12 @@ git commit -m "feat: BindAIFlow·ValidateAIFlow Commandlet + Shell Wrapper"
 
 # 3. 바인딩
 ./tools/ue/bind_ai_flow.sh specs/examples/guard_ai.json
-jq -e '.ok == true' "$(ls -t sample/Saved/CodexReports/BindAIFlow_*.json | head -1)"
+jq -e '.ok == true' "$(ls -t sample/Saved/UECommandForge/Reports/BindAIFlow_*.json | head -1)"
 
 # 4. 검증
 ./tools/ue/validate_ai_flow.sh specs/examples/guard_ai.json
 jq -e '.ok and .validation.ai_controller_class == "ok" and .validation.auto_possess_ai == "ok" and .validation.statetree_component == "ok"' \
-  "$(ls -t sample/Saved/CodexReports/ValidateAIFlow_*.json | head -1)"
+  "$(ls -t sample/Saved/UECommandForge/Reports/ValidateAIFlow_*.json | head -1)"
 
 # 5. 전체 smoke
 ./tools/test/smoke/ai_flow_binding.sh specs/examples/guard_ai.json

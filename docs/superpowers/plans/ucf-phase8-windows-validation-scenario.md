@@ -64,13 +64,13 @@ tools\ue\hello.bat
 
 기대 결과:
 - exit code `0`
-- `sample\Saved\CodexReports\Hello_<UTC>.json` 생성
+- `sample\Saved\UECommandForge/Reports\Hello_<UTC>.json` 생성
 - report의 `.ok == true`
 
 확인:
 
 ```bat
-dir /b /o-d sample\Saved\CodexReports\Hello_*.json
+dir /b /o-d sample\Saved\UECommandForge/Reports\Hello_*.json
 ```
 
 ## 시나리오 2: Asset 정책 검증
@@ -170,7 +170,7 @@ tools\test\smoke\installer_install_update_uninstall.bat
 ```bat
 echo UE_ROOT=%UE_ROOT%
 bash --version
-dir /b /o-d sample\Saved\CodexReports\*.json
+dir /b /o-d sample\Saved\UECommandForge/Reports\*.json
 ```
 
 ## 최종 PASS 기준

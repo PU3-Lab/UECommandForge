@@ -89,7 +89,7 @@ CLI에서는 다음과 같이 호출한다.
 UnrealEditor-Cmd MyProject.uproject \
   -run=CreateAIFlow \
   -Spec=specs/guard_ai.json \
-  -Output=Saved/CodexReports/create_ai_flow_result.json
+  -Output=Saved/UECommandForge/Reports/create_ai_flow_result.json
 ```
 
 Commandlet은 다음 역할을 수행한다.
@@ -216,7 +216,7 @@ Shell Wrapper는 Codex가 실행하는 안전한 명령 버튼이다.
 UnrealEditor-Cmd MyProject.uproject \
   -run=CreateAIFlow \
   -Spec=specs/guard_ai.json \
-  -Output=Saved/CodexReports/create_ai_flow_result.json
+  -Output=Saved/UECommandForge/Reports/create_ai_flow_result.json
 ```
 
 역할:
@@ -227,7 +227,7 @@ UnrealEditor-Cmd MyProject.uproject \
 | 프로젝트 경로 관리 | `.uproject` 자동 탐색 |
 | 공통 옵션 적용 | `-unattended`, `-nop4`, `-log` |
 | 명령 제한 | 허용된 Commandlet만 실행 |
-| 결과 경로 통일 | `Saved/CodexReports`로 통일 |
+| 결과 경로 통일 | `Saved/UECommandForge/Reports`로 통일 |
 | 종료 코드 전달 | 성공/실패 판단 가능 |
 
 ---
@@ -643,7 +643,7 @@ Transition:
 UnrealEditor-Cmd MyProject.uproject \
   -run=CreateAIFlow \
   -Spec=specs/guard_ai.json \
-  -Output=Saved/CodexReports/create_ai_flow_result.json
+  -Output=Saved/UECommandForge/Reports/create_ai_flow_result.json
 ```
 
 ---
