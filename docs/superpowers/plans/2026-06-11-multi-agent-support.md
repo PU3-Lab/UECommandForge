@@ -4,7 +4,7 @@
 
 **Goal:** Codex 전용 결합을 제거하고 `--codex`/`--claude`/`--antigravity` 플래그로 각 에이전트 전역 폴더에 설치되도록 UECommandForge를 범용화한다.
 
-**Architecture:** 네 개 층(런타임 출력 경로, 설치 프로파일, 지시/스펙 콘텐츠, manifest/언인스톨러)을 단계적으로 중립화한다. 흩어진 `Saved/UECommandForge/Reports` 리터럴은 단일 상수로 추출하고, 설치 스크립트는 에이전트 프로파일 테이블 기반으로 재구성한다. Windows는 별도 로직 없이 Git Bash로 동일 bash 코어를 실행한다.
+**Architecture:** 네 개 층(런타임 출력 경로, 설치 프로파일, 지시/스펙 콘텐츠, manifest/언인스톨러)을 단계적으로 중립화한다. 흩어진 `Saved/CodexReports` 리터럴은 단일 상수로 추출하고, 설치 스크립트는 에이전트 프로파일 테이블 기반으로 재구성한다. Windows는 별도 로직 없이 Git Bash로 동일 bash 코어를 실행한다.
 
 **Tech Stack:** Unreal C++ (Editor commandlets), Bash 설치/래퍼 스크립트, `.bat`/`.ps1` 얇은 래퍼, jq, shell smoke 테스트.
 
@@ -14,7 +14,7 @@
 
 ## File Structure
 
-### Phase A — 런타임 출력 경로 (`Saved/UECommandForge/Reports` → `Saved/UECommandForge/Reports`)
+### Phase A — 런타임 출력 경로 (`Saved/CodexReports` → `Saved/UECommandForge/Reports`)
 - Create: `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Public/Reports/ReportPaths.h` — 리포트 디렉터리 단일 상수/헬퍼
 - Modify: 4개 commandlet `.cpp` (rollback 디렉터리 + 가드 메시지)
 - Modify: `tools/ue/run_commandlet.sh`, `tools/ue/run_commandlet.bat` — `REPORT_DIR` 기본값/주석
@@ -36,7 +36,7 @@
 
 ## Phase A — 런타임 출력 경로 중립화
 
-`Saved/UECommandForge/Reports` 를 그룹화된 `Saved/UECommandForge/Reports` 로 바꾸고, 흩어진 C++ 리터럴을 단일 상수로 추출한다.
+`Saved/CodexReports` 를 그룹화된 `Saved/UECommandForge/Reports` 로 바꾸고, 흩어진 C++ 리터럴을 단일 상수로 추출한다.
 
 ### Task A1: C++ 리포트 경로 단일 상수 추출
 
@@ -102,7 +102,7 @@ namespace UECommandForge
 
 - [ ] **Step 4: ImportDataSourceCommandlet.cpp 갱신**
 
-`#include "Reports/ReportPaths.h"` 추가. 라인 169 부근 `FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("UECommandForge/Reports"))` 를 `UECommandForge::GetReportsDir()` 호출로 교체하고, 라인 219 부근 가드 메시지를 `TEXT("rollback_plan은 Saved/UECommandForge/Reports 아래에만 쓸 수 있습니다.")` 로 교체.
+`#include "Reports/ReportPaths.h"` 추가. 라인 169 부근 `FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("CodexReports"))` 를 `UECommandForge::GetReportsDir()` 호출로 교체하고, 라인 219 부근 가드 메시지를 `TEXT("rollback_plan은 Saved/UECommandForge/Reports 아래에만 쓸 수 있습니다.")` 로 교체.
 
 - [ ] **Step 5: CreateProjectFoldersCommandlet.cpp 갱신**
 
@@ -119,7 +119,7 @@ namespace UECommandForge
 
 Run:
 ```bash
-grep -rn 'UECommandForge/Reports' sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/
+grep -rn 'CodexReports' sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/
 ```
 Expected: 출력 없음 (빈 결과).
 
@@ -157,11 +157,11 @@ REPORT_DIR="${UECF_REPORT_DIR:-${PROJECT_DIR}/Saved/UECommandForge/Reports}"
 ```bat
   set "REPORT_DIR=!PROJECT_DIR!\Saved\UECommandForge\Reports"
 ```
-상단의 `Saved\UECommandForge/Reports` 주석도 `Saved\UECommandForge\Reports` 로 교체.
+상단의 `Saved\CodexReports` 주석도 `Saved\UECommandForge\Reports` 로 교체.
 
 - [ ] **Step 3: 래퍼에 옛 경로가 남지 않았는지 확인**
 
-Run: `grep -rn 'UECommandForge/Reports' tools/ue/`
+Run: `grep -rn 'CodexReports' tools/ue/`
 Expected: 출력 없음.
 
 - [ ] **Step 4: 커밋**
@@ -173,31 +173,31 @@ git commit -m "refactor: point commandlet wrapper report dir to Saved/UECommandF
 
 ### Task A3: C++ 테스트 경로 일괄 변경
 
-**Files:** `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/` 아래 `UECommandForge/Reports` 를 참조하는 21개 `.cpp`.
+**Files:** `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/` 아래 `CodexReports` 를 참조하는 21개 `.cpp`.
 
 - [ ] **Step 1: 변경 전 참조 개수 기록**
 
-Run: `grep -rl 'UECommandForge/Reports' sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/ | wc -l`
+Run: `grep -rl 'CodexReports' sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/ | wc -l`
 Expected: `21`
 
 - [ ] **Step 2: 테스트의 단일 세그먼트 리터럴을 두 세그먼트로 치환**
 
-테스트는 `TEXT("UECommandForge/Reports")` 를 단일 디렉터리 세그먼트로 `FPaths::Combine(..., TEXT("UECommandForge/Reports"), TEXT("foo.json"))` 형태로 쓴다. 이를 `TEXT("UECommandForge"), TEXT("Reports")` 두 세그먼트로 바꾼다.
+테스트는 `TEXT("CodexReports")` 를 단일 디렉터리 세그먼트로 `FPaths::Combine(..., TEXT("CodexReports"), TEXT("foo.json"))` 형태로 쓴다. 이를 `TEXT("UECommandForge"), TEXT("Reports")` 두 세그먼트로 바꾼다.
 
 Run (검토용 dry-run 먼저):
 ```bash
-grep -rn 'TEXT("UECommandForge/Reports")' sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/ | head
+grep -rn 'TEXT("CodexReports")' sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/ | head
 ```
 그 다음 일괄 치환(macOS):
 ```bash
-grep -rl 'TEXT("UECommandForge/Reports")' sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/ \
-  | xargs sed -i '' 's/TEXT("UECommandForge/Reports")/TEXT("UECommandForge"), TEXT("Reports")/g'
+grep -rl 'TEXT("CodexReports")' sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/ \
+  | xargs sed -i '' 's/TEXT("CodexReports")/TEXT("UECommandForge"), TEXT("Reports")/g'
 ```
 > macOS `sed` 는 `-i ''` 를 쓴다. Linux/Git Bash는 `sed -i`.
 
 - [ ] **Step 3: 남은 옛 리터럴 확인**
 
-Run: `grep -rn 'UECommandForge/Reports' sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/`
+Run: `grep -rn 'CodexReports' sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/`
 Expected: 출력 없음. (혹시 `FPaths::Combine` 인자가 아닌 문자열/주석에 남아 있으면 수동으로 `UECommandForge/Reports` 로 교체.)
 
 - [ ] **Step 4: 빌드 + C++ 자동화 테스트 실행 (UE 필요)**
@@ -217,33 +217,33 @@ git commit -m "test: update C++ commandlet tests to Saved/UECommandForge/Reports
 
 ### Task A4: shell/bat smoke 테스트 + .gitignore 경로 변경
 
-**Files:** `tools/test/smoke/*.sh`(24개 중 `UECommandForge/Reports` 참조분), `tools/test/smoke/create_ai_flow.bat`, `.gitignore:17`
+**Files:** `tools/test/smoke/*.sh`(24개 중 `CodexReports` 참조분), `tools/test/smoke/create_ai_flow.bat`, `.gitignore:17`
 
 - [ ] **Step 1: 변경 전 참조 파일 목록 확인**
 
-Run: `grep -rl 'UECommandForge/Reports' tools/test/smoke/`
+Run: `grep -rl 'CodexReports' tools/test/smoke/`
 Expected: `.sh` 다수 + `create_ai_flow.bat`.
 
 - [ ] **Step 2: shell smoke 일괄 치환**
 
 ```bash
-grep -rl 'Saved/UECommandForge/Reports' tools/test/smoke/ \
-  | xargs sed -i '' 's#Saved/UECommandForge/Reports#Saved/UECommandForge/Reports#g'
-grep -rl 'UECommandForge/Reports' tools/test/smoke/ \
-  | grep '\.sh$' | xargs --no-run-if-empty sed -i '' 's#UECommandForge/Reports#UECommandForge/Reports#g'
+grep -rl 'Saved/CodexReports' tools/test/smoke/ \
+  | xargs sed -i '' 's#Saved/CodexReports#Saved/UECommandForge/Reports#g'
+grep -rl 'CodexReports' tools/test/smoke/ \
+  | grep '\.sh$' | xargs --no-run-if-empty sed -i '' 's#CodexReports#UECommandForge/Reports#g'
 ```
 
 - [ ] **Step 3: bat smoke 치환**
 
-`tools/test/smoke/create_ai_flow.bat` 의 `Saved\UECommandForge/Reports` → `Saved\UECommandForge\Reports`, 단독 `UECommandForge/Reports` → `UECommandForge\Reports`.
+`tools/test/smoke/create_ai_flow.bat` 의 `Saved\CodexReports` → `Saved\UECommandForge\Reports`, 단독 `CodexReports` → `UECommandForge\Reports`.
 
 - [ ] **Step 4: .gitignore 주석 갱신**
 
-라인 17 `# But keep UECommandForge/Reports examples` → `# But keep UECommandForge/Reports examples`.
+라인 17 `# But keep CodexReports examples` → `# But keep UECommandForge/Reports examples`.
 
 - [ ] **Step 5: 남은 참조 확인**
 
-Run: `grep -rn 'UECommandForge/Reports' tools/ .gitignore`
+Run: `grep -rn 'CodexReports' tools/ .gitignore`
 Expected: 출력 없음.
 
 - [ ] **Step 6: 대표 smoke 1개 실행**
@@ -260,25 +260,25 @@ git commit -m "test: update smoke tests and gitignore to Saved/UECommandForge/Re
 
 ### Task A5: 문서 경로 갱신
 
-**Files:** `AGENTS.md`, `README.md`, `ue_commandlet_based_llm_automation_plan.md`, `docs/**`(UECommandForge/Reports 참조분)
+**Files:** `AGENTS.md`, `README.md`, `ue_commandlet_based_llm_automation_plan.md`, `docs/**`(CodexReports 참조분)
 
 - [ ] **Step 1: 참조 목록 확인**
 
-Run: `grep -rl 'UECommandForge/Reports' AGENTS.md README.md ue_commandlet_based_llm_automation_plan.md docs/`
+Run: `grep -rl 'CodexReports' AGENTS.md README.md ue_commandlet_based_llm_automation_plan.md docs/`
 
 - [ ] **Step 2: 문서 일괄 치환**
 
 ```bash
-grep -rl 'Saved/UECommandForge/Reports' AGENTS.md README.md ue_commandlet_based_llm_automation_plan.md docs/ \
-  | xargs sed -i '' 's#Saved/UECommandForge/Reports#Saved/UECommandForge/Reports#g'
-grep -rl 'UECommandForge/Reports' AGENTS.md README.md ue_commandlet_based_llm_automation_plan.md docs/ \
-  | xargs --no-run-if-empty sed -i '' 's#UECommandForge/Reports#UECommandForge/Reports#g'
+grep -rl 'Saved/CodexReports' AGENTS.md README.md ue_commandlet_based_llm_automation_plan.md docs/ \
+  | xargs sed -i '' 's#Saved/CodexReports#Saved/UECommandForge/Reports#g'
+grep -rl 'CodexReports' AGENTS.md README.md ue_commandlet_based_llm_automation_plan.md docs/ \
+  | xargs --no-run-if-empty sed -i '' 's#CodexReports#UECommandForge/Reports#g'
 ```
 > `docs/superpowers/plans/`, `docs/memory/` 의 과거 세션 기록은 역사적 사실이므로 **경로 문자열만** 바뀌어도 무방하다. 의미가 깨지는 문장이 있으면 수동 검토.
 
 - [ ] **Step 3: 남은 참조 확인**
 
-Run: `grep -rn 'UECommandForge/Reports' . --include='*.md' | grep -v node_modules`
+Run: `grep -rn 'CodexReports' . --include='*.md' | grep -v node_modules`
 Expected: 출력 없음.
 
 - [ ] **Step 4: 커밋**
@@ -333,17 +333,17 @@ sed -i '' \
 ```bash
 sed -i '' 's#~/.codex/UECommandForge#<AGENT_HOME>/UECommandForge#g' specs/agent/unreal-automation-agents.md
 ```
-설치 확인 절차(4절)의 `~/.codex/UECommandForge/uecommandforge-installed.json` 등도 `<AGENT_HOME>/UECommandForge/...` 로 바뀐다. `Saved/UECommandForge/Reports` 잔여분이 있으면 `Saved/UECommandForge/Reports` 로 교체.
+설치 확인 절차(4절)의 `~/.codex/UECommandForge/uecommandforge-installed.json` 등도 `<AGENT_HOME>/UECommandForge/...` 로 바뀐다. `Saved/CodexReports` 잔여분이 있으면 `Saved/UECommandForge/Reports` 로 교체.
 
 - [ ] **Step 5: MANAGED CONTENT 블록 내부도 동일하게 중립화됐는지 확인**
 
 Run: `sed -n '/BEGIN UECOMMANDFORGE MANAGED CONTENT/,/END UECOMMANDFORGE MANAGED CONTENT/p' specs/agent/unreal-automation-agents.md`
-Expected: 블록 안에 `Codex`/`UECommandForge/Reports`/`~/.codex` 가 없다. 남았으면 수동 교체.
+Expected: 블록 안에 `Codex`/`CodexReports`/`~/.codex` 가 없다. 남았으면 수동 교체.
 
 - [ ] **Step 6: 잔여 확인 + 커밋**
 
 ```bash
-grep -n 'Codex\|~/.codex\|UECommandForge/Reports' specs/agent/unreal-automation-agents.md   # 기대: 출력 없음
+grep -n 'Codex\|~/.codex\|CodexReports' specs/agent/unreal-automation-agents.md   # 기대: 출력 없음
 git add -A
 git commit -m "refactor: move agent rules to specs/agent and neutralize Codex wording"
 ```
@@ -360,21 +360,21 @@ git commit -m "refactor: move agent rules to specs/agent and neutralize Codex wo
 ```markdown
 - 안전 규칙은 `specs/agent/unreal-automation-agents.md`를 따른다.
 ```
-라인 28의 `최신 Saved/UECommandForge/Reports/*.json` → `최신 Saved/UECommandForge/Reports/*.json` (Phase A5에서 이미 바뀌었으면 확인만).
+라인 28의 `최신 Saved/CodexReports/*.json` → `최신 Saved/UECommandForge/Reports/*.json` (Phase A5에서 이미 바뀌었으면 확인만).
 
 - [ ] **Step 2: SKILL.md 중립화**
 
 `skills/uecommandforge/SKILL.md` 에서 `Codex` 고유 표현을 중립화:
 ```bash
-grep -n 'Codex\|~/.codex\|UECommandForge/Reports\|specs/codex' skills/uecommandforge/SKILL.md
+grep -n 'Codex\|~/.codex\|CodexReports\|specs/codex' skills/uecommandforge/SKILL.md
 ```
 - `Codex skill` → `uecommandforge skill`, `Codex가/Codex는` → `에이전트가/에이전트는`
-- `~/.codex/...` → `<AGENT_HOME>/...`, `specs/codex/` → `specs/agent/`, `UECommandForge/Reports` → `UECommandForge/Reports`
+- `~/.codex/...` → `<AGENT_HOME>/...`, `specs/codex/` → `specs/agent/`, `CodexReports` → `UECommandForge/Reports`
 각 매치를 위 규칙대로 교체한다.
 
 - [ ] **Step 3: 잔여 확인**
 
-Run: `grep -rn 'specs/codex\|UECommandForge/Reports' AGENTS.md skills/uecommandforge/SKILL.md`
+Run: `grep -rn 'specs/codex\|CodexReports' AGENTS.md skills/uecommandforge/SKILL.md`
 Expected: 출력 없음.
 
 - [ ] **Step 4: 커밋**
@@ -659,7 +659,7 @@ git commit -m "test: HOME-isolated installer smoke for per-agent and multi-agent
 
 Run:
 ```bash
-grep -rn 'UECommandForge/Reports\|--codex-home\|CODEX_HOME\|specs/codex\|codex_home\|codex_tools_path\|codex_specs_path\|codex_skill_path' . \
+grep -rn 'CodexReports\|--codex-home\|CODEX_HOME\|specs/codex\|codex_home\|codex_tools_path\|codex_specs_path\|codex_skill_path' . \
   | grep -v node_modules | grep -v 'sample/Saved/PluginBuild' | grep -v 'docs/memory' | grep -v 'docs/superpowers/plans/ucf-'
 ```
 Expected: 출력 없음. (과거 세션 기록 `docs/memory/`·옛 계획 `ucf-*` 은 역사 기록이라 제외. `sample/Saved/PluginBuild` 는 빌드 산출물.)

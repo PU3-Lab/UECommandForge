@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-CODEX_UECF="${CODEX_HOME:-$HOME/.codex}/UECommandForge"
+AGENT_HOME_VAL="${AGENT_HOME:-${CODEX_HOME:-$HOME/.codex}}"
+CODEX_UECF="${AGENT_HOME_VAL}/UECommandForge"
 
 # 만약 전역 설치 경로에 없으면 현재 개발 리포지토리의 로컬 경로를 대체하여 사용할 수 있게 처리
 if [ ! -d "${CODEX_UECF}" ]; then

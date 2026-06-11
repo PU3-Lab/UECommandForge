@@ -205,6 +205,17 @@ grep -q '이 내용은 설치 후에도 보존되어야 한다.' "${CODEX_HOME}/
 grep -q 'BEGIN UECOMMANDFORGE INSTRUCTIONS' "${CODEX_HOME}/AGENTS.md"
 ! grep -q 'OLD_UNREAL_PYTHON_RULE_SHOULD_BE_REPLACED' "${CODEX_HOME}/AGENTS.md"
 
+# env 파일 source 및 AGENT_HOME 검증
+source "${CODEX_HOME}/UECommandForge/uecommandforge.env.sh"
+test "${AGENT_HOME}" = "${CODEX_HOME}"
+test "${UECF_PROJECT_FILE}" = "${PROJECT_FILE}"
+
+# 마커 개수 상한선 및 제거 검증
+MANAGED_BLOCK_LINES="$(grep -A 100 'BEGIN UECOMMANDFORGE INSTRUCTIONS' "${CODEX_HOME}/AGENTS.md" | grep -B 100 'END UECOMMANDFORGE INSTRUCTIONS' | wc -l)"
+test "${MANAGED_BLOCK_LINES}" -le 30
+test "$(grep -c 'BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS' "${CODEX_HOME}/AGENTS.md" || true)" -eq 0
+test "$(grep -c 'BEGIN UECOMMANDFORGE INSTRUCTIONS' "${CODEX_HOME}/AGENTS.md" || true)" -eq 1
+
 # ==========================================
 # TEST CASE 2: 다중 에이전트 설치 (Codex + Claude)
 # ==========================================

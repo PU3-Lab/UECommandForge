@@ -140,15 +140,15 @@ require_managed_existing_targets_for_agent() {
   local AGENT_SHELL_ENV_FILE="${AGENT_INSTALL_ROOT}/uecommandforge.env.sh"
   local AGENT_MANIFEST="${AGENT_INSTALL_ROOT}/uecommandforge-installed.json"
 
-  local has_codex_state=false
+  local has_agent_state=false
   if [ -e "${AGENT_INSTALL_ROOT}/tools" ] || [ -e "${AGENT_INSTALL_ROOT}/specs" ] \
     || [ -e "${AGENT_SKILL_DIR}" ] \
     || [ -e "${AGENT_ENV_FILE}" ] || [ -e "${AGENT_SHELL_ENV_FILE}" ] \
     || [ -e "${AGENT_MANIFEST}" ]; then
-    has_codex_state=true
+    has_agent_state=true
   fi
 
-  if [ "${has_codex_state}" = true ]; then
+  if [ "${has_agent_state}" = true ]; then
     if [ ! -f "${AGENT_MANIFEST}" ]; then
       echo "[install_local] existing ${AGENT} install targets are unmanaged; refusing to overwrite" >&2
       exit 2
@@ -597,9 +597,6 @@ ENV
     echo "agent_instructions_path=${INSTRUCTIONS_FILE}"
   } | uecf_append_file_from_stdin "${LOG_FILE}" "install_local"
 
-  if [ "${RUN_COMMANDLET_CHECK}" = true ]; then
-    UECF_PROJECT_FILE="${PROJECT_FILE}" "${INSTALL_ROOT}/tools/ue/hello.sh" >/dev/null
-  fi
   echo "${INSTALLED_MANIFEST}"
 }
 
@@ -611,6 +608,14 @@ for agent in "${AGENTS[@]}"; do
     FIRST_INSTALLED_MANIFEST="${manifest_result}"
   fi
 done
+
+# 설치 검증 (1회)
+if [ "${RUN_COMMANDLET_CHECK}" = true ]; then
+  FIRST_AGENT="${AGENTS[0]}"
+  FIRST_AGENT_HOME="$(agent_home_for "${FIRST_AGENT}")"
+  FIRST_INSTALL_ROOT="${FIRST_AGENT_HOME}/UECommandForge"
+  UECF_PROJECT_FILE="${PROJECT_FILE}" "${FIRST_INSTALL_ROOT}/tools/ue/hello.sh" >/dev/null
+fi
 
 # 첫 에이전트의 홈 정보 기준으로 대표 project-manifest 작성 (1회)
 FIRST_AGENT="${AGENTS[0]}"
