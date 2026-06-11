@@ -1,6 +1,6 @@
 # UECommandForge 범용 AI 코딩 도구 지원 Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Codex 전용 결합을 제거하고 `--codex`/`--claude`/`--antigravity` 플래그로 각 에이전트 전역 폴더에 설치되도록 UECommandForge를 범용화한다.
 
@@ -47,7 +47,7 @@
 - Modify: `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Commandlets/ImportDataSourceCommandlet.cpp:166-221`
 - Modify: `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Commandlets/CreateProjectFoldersCommandlet.cpp:86-89`
 
-- [ ] **Step 1: 공유 헤더 작성**
+- [x] **Step 1: 공유 헤더 작성**
 
 `ReportPaths.h` 생성:
 
@@ -77,7 +77,7 @@ namespace UECommandForge
 }
 ```
 
-- [ ] **Step 2: ApplyAssetChangesCommandlet.cpp 갱신**
+- [x] **Step 2: ApplyAssetChangesCommandlet.cpp 갱신**
 
 상단 include에 `#include "Reports/ReportPaths.h"` 추가. `RollbackReportDirectory()` 본문을 교체:
 
@@ -96,15 +96,15 @@ namespace UECommandForge
                 TEXT("rollback_plan"));
 ```
 
-- [ ] **Step 3: PlanAssetChangesCommandlet.cpp 갱신**
+- [x] **Step 3: PlanAssetChangesCommandlet.cpp 갱신**
 
 `#include "Reports/ReportPaths.h"` 추가 후 동일하게 `RollbackReportDirectory()` 본문을 `return UECommandForge::GetReportsDir();` 로, 가드 메시지를 `TEXT("rollback_plan은 Saved/UECommandForge/Reports 아래에만 쓸 수 있습니다.")` 로 교체.
 
-- [ ] **Step 4: ImportDataSourceCommandlet.cpp 갱신**
+- [x] **Step 4: ImportDataSourceCommandlet.cpp 갱신**
 
 `#include "Reports/ReportPaths.h"` 추가. 라인 169 부근 `FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("CodexReports"))` 를 `UECommandForge::GetReportsDir()` 호출로 교체하고, 라인 219 부근 가드 메시지를 `TEXT("rollback_plan은 Saved/UECommandForge/Reports 아래에만 쓸 수 있습니다.")` 로 교체.
 
-- [ ] **Step 5: CreateProjectFoldersCommandlet.cpp 갱신**
+- [x] **Step 5: CreateProjectFoldersCommandlet.cpp 갱신**
 
 `#include "Reports/ReportPaths.h"` 추가 후 `RollbackReportDirectory()` 본문 교체:
 
@@ -115,7 +115,7 @@ namespace UECommandForge
     }
 ```
 
-- [ ] **Step 6: 생산 코드에 옛 리터럴이 남지 않았는지 확인**
+- [x] **Step 6: 생산 코드에 옛 리터럴이 남지 않았는지 확인**
 
 Run:
 ```bash
@@ -123,7 +123,7 @@ grep -rn 'CodexReports' sample/Plugins/UECommandForge/Source/UECommandForgeEdito
 ```
 Expected: 출력 없음 (빈 결과).
 
-- [ ] **Step 7: 커밋**
+- [x] **Step 7: 커밋**
 
 ```bash
 git add sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Public/Reports/ReportPaths.h \
@@ -140,7 +140,7 @@ git commit -m "refactor: extract report dir constant and rename to Saved/UEComma
 - Modify: `tools/ue/run_commandlet.sh:3,81`
 - Modify: `tools/ue/run_commandlet.bat:33` (+ 상단 주석)
 
-- [ ] **Step 1: run_commandlet.sh 갱신**
+- [x] **Step 1: run_commandlet.sh 갱신**
 
 라인 81 교체:
 ```bash
@@ -151,7 +151,7 @@ REPORT_DIR="${UECF_REPORT_DIR:-${PROJECT_DIR}/Saved/UECommandForge/Reports}"
 # Result JSON은 대상 project의 Saved/UECommandForge/Reports/<Commandlet>_<UTC>.json에 기록된다.
 ```
 
-- [ ] **Step 2: run_commandlet.bat 갱신**
+- [x] **Step 2: run_commandlet.bat 갱신**
 
 라인 33 교체:
 ```bat
@@ -159,12 +159,12 @@ REPORT_DIR="${UECF_REPORT_DIR:-${PROJECT_DIR}/Saved/UECommandForge/Reports}"
 ```
 상단의 `Saved\CodexReports` 주석도 `Saved\UECommandForge\Reports` 로 교체.
 
-- [ ] **Step 3: 래퍼에 옛 경로가 남지 않았는지 확인**
+- [x] **Step 3: 래퍼에 옛 경로가 남지 않았는지 확인**
 
 Run: `grep -rn 'CodexReports' tools/ue/`
 Expected: 출력 없음.
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add tools/ue/run_commandlet.sh tools/ue/run_commandlet.bat
@@ -175,12 +175,12 @@ git commit -m "refactor: point commandlet wrapper report dir to Saved/UECommandF
 
 **Files:** `sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/` 아래 `CodexReports` 를 참조하는 21개 `.cpp`.
 
-- [ ] **Step 1: 변경 전 참조 개수 기록**
+- [x] **Step 1: 변경 전 참조 개수 기록**
 
 Run: `grep -rl 'CodexReports' sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/ | wc -l`
 Expected: `21`
 
-- [ ] **Step 2: 테스트의 단일 세그먼트 리터럴을 두 세그먼트로 치환**
+- [x] **Step 2: 테스트의 단일 세그먼트 리터럴을 두 세그먼트로 치환**
 
 테스트는 `TEXT("CodexReports")` 를 단일 디렉터리 세그먼트로 `FPaths::Combine(..., TEXT("CodexReports"), TEXT("foo.json"))` 형태로 쓴다. 이를 `TEXT("UECommandForge"), TEXT("Reports")` 두 세그먼트로 바꾼다.
 
@@ -195,12 +195,12 @@ grep -rl 'TEXT("CodexReports")' sample/Plugins/UECommandForge/Source/UECommandFo
 ```
 > macOS `sed` 는 `-i ''` 를 쓴다. Linux/Git Bash는 `sed -i`.
 
-- [ ] **Step 3: 남은 옛 리터럴 확인**
+- [x] **Step 3: 남은 옛 리터럴 확인**
 
 Run: `grep -rn 'CodexReports' sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/`
 Expected: 출력 없음. (혹시 `FPaths::Combine` 인자가 아닌 문자열/주석에 남아 있으면 수동으로 `UECommandForge/Reports` 로 교체.)
 
-- [ ] **Step 4: 빌드 + C++ 자동화 테스트 실행 (UE 필요)**
+- [x] **Step 4: 빌드 + C++ 자동화 테스트 실행 (UE 필요)**
 
 Run (예시, 실제 엔진 경로/프로젝트로 대체):
 ```bash
@@ -208,7 +208,7 @@ UECF_PROJECT_FILE=<.uproject> tools/test/smoke/asset_change_apply_rollback.sh
 ```
 Expected: rollback 산출물이 `Saved/UECommandForge/Reports` 아래에 생성되고 가드 테스트 통과.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Tests/
@@ -219,12 +219,12 @@ git commit -m "test: update C++ commandlet tests to Saved/UECommandForge/Reports
 
 **Files:** `tools/test/smoke/*.sh`(24개 중 `CodexReports` 참조분), `tools/test/smoke/create_ai_flow.bat`, `.gitignore:17`
 
-- [ ] **Step 1: 변경 전 참조 파일 목록 확인**
+- [x] **Step 1: 변경 전 참조 파일 목록 확인**
 
 Run: `grep -rl 'CodexReports' tools/test/smoke/`
 Expected: `.sh` 다수 + `create_ai_flow.bat`.
 
-- [ ] **Step 2: shell smoke 일괄 치환**
+- [x] **Step 2: shell smoke 일괄 치환**
 
 ```bash
 grep -rl 'Saved/CodexReports' tools/test/smoke/ \
@@ -233,25 +233,25 @@ grep -rl 'CodexReports' tools/test/smoke/ \
   | grep '\.sh$' | xargs --no-run-if-empty sed -i '' 's#CodexReports#UECommandForge/Reports#g'
 ```
 
-- [ ] **Step 3: bat smoke 치환**
+- [x] **Step 3: bat smoke 치환**
 
 `tools/test/smoke/create_ai_flow.bat` 의 `Saved\CodexReports` → `Saved\UECommandForge\Reports`, 단독 `CodexReports` → `UECommandForge\Reports`.
 
-- [ ] **Step 4: .gitignore 주석 갱신**
+- [x] **Step 4: .gitignore 주석 갱신**
 
 라인 17 `# But keep CodexReports examples` → `# But keep UECommandForge/Reports examples`.
 
-- [ ] **Step 5: 남은 참조 확인**
+- [x] **Step 5: 남은 참조 확인**
 
 Run: `grep -rn 'CodexReports' tools/ .gitignore`
 Expected: 출력 없음.
 
-- [ ] **Step 6: 대표 smoke 1개 실행**
+- [x] **Step 6: 대표 smoke 1개 실행**
 
 Run: `UECF_PROJECT_FILE=<.uproject> tools/test/smoke/create_ai_flow.sh`
 Expected: 결과 JSON이 `Saved/UECommandForge/Reports` 에 생성되고 PASS.
 
-- [ ] **Step 7: 커밋**
+- [x] **Step 7: 커밋**
 
 ```bash
 git add tools/test/smoke/ .gitignore
@@ -262,11 +262,11 @@ git commit -m "test: update smoke tests and gitignore to Saved/UECommandForge/Re
 
 **Files:** `AGENTS.md`, `README.md`, `ue_commandlet_based_llm_automation_plan.md`, `docs/**`(CodexReports 참조분)
 
-- [ ] **Step 1: 참조 목록 확인**
+- [x] **Step 1: 참조 목록 확인**
 
 Run: `grep -rl 'CodexReports' AGENTS.md README.md ue_commandlet_based_llm_automation_plan.md docs/`
 
-- [ ] **Step 2: 문서 일괄 치환**
+- [x] **Step 2: 문서 일괄 치환**
 
 ```bash
 grep -rl 'Saved/CodexReports' AGENTS.md README.md ue_commandlet_based_llm_automation_plan.md docs/ \
@@ -276,12 +276,12 @@ grep -rl 'CodexReports' AGENTS.md README.md ue_commandlet_based_llm_automation_p
 ```
 > `docs/superpowers/plans/`, `docs/memory/` 의 과거 세션 기록은 역사적 사실이므로 **경로 문자열만** 바뀌어도 무방하다. 의미가 깨지는 문장이 있으면 수동 검토.
 
-- [ ] **Step 3: 남은 참조 확인**
+- [x] **Step 3: 남은 참조 확인**
 
 Run: `grep -rn 'CodexReports' . --include='*.md' | grep -v node_modules`
 Expected: 출력 없음.
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add -A
@@ -298,7 +298,7 @@ git commit -m "docs: update report path references to Saved/UECommandForge/Repor
 - Move: `specs/codex/unreal-automation-agents.md` → `specs/agent/unreal-automation-agents.md`
 - Modify: 이동한 파일 본문
 
-- [ ] **Step 1: git mv 로 이동**
+- [x] **Step 1: git mv 로 이동**
 
 ```bash
 mkdir -p specs/agent
@@ -306,7 +306,7 @@ git mv specs/codex/unreal-automation-agents.md specs/agent/unreal-automation-age
 rmdir specs/codex 2>/dev/null || true
 ```
 
-- [ ] **Step 2: 제목/도입부 중립화**
+- [x] **Step 2: 제목/도입부 중립화**
 
 `specs/agent/unreal-automation-agents.md` 1~3행 교체:
 ```markdown
@@ -315,7 +315,7 @@ rmdir specs/codex 2>/dev/null || true
 이 문서는 AI 코딩 에이전트가 UECommandForge 프로젝트에서 Unreal Editor, 에셋, Blueprint, C++ Reflection, DataTable, Config 관련 자동화를 수행할 때 반드시 따라야 하는 규칙이다.
 ```
 
-- [ ] **Step 3: 본문의 "Codex" 주체 표현 중립화**
+- [x] **Step 3: 본문의 "Codex" 주체 표현 중립화**
 
 `Codex가` → `에이전트가`, `Codex는` → `에이전트는`, `Codex skill` → `uecommandforge skill`, `Codex 최종 판단` → `에이전트 최종 판단` 으로 치환:
 ```bash
@@ -327,7 +327,7 @@ sed -i '' \
   specs/agent/unreal-automation-agents.md
 ```
 
-- [ ] **Step 4: 하드코딩 홈 경로 일반화**
+- [x] **Step 4: 하드코딩 홈 경로 일반화**
 
 `~/.codex/UECommandForge/...` 를 `<AGENT_HOME>/UECommandForge/...` 로 교체:
 ```bash
@@ -335,12 +335,12 @@ sed -i '' 's#~/.codex/UECommandForge#<AGENT_HOME>/UECommandForge#g' specs/agent/
 ```
 설치 확인 절차(4절)의 `~/.codex/UECommandForge/uecommandforge-installed.json` 등도 `<AGENT_HOME>/UECommandForge/...` 로 바뀐다. `Saved/CodexReports` 잔여분이 있으면 `Saved/UECommandForge/Reports` 로 교체.
 
-- [ ] **Step 5: MANAGED CONTENT 블록 내부도 동일하게 중립화됐는지 확인**
+- [x] **Step 5: MANAGED CONTENT 블록 내부도 동일하게 중립화됐는지 확인**
 
 Run: `sed -n '/BEGIN UECOMMANDFORGE MANAGED CONTENT/,/END UECOMMANDFORGE MANAGED CONTENT/p' specs/agent/unreal-automation-agents.md`
 Expected: 블록 안에 `Codex`/`CodexReports`/`~/.codex` 가 없다. 남았으면 수동 교체.
 
-- [ ] **Step 6: 잔여 확인 + 커밋**
+- [x] **Step 6: 잔여 확인 + 커밋**
 
 ```bash
 grep -n 'Codex\|~/.codex\|CodexReports' specs/agent/unreal-automation-agents.md   # 기대: 출력 없음
@@ -354,7 +354,7 @@ git commit -m "refactor: move agent rules to specs/agent and neutralize Codex wo
 - Modify: `AGENTS.md:26,28`
 - Modify: `skills/uecommandforge/SKILL.md`
 
-- [ ] **Step 1: 루트 AGENTS.md 갱신**
+- [x] **Step 1: 루트 AGENTS.md 갱신**
 
 라인 26 교체:
 ```markdown
@@ -362,7 +362,7 @@ git commit -m "refactor: move agent rules to specs/agent and neutralize Codex wo
 ```
 라인 28의 `최신 Saved/CodexReports/*.json` → `최신 Saved/UECommandForge/Reports/*.json` (Phase A5에서 이미 바뀌었으면 확인만).
 
-- [ ] **Step 2: SKILL.md 중립화**
+- [x] **Step 2: SKILL.md 중립화**
 
 `skills/uecommandforge/SKILL.md` 에서 `Codex` 고유 표현을 중립화:
 ```bash
@@ -372,12 +372,12 @@ grep -n 'Codex\|~/.codex\|CodexReports\|specs/codex' skills/uecommandforge/SKILL
 - `~/.codex/...` → `<AGENT_HOME>/...`, `specs/codex/` → `specs/agent/`, `CodexReports` → `UECommandForge/Reports`
 각 매치를 위 규칙대로 교체한다.
 
-- [ ] **Step 3: 잔여 확인**
+- [x] **Step 3: 잔여 확인**
 
 Run: `grep -rn 'specs/codex\|CodexReports' AGENTS.md skills/uecommandforge/SKILL.md`
 Expected: 출력 없음.
 
-- [ ] **Step 4: 커밋**
+- [x] **Step 4: 커밋**
 
 ```bash
 git add AGENTS.md skills/uecommandforge/SKILL.md
@@ -396,7 +396,7 @@ git commit -m "docs: point AGENTS.md and SKILL.md to neutralized specs/agent pat
 
 이 스크립트는 단일 `CODEX_HOME` 가정으로 짜여 있다. 핵심 설치 본문(스테이징·검증·복사·manifest 작성)을 **에이전트 1개를 받는 함수** `install_for_agent <agent>` 로 감싸고, 인자로 받은 에이전트 목록을 순회한다.
 
-- [ ] **Step 1: 인자 파서 교체**
+- [x] **Step 1: 인자 파서 교체**
 
 상단 인자 파싱(라인 7~45 영역)에서 `--codex-home` 케이스를 제거하고 에이전트 플래그를 추가한다. `AGENTS=()` 배열에 수집:
 
@@ -423,7 +423,7 @@ while [ $# -gt 0 ]; do
 done
 ```
 
-- [ ] **Step 2: 에이전트 필수 검증 + 중복 제거**
+- [x] **Step 2: 에이전트 필수 검증 + 중복 제거**
 
 인자 검증 블록(라인 47~53 영역) 다음에 추가:
 
@@ -440,7 +440,7 @@ done
 AGENTS=("${DEDUP_AGENTS[@]}")
 ```
 
-- [ ] **Step 3: 프로파일 해석 함수 추가**
+- [x] **Step 3: 프로파일 해석 함수 추가**
 
 PROJECT_FILE 정규화 직후에 추가:
 
@@ -464,7 +464,7 @@ agent_instructions_filename_for() {
 }
 ```
 
-- [ ] **Step 4: 설치 본문을 install_for_agent 함수로 감싸기**
+- [x] **Step 4: 설치 본문을 install_for_agent 함수로 감싸기**
 
 기존 `CODEX_HOME=...` 이후의 경로 변수 정의부터 manifest/로그 작성까지(라인 73~546 영역)를 함수 본문으로 옮기고, 첫머리에서 에이전트별 경로를 계산한다. 변수 리네임 매핑:
 
@@ -496,7 +496,7 @@ install_for_agent() {
 ```
 스테이징/패키지 검증(staged package 압축 해제, 버전 확인)은 에이전트와 무관하므로 함수 **밖에서 1회** 수행하고, 함수는 `${PLUGIN_ROOT}`/`${TOOLS_ROOT}`/`${VERSION}` 등 공통 변수를 참조한다. 플러그인 복사 대상(`PLUGIN_DIR`)·프로젝트 manifest·로그는 에이전트와 무관(프로젝트 쪽)하므로 첫 에이전트에서 1회만 수행하거나 함수 밖에서 처리한다.
 
-- [ ] **Step 5: 마커를 중립화하고 옛 마커 마이그레이션**
+- [x] **Step 5: 마커를 중립화하고 옛 마커 마이그레이션**
 
 `append_codex_agents_instructions`(라인 297~343) 를 `append_agent_instructions` 로 바꾸고 마커를 `UECOMMANDFORGE INSTRUCTIONS` 로 변경. 기존 블록 제거 awk가 **옛/새 마커 둘 다** 인식하게 한다:
 
@@ -515,12 +515,12 @@ awk '
 ```
 `require_ordered_marker_pair` 호출의 마커 인자도 새 마커로 바꾸되, begin_count 계산은 옛/새 둘 다 합산하도록 `grep -cE 'BEGIN UECOMMANDFORGE (CODEX )?INSTRUCTIONS'` 로 변경. 지시 소스 발췌는 `${TOOLS_ROOT}/specs/agent/unreal-automation-agents.md` 에서 한다. `require_codex_agents_appendable`/`require_instruction_source` 함수명·메시지의 "Codex" 도 중립화한다.
 
-- [ ] **Step 6: manifest/프로젝트 manifest 키 중립화**
+- [x] **Step 6: manifest/프로젝트 manifest 키 중립화**
 
 installed manifest(라인 467~) 와 project manifest(라인 508~) 의 jq 키를 교체: `codex_home`→`agent_home`, `codex_tools_path`→`tools_path`, `codex_specs_path`→`specs_path`, `codex_skill_path`→`skill_path`. installed manifest에 `agent: $agent`(에이전트 이름) 필드를 추가. env 파일 내용의 `CODEX_HOME=` → `AGENT_HOME=`.
 > 프로젝트 manifest는 에이전트 무관 공통 정보(project_file, plugin_path, installed_version)만 기록하고, 에이전트별 홈 경로는 각 홈의 installed manifest(홈마다 1개)에 둔다. 다중 에이전트 설치 시 프로젝트 manifest는 동일 내용으로 1회만 쓴다.
 
-- [ ] **Step 7: 에이전트 순회 호출**
+- [x] **Step 7: 에이전트 순회 호출**
 
 스테이징/검증 이후 마지막에:
 ```bash
@@ -530,12 +530,12 @@ done
 echo "installed agents: ${AGENTS[*]}"
 ```
 
-- [ ] **Step 8: 잔여 Codex 식별자 확인**
+- [x] **Step 8: 잔여 Codex 식별자 확인**
 
 Run: `grep -n 'CODEX\|Codex\|codex' tools/release/install_local.sh`
 Expected: `specs/agent` 경로·중립 메시지만 남고 `CODEX_HOME`/`--codex-home`/`codex_home` 식별자는 없음.
 
-- [ ] **Step 9: 구문 검사 + 커밋**
+- [x] **Step 9: 구문 검사 + 커밋**
 
 ```bash
 bash -n tools/release/install_local.sh
@@ -547,7 +547,7 @@ git commit -m "feat: install_local supports --codex/--claude/--antigravity profi
 
 **Files:** `install-uecommandforge.sh`, `install-uecommandforge.bat`, `install-uecommandforge.ps1`
 
-- [ ] **Step 1: passthrough 파서에 에이전트 플래그 추가**
+- [x] **Step 1: passthrough 파서에 에이전트 플래그 추가**
 
 `install-uecommandforge.sh` 의 passthrough case(라인 78 `--codex-home|--backup|--run-commandlet-check`)를 교체:
 ```bash
@@ -558,7 +558,7 @@ git commit -m "feat: install_local supports --codex/--claude/--antigravity profi
 ```
 `--codex-home` 케이스를 제거한다.
 
-- [ ] **Step 2: 도움말 텍스트 갱신**
+- [x] **Step 2: 도움말 텍스트 갱신**
 
 라인 32 `--codex-home <path> ... Defaults to ~/.codex` 블록을 제거하고 다음으로 교체:
 ```
@@ -569,11 +569,11 @@ git commit -m "feat: install_local supports --codex/--claude/--antigravity profi
 ```
 사용 예시(라인 15~21)에도 `--codex` 를 추가한다. 예: `./install-uecommandforge.sh --project <.uproject> --codex`.
 
-- [ ] **Step 3: .bat/.ps1 사용 예시 갱신**
+- [x] **Step 3: .bat/.ps1 사용 예시 갱신**
 
 `install-uecommandforge.bat`, `install-uecommandforge.ps1` 의 주석/도움말 예시에 `--codex` 등 에이전트 플래그를 추가한다(로직은 passthrough라 변경 없음).
 
-- [ ] **Step 4: 구문 검사 + 커밋**
+- [x] **Step 4: 구문 검사 + 커밋**
 
 ```bash
 bash -n install-uecommandforge.sh
@@ -585,11 +585,11 @@ git commit -m "feat: forward agent flags through top-level installer and update 
 
 **Files:** `tools/release/uninstall.sh`
 
-- [ ] **Step 1: 플래그/변수 교체**
+- [x] **Step 1: 플래그/변수 교체**
 
 `--codex-home` 를 에이전트 플래그(`--codex|--claude|--antigravity`)로 교체하고, C1의 `agent_home_for` 와 동일한 case 함수를 추가해 에이전트→홈을 해석한다. `CODEX_HOME` → `AGENT_HOME`. `--remove-codex-tools` → `--remove-agent-tools`(옛 플래그는 별칭으로 계속 인식). 에이전트 플래그가 최소 하나 필수이며, 여러 개면 각 홈에서 순회 제거한다.
 
-- [ ] **Step 2: installed manifest 키 읽기에 fallback**
+- [x] **Step 2: installed manifest 키 읽기에 fallback**
 
 manifest에서 경로를 읽을 때 신규 키 우선, 옛 키 fallback:
 ```bash
@@ -600,11 +600,11 @@ AGENT_HOME="$(jq -r '.agent_home // .codex_home' "${INSTALLED_MANIFEST}")"
 ```
 로그 출력 `removed_codex_tools=` → `removed_agent_tools=`.
 
-- [ ] **Step 3: 마커 제거가 옛/새 마커 모두 처리하는지 확인**
+- [x] **Step 3: 마커 제거가 옛/새 마커 모두 처리하는지 확인**
 
 언인스톨 시 지시 파일에서 관리 블록을 제거하는 awk가 `BEGIN UECOMMANDFORGE (CODEX )?INSTRUCTIONS` 둘 다 인식하게 한다(C1 Step 5와 동일 패턴).
 
-- [ ] **Step 4: 구문 검사 + 커밋**
+- [x] **Step 4: 구문 검사 + 커밋**
 
 ```bash
 bash -n tools/release/uninstall.sh
@@ -616,33 +616,33 @@ git commit -m "feat: uninstall supports agent flags and reads neutral+legacy man
 
 **Files:** `tools/test/smoke/release_package_install.sh`, `tools/test/smoke/installer_install_update_uninstall.sh`
 
-- [ ] **Step 1: 현재 격리 방식 확인**
+- [x] **Step 1: 현재 격리 방식 확인**
 
 Run: `grep -n 'codex-home\|CODEX_HOME\|\.codex\|HOME=' tools/test/smoke/release_package_install.sh tools/test/smoke/installer_install_update_uninstall.sh`
 Expected: `--codex-home <temp>` 로 임시 홈을 넘기는 호출 발견.
 
-- [ ] **Step 2: HOME 격리 + --codex 로 전환**
+- [x] **Step 2: HOME 격리 + --codex 로 전환**
 
 `--codex-home "${TMP_HOME}"` 인자를 제거하고, 설치 호출을 `HOME="${TMP_HOME}" ... install-uecommandforge.sh --project ... --codex` 형태로 바꾼다. 설치 대상 경로 검증을 `${TMP_HOME}/.codex/UECommandForge/...`, 지시 파일을 `${TMP_HOME}/.codex/AGENTS.md` 로 맞춘다.
 
-- [ ] **Step 3: 다중 에이전트 케이스 추가**
+- [x] **Step 3: 다중 에이전트 케이스 추가**
 
 `--codex --claude` 동시 설치 후 `${TMP_HOME}/.codex/AGENTS.md` 와 `${TMP_HOME}/.claude/CLAUDE.md` **양쪽**에 관리 블록(`BEGIN UECOMMANDFORGE INSTRUCTIONS`)이 주입됐는지, 각 홈에 `UECommandForge/` 트리가 생성됐는지 검증하는 assert를 추가한다.
 
-- [ ] **Step 4: 에이전트 플래그 누락 케이스 추가**
+- [x] **Step 4: 에이전트 플래그 누락 케이스 추가**
 
 에이전트 플래그 없이 설치 호출 시 비정상 종료(exit≠0)하고 사용법 메시지를 출력하는지 검증한다.
 
-- [ ] **Step 5: 옛 마커 마이그레이션 케이스 추가**
+- [x] **Step 5: 옛 마커 마이그레이션 케이스 추가**
 
 `${TMP_HOME}/.codex/AGENTS.md` 에 옛 마커(`BEGIN/END UECOMMANDFORGE CODEX INSTRUCTIONS`) 블록을 미리 심어두고 `--codex` 재설치 후, 파일에 `BEGIN UECOMMANDFORGE INSTRUCTIONS` 가 정확히 1회, 옛 마커가 0회인지 검증한다.
 
-- [ ] **Step 6: 설치 smoke 실행**
+- [x] **Step 6: 설치 smoke 실행**
 
 Run: `tools/test/smoke/release_package_install.sh`
 Expected: 위 모든 assert PASS.
 
-- [ ] **Step 7: 커밋**
+- [x] **Step 7: 커밋**
 
 ```bash
 git add tools/test/smoke/release_package_install.sh tools/test/smoke/installer_install_update_uninstall.sh
@@ -655,7 +655,7 @@ git commit -m "test: HOME-isolated installer smoke for per-agent and multi-agent
 
 ### Task D1: 전체 잔여 Codex 스캔 + smoke 스위트
 
-- [ ] **Step 1: 전역 잔여 Codex 식별자 스캔**
+- [x] **Step 1: 전역 잔여 Codex 식별자 스캔**
 
 Run:
 ```bash
@@ -664,7 +664,7 @@ grep -rn 'CodexReports\|--codex-home\|CODEX_HOME\|specs/codex\|codex_home\|codex
 ```
 Expected: 출력 없음. (과거 세션 기록 `docs/memory/`·옛 계획 `ucf-*` 은 역사 기록이라 제외. `sample/Saved/PluginBuild` 는 빌드 산출물.)
 
-- [ ] **Step 2: 가능한 smoke 테스트 일괄 실행**
+- [x] **Step 2: 가능한 smoke 테스트 일괄 실행**
 
 Run (엔진/프로젝트 준비된 환경에서):
 ```bash
@@ -672,15 +672,15 @@ for t in tools/test/smoke/*.sh; do echo "== $t =="; UECF_PROJECT_FILE=<.uproject
 ```
 Expected: 전부 PASS, 결과물이 `Saved/UECommandForge/Reports` 에 생성.
 
-- [ ] **Step 3: 보안 리뷰 (설치/언인스톨 변경)**
+- [x] **Step 3: 보안 리뷰 (설치/언인스톨 변경)**
 
 설치·언인스톨·체크섬·입력 검증 변경이 포함되므로 security-reviewer(또는 로컬 diff 리뷰)로 findings-first 리뷰를 수행하고, CRITICAL/HIGH를 검증 후 수정한다. 특히 마커 마이그레이션 awk의 중첩/주입 안전성, 다중 에이전트 순회 시 백업/심볼릭 링크 거부 로직이 각 홈에 일관 적용되는지 확인한다.
 
-- [ ] **Step 4: 문서 갱신 (doc-updater)**
+- [x] **Step 4: 문서 갱신 (doc-updater)**
 
 `README.md` 설치 절차에 `--codex/--claude/--antigravity` 사용법을 반영하고, 코드맵/README를 한국어로 갱신한다.
 
-- [ ] **Step 5: 최종 커밋**
+- [x] **Step 5: 최종 커밋**
 
 ```bash
 git add -A
