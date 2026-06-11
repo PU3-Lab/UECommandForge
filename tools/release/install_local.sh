@@ -68,7 +68,7 @@ fi
 # 중복 플래그 제거(순서 유지)
 DEDUP_AGENTS=()
 for agent in "${AGENTS[@]}"; do
-  case " ${DEDUP_AGENTS[*]} " in *" ${agent} "*) ;; *) DEDUP_AGENTS+=("${agent}") ;; esac
+  case " ${DEDUP_AGENTS[*]:-} " in *" ${agent} "*) ;; *) DEDUP_AGENTS+=("${agent}") ;; esac
 done
 AGENTS=("${DEDUP_AGENTS[@]}")
 

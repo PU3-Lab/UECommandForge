@@ -271,6 +271,17 @@ test ! -e "${PROJECT_DIR}/UECommandForge/uecommandforge-project.json"
 # 마커도 정상 정리되었는지 검증
 ! grep -q 'BEGIN UECOMMANDFORGE INSTRUCTIONS' "${CODEX_HOME}/AGENTS.md"
 
+# 재설치 진행
+HOME="${BASE_DIR}" "${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${PROJECT_FILE}" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${TOOLS_ZIP}" \
+  --codex \
+  --run-commandlet-check false
+
+test -f "${PROJECT_DIR}/Plugins/UECommandForge/UECommandForge.uplugin"
+grep -q 'BEGIN UECOMMANDFORGE INSTRUCTIONS' "${CODEX_HOME}/AGENTS.md"
+
 # 완전히 툴까지 삭제
 HOME="${BASE_DIR}" "${REPO_ROOT}/tools/release/uninstall.sh" \
   --project "${PROJECT_FILE}" \
@@ -278,6 +289,10 @@ HOME="${BASE_DIR}" "${REPO_ROOT}/tools/release/uninstall.sh" \
   --remove-agent-tools true \
   --remove-specs true
 
+test ! -e "${PROJECT_DIR}/Plugins/UECommandForge"
+test ! -e "${CODEX_HOME}/UECommandForge/tools"
+test ! -e "${CODEX_HOME}/UECommandForge/specs"
+test ! -e "${CODEX_HOME}/skills/uecommandforge"
 test ! -e "${CODEX_HOME}/UECommandForge"
 
 # ==========================================

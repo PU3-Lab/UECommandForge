@@ -59,7 +59,7 @@ fi
 # 중복 제거
 DEDUP_AGENTS=()
 for agent in "${AGENTS[@]}"; do
-  case " ${DEDUP_AGENTS[*]} " in *" ${agent} "*) ;; *) DEDUP_AGENTS+=("${agent}") ;; esac
+  case " ${DEDUP_AGENTS[*]:-} " in *" ${agent} "*) ;; *) DEDUP_AGENTS+=("${agent}") ;; esac
 done
 AGENTS=("${DEDUP_AGENTS[@]}")
 
@@ -211,6 +211,8 @@ uninstall_for_agent() {
     rm -f "${INSTALL_ROOT}/uecommandforge.env" \
       "${INSTALL_ROOT}/uecommandforge.env.sh" \
       "${INSTALLED_MANIFEST}"
+    rmdir "${AGENT_HOME}/skills" 2>/dev/null || true
+    rmdir "${INSTALL_ROOT}" 2>/dev/null || true
   fi
 }
 
