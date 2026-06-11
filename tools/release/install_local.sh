@@ -208,10 +208,59 @@ copy_tree() {
   cp -R "${src}" "${dest}"
 }
 
-require_codex_agents_appendable() {
-  local begin_count=0
-  local end_count=0
+require_ordered_marker_pair() {
+  local path="$1"
+  local begin_marker="$2"
+  local end_marker="$3"
+  local mode="$4"
+  local error_message="$5"
 
+  if ! awk \
+    -v begin_marker="${begin_marker}" \
+    -v end_marker="${end_marker}" \
+    -v mode="${mode}" '
+      index($0, begin_marker) {
+        if (state != 0 || index($0, end_marker)) {
+          invalid = 1
+          exit 1
+        }
+        state = 1
+        next
+      }
+      index($0, end_marker) {
+        if (state != 1) {
+          invalid = 1
+          exit 1
+        }
+        state = 2
+        next
+      }
+      END {
+        if (invalid || (mode == "required" && state != 2) || (mode == "optional" && state != 0 && state != 2)) {
+          exit 1
+        }
+      }
+    ' "${path}"; then
+    echo "${error_message}" >&2
+    exit 2
+  fi
+}
+
+require_instruction_source() {
+  local instructions_file="$1"
+  if [ ! -f "${instructions_file}" ]; then
+    echo "[install_local] Codex instruction source is missing: ${instructions_file}" >&2
+    exit 2
+  fi
+  require_ordered_marker_pair \
+    "${instructions_file}" \
+    "BEGIN UECOMMANDFORGE MANAGED CONTENT" \
+    "END UECOMMANDFORGE MANAGED CONTENT" \
+    required \
+    "[install_local] Codex instruction source has invalid managed content markers: ${instructions_file}"
+}
+
+require_codex_agents_appendable() {
   if [ ! -w "${CODEX_HOME}" ]; then
     echo "[install_local] Codex home is not writable: ${CODEX_HOME}" >&2
     exit 2
@@ -236,35 +285,32 @@ require_codex_agents_appendable() {
       echo "[install_local] Existing AGENTS.md was preserved; fix file permissions and retry." >&2
       exit 2
     fi
-    begin_count="$(grep -c 'BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS' "${CODEX_AGENTS_FILE}" || true)"
-    end_count="$(grep -c 'END UECOMMANDFORGE CODEX INSTRUCTIONS' "${CODEX_AGENTS_FILE}" || true)"
-    if [ "${begin_count}" -ne "${end_count}" ] || [ "${begin_count}" -gt 1 ]; then
-      echo "[install_local] Existing Codex AGENTS.md has an invalid UECommandForge managed block; fix markers and retry: ${CODEX_AGENTS_FILE}" >&2
-      exit 2
-    fi
+    require_ordered_marker_pair \
+      "${CODEX_AGENTS_FILE}" \
+      "BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS" \
+      "END UECOMMANDFORGE CODEX INSTRUCTIONS" \
+      optional \
+      "[install_local] Existing Codex AGENTS.md has an invalid UECommandForge managed block; fix markers and retry: ${CODEX_AGENTS_FILE}"
   fi
 }
 
 append_codex_agents_instructions() {
   local temp_file
   local begin_count=0
-  local end_count=0
   local instructions_file="${TOOLS_ROOT}/specs/codex/unreal-automation-agents.md"
-  if [ ! -f "${instructions_file}" ]; then
-    echo "[install_local] Codex instruction source is missing: ${instructions_file}" >&2
-    exit 2
-  fi
+  require_instruction_source "${instructions_file}"
+  reject_symlink_path "${CODEX_AGENTS_FILE}"
 
   temp_file="$(mktemp "${CODEX_HOME}/.AGENTS.md.XXXXXX")"
   if [ -f "${CODEX_AGENTS_FILE}" ]; then
     cp -p "${CODEX_AGENTS_FILE}" "${temp_file}"
+    require_ordered_marker_pair \
+      "${CODEX_AGENTS_FILE}" \
+      "BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS" \
+      "END UECOMMANDFORGE CODEX INSTRUCTIONS" \
+      optional \
+      "[install_local] Existing Codex AGENTS.md has an invalid UECommandForge managed block; fix markers and retry: ${CODEX_AGENTS_FILE}"
     begin_count="$(grep -c 'BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS' "${CODEX_AGENTS_FILE}" || true)"
-    end_count="$(grep -c 'END UECOMMANDFORGE CODEX INSTRUCTIONS' "${CODEX_AGENTS_FILE}" || true)"
-    if [ "${begin_count}" -ne "${end_count}" ] || [ "${begin_count}" -gt 1 ]; then
-      rm -f "${temp_file}" "${temp_file}.stripped"
-      echo "[install_local] Existing Codex AGENTS.md has an invalid UECommandForge managed block; fix markers and retry: ${CODEX_AGENTS_FILE}" >&2
-      exit 2
-    fi
     if [ "${begin_count}" -eq 1 ]; then
       awk '
         /BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS/ { skipping = 1; next }
@@ -283,7 +329,11 @@ append_codex_agents_instructions() {
 cat >> "${temp_file}" <<'AGENTS'
 <!-- BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS -->
 AGENTS
-  cat "${instructions_file}" >> "${temp_file}"
+  awk '
+    /BEGIN UECOMMANDFORGE MANAGED CONTENT/ { copying = 1; next }
+    /END UECOMMANDFORGE MANAGED CONTENT/ { copying = 0; next }
+    copying == 1 { print }
+  ' "${instructions_file}" >> "${temp_file}"
   printf '\n' >> "${temp_file}"
 cat >> "${temp_file}" <<'AGENTS'
 <!-- END UECOMMANDFORGE CODEX INSTRUCTIONS -->
@@ -342,6 +392,7 @@ jq -e \
   '.release_channel == $plugin_manifest[0].release_channel' \
   "${TOOLS_MANIFEST}" >/dev/null
 
+require_instruction_source "${TOOLS_ROOT}/specs/codex/unreal-automation-agents.md"
 require_codex_agents_appendable
 mkdir -p "${LOG_DIR}" "${INSTALL_ROOT}" "${PROJECT_LINK_DIR}"
 

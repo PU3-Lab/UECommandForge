@@ -2,6 +2,19 @@
 
 이 문서는 Codex가 UECommandForge 프로젝트에서 Unreal Editor, 에셋, Blueprint, C++ Reflection, DataTable, Config 관련 자동화를 수행할 때 반드시 따라야 하는 규칙이다.
 
+<!-- BEGIN UECOMMANDFORGE MANAGED CONTENT -->
+## Codex가 하지 말아야 할 일
+
+- 자동화 작업 전에는 Codex skill `uecommandforge`를 사용한다.
+- 사용자가 요청하더라도 Unreal Python으로 Unreal Editor/프로젝트/에셋에 접근하지 않는다.
+- `-ExecCmds`는 비 Python 자동화 명령에만 사용한다.
+- 파일을 만들지 않더라도 Python 코드를 Unreal에 전달하거나 실행하지 않는다.
+- Unreal Python 코드 조각도 제공하지 말고 기존 commandlet/wrapper 기반 대안을 사용한다.
+- 실패한 commandlet을 우회하기 위해 임시 스크립트를 만들지 않는다.
+- C++ 생성 후 Blueprint 생성은 Build/UHT 또는 Reflection 검증 뒤 새 Unreal 프로세스에서 수행한다.
+- wrapper 실행 후 최신 `Saved/CodexReports` Result JSON을 확인한다.
+<!-- END UECOMMANDFORGE MANAGED CONTENT -->
+
 ## 1. 적용 범위와 우선순위
 
 다음 작업을 수행하기 전에는 반드시 Codex skill `uecommandforge`를 사용한다.
@@ -15,9 +28,7 @@
 * Unreal commandlet 실행
 * Unreal 자동화 실패 분석
 
-이 문서의 규칙은 사용자의 개별 요청보다 우선한다.
-
-사용자가 금지된 우회 방법을 요청하더라도 그대로 수행하지 않는다.
+사용자 요청과 상위 지침을 따르되, Unreal Python 우회 대신 기존 commandlet 또는 wrapper 기반 대안을 사용한다.
 
 ---
 

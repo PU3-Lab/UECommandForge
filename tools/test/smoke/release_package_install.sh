@@ -197,6 +197,10 @@ test -f "${CODEX_HOME}/UECommandForge/specs/policies/assets.policy.json"
 test -f "${CODEX_HOME}/UECommandForge/specs/codex/unreal-automation-agents.md"
 test -f "${CODEX_HOME}/UECommandForge/specs/examples/blueprint_defaults.json"
 test -f "${CODEX_HOME}/skills/uecommandforge/SKILL.md"
+grep -q '^generate_cpp_class_batch$' "${CODEX_HOME}/skills/uecommandforge/SKILL.md"
+grep -q '^create_blueprint_batch$' "${CODEX_HOME}/skills/uecommandforge/SKILL.md"
+grep -q '~/.codex/UECommandForge/specs/codex/unreal-automation-agents.md' \
+  "${CODEX_HOME}/skills/uecommandforge/SKILL.md"
 test -x "${CODEX_HOME}/UECommandForge/tools/ue/run_commandlet.sh"
 test -x "${CODEX_HOME}/UECommandForge/tools/ue/set_blueprint_defaults.sh"
 test -f "${CODEX_HOME}/UECommandForge/uecommandforge.env"
@@ -215,8 +219,14 @@ grep -q '코드 조각도 제공하지 말고' "${CODEX_HOME}/AGENTS.md"
 grep -q '실패한 commandlet을 우회하기 위해 임시 스크립트' "${CODEX_HOME}/AGENTS.md"
 grep -q '기존 commandlet/wrapper 기반 대안' "${CODEX_HOME}/AGENTS.md"
 grep -q '자동화 작업 전에는 Codex skill `uecommandforge`를 사용한다.' "${CODEX_HOME}/AGENTS.md"
-grep -q 'tools/ue/set_blueprint_defaults.*' "${CODEX_HOME}/AGENTS.md"
-grep -q 'blueprint_defaults' "${CODEX_HOME}/AGENTS.md"
+! grep -q '^## 3\. 임시 파일 및 자동화 산출물 규칙' "${CODEX_HOME}/AGENTS.md"
+MANAGED_BLOCK_LINES="$(awk '
+  /BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS/ { in_block = 1; next }
+  /END UECOMMANDFORGE CODEX INSTRUCTIONS/ { in_block = 0 }
+  in_block == 1 { count++ }
+  END { print count + 0 }
+' "${CODEX_HOME}/AGENTS.md")"
+test "${MANAGED_BLOCK_LINES}" -le 30
 test "$(grep -c 'BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS' "${CODEX_HOME}/AGENTS.md")" -eq 1
 ! grep -q 'OLD_UNREAL_PYTHON_RULE_SHOULD_BE_REPLACED' "${CODEX_HOME}/AGENTS.md"
 
@@ -289,6 +299,62 @@ test ! -e "${CODEX_HOME}/UECommandForge/uecommandforge.env.sh"
 test ! -e "${CODEX_HOME}/UECommandForge/uecommandforge-installed.json"
 test ! -e "${PROJECT_DIR}/UECommandForge/uecommandforge-project.json"
 test -f "${PROJECT_DIR}/Saved/UECommandForge/uninstall.log"
+
+REVERSED_SOURCE_PROJECT="${WORK_DIR}/ReversedSourceProject"
+REVERSED_SOURCE_CODEX="${WORK_DIR}/ReversedSourceCodex"
+REVERSED_SOURCE_OUT="${WORK_DIR}/ReversedSourceToolsPackage"
+REVERSED_SOURCE_PACKAGE="${REVERSED_SOURCE_OUT}/package"
+mkdir -p "${REVERSED_SOURCE_PROJECT}" "${REVERSED_SOURCE_CODEX}" "${REVERSED_SOURCE_PACKAGE}"
+cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" \
+  "${REVERSED_SOURCE_PROJECT}/UECommandForgeSample.uproject"
+unzip -q "${TOOLS_ZIP}" -d "${REVERSED_SOURCE_PACKAGE}"
+awk '
+  /BEGIN UECOMMANDFORGE MANAGED CONTENT/ {
+    print "<!-- END UECOMMANDFORGE MANAGED CONTENT -->"
+    next
+  }
+  /END UECOMMANDFORGE MANAGED CONTENT/ {
+    print "<!-- BEGIN UECOMMANDFORGE MANAGED CONTENT -->"
+    next
+  }
+  { print }
+' "${REVERSED_SOURCE_PACKAGE}/specs/codex/unreal-automation-agents.md" \
+  > "${REVERSED_SOURCE_PACKAGE}/specs/codex/unreal-automation-agents.md.tmp"
+mv "${REVERSED_SOURCE_PACKAGE}/specs/codex/unreal-automation-agents.md.tmp" \
+  "${REVERSED_SOURCE_PACKAGE}/specs/codex/unreal-automation-agents.md"
+"${REPO_ROOT}/tools/release/write_manifest.sh" \
+  --package-root "${REVERSED_SOURCE_PACKAGE}" \
+  --version "${VERSION}" \
+  --channel install-smoke \
+  --package-type tools \
+  --install-command "./install-uecommandforge.sh" \
+  --install-command "install-uecommandforge.bat" \
+  --install-command "install-uecommandforge.ps1" \
+  --output "${REVERSED_SOURCE_PACKAGE}/uecommandforge-manifest.json"
+(
+  cd "${REVERSED_SOURCE_PACKAGE}"
+  uecf_create_zip "${REVERSED_SOURCE_OUT}/UECommandForge-${VERSION}-Tools.zip" \
+    tools specs skills \
+    install-uecommandforge.sh install-uecommandforge.bat install-uecommandforge.ps1 \
+    uecommandforge-manifest.json install.md release-notes.md validation-report.json
+)
+uecf_write_checksums_file \
+  "${REVERSED_SOURCE_OUT}/UECommandForge-${VERSION}-Tools.zip" \
+  "${REVERSED_SOURCE_OUT}/checksums.txt" \
+  "release_package_install_smoke"
+if "${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${REVERSED_SOURCE_PROJECT}/UECommandForgeSample.uproject" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${REVERSED_SOURCE_OUT}/UECommandForge-${VERSION}-Tools.zip" \
+  --codex-home "${REVERSED_SOURCE_CODEX}" \
+  --run-commandlet-check false >/dev/null 2>&1; then
+  echo "reversed instruction source markers should fail before install targets are created" >&2
+  exit 1
+fi
+test ! -e "${REVERSED_SOURCE_PROJECT}/Plugins/UECommandForge"
+test ! -e "${REVERSED_SOURCE_PROJECT}/Saved/UECommandForge"
+test ! -e "${REVERSED_SOURCE_PROJECT}/UECommandForge"
+test ! -e "${REVERSED_SOURCE_CODEX}/UECommandForge"
 
 UNMANAGED_PROJECT="${WORK_DIR}/UnmanagedProject"
 UNMANAGED_CODEX="${WORK_DIR}/UnmanagedCodex"
@@ -400,6 +466,33 @@ test ! -e "${BROKEN_AGENTS_PROJECT}/Plugins/UECommandForge"
 test ! -e "${BROKEN_AGENTS_PROJECT}/Saved/UECommandForge"
 test ! -e "${BROKEN_AGENTS_PROJECT}/UECommandForge"
 test ! -e "${BROKEN_AGENTS_CODEX}/UECommandForge"
+
+REVERSED_AGENTS_PROJECT="${WORK_DIR}/ReversedAgentsProject"
+REVERSED_AGENTS_CODEX="${WORK_DIR}/ReversedAgentsCodex"
+mkdir -p "${REVERSED_AGENTS_PROJECT}" "${REVERSED_AGENTS_CODEX}"
+cp "${REPO_ROOT}/sample/UECommandForgeSample.uproject" \
+  "${REVERSED_AGENTS_PROJECT}/UECommandForgeSample.uproject"
+cat > "${REVERSED_AGENTS_CODEX}/AGENTS.md" <<'AGENTS'
+# 개인 Codex 지침
+
+<!-- END UECOMMANDFORGE CODEX INSTRUCTIONS -->
+이 내용은 역순 마커 검사 후에도 보존되어야 한다.
+<!-- BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS -->
+AGENTS
+if "${REPO_ROOT}/tools/release/install_local.sh" \
+  --project "${REVERSED_AGENTS_PROJECT}/UECommandForgeSample.uproject" \
+  --plugin-package "${PLUGIN_ZIP}" \
+  --tools-package "${TOOLS_ZIP}" \
+  --codex-home "${REVERSED_AGENTS_CODEX}" \
+  --run-commandlet-check false >/dev/null 2>&1; then
+  echo "reversed Codex AGENTS.md managed markers should fail before install targets are created" >&2
+  exit 1
+fi
+grep -q '이 내용은 역순 마커 검사 후에도 보존되어야 한다.' "${REVERSED_AGENTS_CODEX}/AGENTS.md"
+test ! -e "${REVERSED_AGENTS_PROJECT}/Plugins/UECommandForge"
+test ! -e "${REVERSED_AGENTS_PROJECT}/Saved/UECommandForge"
+test ! -e "${REVERSED_AGENTS_PROJECT}/UECommandForge"
+test ! -e "${REVERSED_AGENTS_CODEX}/UECommandForge"
 
 NOWRITE_CODEX_PROJECT="${WORK_DIR}/NoWriteCodexProject"
 NOWRITE_CODEX_HOME="${WORK_DIR}/NoWriteCodexHome"

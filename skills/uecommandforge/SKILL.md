@@ -9,7 +9,17 @@ description: Use when Codex needs to automate Unreal Engine work through UEComma
 
 Unreal Editor, asset, Blueprint, C++ reflection 작업은 직접 Unreal Python으로 처리하지 않는다. 설치된 UECommandForge commandlet wrapper를 사용하고, 실행 후 대상 프로젝트의 `Saved/CodexReports`에서 Result JSON을 확인한다.
 
-AGENTS의 금지 규칙은 항상 우선한다. `import unreal`, `-ExecutePythonScript`, PythonScriptPlugin, Editor Utility, 원격 Python 실행, 임시 `.py` 우회는 사용하지 않는다.
+AGENTS의 안전 규칙을 따른다. `import unreal`, `-ExecutePythonScript`, PythonScriptPlugin, Editor Utility, 원격 Python 실행, 임시 `.py` 우회는 사용하지 않는다.
+
+## 상세 안전 규칙
+
+자동화 실행 전 다음 상세 규칙을 읽고 적용한다.
+
+```text
+~/.codex/UECommandForge/specs/codex/unreal-automation-agents.md
+```
+
+저장소에서 개발 중이면 repo의 `specs/codex/unreal-automation-agents.md`를 사용한다. 이 skill은 실행 절차의 요약이며, 임시 산출물 위치와 새 automation 구현 요구사항은 상세 규칙을 기준으로 한다.
 
 ## 설치 상태 확인
 
@@ -49,6 +59,7 @@ apply_asset_changes
 rollback_asset_changes
 create_project_folders
 generate_cpp_class
+generate_cpp_class_batch
 validate_cpp_reflection
 validate_buildcs
 analyze_uht_log
@@ -65,6 +76,8 @@ validate_ai_flow
 set_blueprint_defaults
 compile_blueprints
 create_ai_flow
+create_blueprint
+create_blueprint_batch
 ```
 
 작업에 맞는 wrapper가 없으면 임시 스크립트로 우회하지 않는다. 새 automation이 필요한 경우 repo에 commandlet과 `tools/ue/` wrapper를 추가하고 smoke test를 작성한다.
@@ -73,12 +86,18 @@ create_ai_flow
 
 1. wrapper 파일 존재와 실행 권한을 확인한다.
 2. spec이 필요한 wrapper는 repo 또는 설치된 `specs` 아래 JSON을 사용한다.
-3. C++ 클래스 생성과 Blueprint 생성은 같은 흐름에서 섞지 않는다.
-   - `generate_cpp_class`
+3. 반복 생성 작업은 단건 wrapper보다 batch wrapper를 우선 사용한다.
+   - Blueprint 여러 개: `create_blueprint_batch`
+   - C++ 클래스 여러 개: `generate_cpp_class_batch`
+   - Blueprint 생성과 기본 컴포넌트 또는 기본값 적용: batch spec의 `components`와 defaults 기능
+4. 새 C++ 부모 클래스 기반 Blueprint 생성은 프로세스를 분리한다.
+   - `generate_cpp_class` 또는 `generate_cpp_class_batch`
    - Unreal build/UHT 또는 `validate_cpp_reflection`, `validate_buildcs`
-   - 새 프로세스에서 Blueprint 관련 wrapper 실행
-4. 실행 결과의 종료 코드를 확인한다.
-5. 최신 Result JSON을 읽고 `status`, `exit_code`, `errors`, `warnings`, 생성/변경 경로를 확인한다.
+   - 새 Unreal 프로세스에서 `create_blueprint` 또는 `create_blueprint_batch` 실행
+5. 실행 결과의 종료 코드를 확인한다.
+6. 최신 Result JSON의 `ok`, `errors`, `issues`, `validation`과 생성/변경 경로를 확인한다.
+7. `CreateBlueprint` 결과의 `.validation`에 `compile_status: ok`, `asset_on_disk: true`, `asset_in_registry: true`가 있으면 같은 턴에 `compile_blueprints`를 반복 실행하지 않는다.
+8. `CreateBlueprintBatch`는 spec의 `compile: true`, Result JSON의 `ok: true`, 빈 `errors`를 확인하면 같은 턴에 `compile_blueprints`를 반복 실행하지 않는다.
 
 Result JSON 위치:
 

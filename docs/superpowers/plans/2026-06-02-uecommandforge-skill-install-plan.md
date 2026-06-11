@@ -6,6 +6,8 @@
 
 **Architecture:** 안전 규칙은 `AGENTS.md` managed block에 유지하고, 절차형 사용법은 `skills/uecommandforge/SKILL.md`로 분리한다. 릴리즈 tools package가 skill을 포함하며, installer가 이를 Codex skill 디렉터리로 복사한다.
 
+**2026-06-11 유지보수:** 전역 `AGENTS.md`에는 `specs/codex/unreal-automation-agents.md`의 managed content 구획만 설치한다. 상세 규칙은 설치된 spec에 유지하고 skill이 이를 명시적으로 읽는다. source spec과 기존 사용자 `AGENTS.md`의 marker 순서는 설치 대상 변경 전에 검증한다.
+
 **Tech Stack:** Bash release scripts, Codex skill markdown, smoke tests, jq manifest validation.
 
 ---
