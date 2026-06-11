@@ -57,11 +57,11 @@ bool FAnalyzeUhtLogReportsErrorsTest::RunTest(const FString& Parameters)
     using namespace UECommandForgeAnalyzeUhtLogTest;
 
     const FString UhtLogPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_uht_error.log"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_uht_error.log"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_uht_error_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_uht_error_report.json"));
     const FString MarkdownPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_uht_error_report.md"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_uht_error_report.md"));
 
     const FString LogText = TEXT(R"(LogInit: Running UnrealHeaderTool
 /Project/Plugins/UECommandForge/Source/CodexBad/Public/BadComponent.h(17): Error: Unrecognized type 'FInventoryRow' - type must be a UCLASS, USTRUCT or UENUM
@@ -104,9 +104,9 @@ bool FAnalyzeUhtLogCleanLogTest::RunTest(const FString& Parameters)
     using namespace UECommandForgeAnalyzeUhtLogTest;
 
     const FString UhtLogPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_uht_clean.log"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_uht_clean.log"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_uht_clean_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_uht_clean_report.json"));
 
     const FString LogText = TEXT(R"(LogInit: Running UnrealHeaderTool
 Reflection code generated for UECommandForgeEditor in 1.23 seconds

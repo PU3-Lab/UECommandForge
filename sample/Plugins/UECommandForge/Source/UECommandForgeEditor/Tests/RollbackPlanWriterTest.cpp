@@ -11,7 +11,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 bool FUECommandForgeRollbackPlanWriterTest::RunTest(const FString& Parameters)
 {
     const FString OutPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_rollback_plan.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_rollback_plan.json"));
     IFileManager::Get().Delete(*OutPath);
 
     FCommandForgeRollbackPlan Plan;

@@ -69,9 +69,9 @@ namespace
 bool FCreateProjectFoldersDryRunTest::RunTest(const FString& Parameters)
 {
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_project_folders_dry_run.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_project_folders_dry_run.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_project_folders_dry_run_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_project_folders_dry_run_report.json"));
     const FString RootFolder = TEXT("/Game/Tests/ProjectFoldersDryRun");
 
     IFileManager::Get().Delete(*SpecPath);
@@ -106,9 +106,9 @@ bool FCreateProjectFoldersDryRunTest::RunTest(const FString& Parameters)
 bool FCreateProjectFoldersApplyTest::RunTest(const FString& Parameters)
 {
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_project_folders_apply.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_project_folders_apply.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_project_folders_apply_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_project_folders_apply_report.json"));
     const FString RootFolder = TEXT("/Game/Tests/ProjectFoldersApply");
 
     IFileManager::Get().Delete(*SpecPath);
@@ -151,9 +151,9 @@ bool FCreateProjectFoldersApplyTest::RunTest(const FString& Parameters)
 bool FCreateProjectFoldersRejectsUnsafePathTest::RunTest(const FString& Parameters)
 {
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_project_folders_invalid.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_project_folders_invalid.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_project_folders_invalid_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_project_folders_invalid_report.json"));
 
     IFileManager::Get().Delete(*SpecPath);
     IFileManager::Get().Delete(*ReportPath);

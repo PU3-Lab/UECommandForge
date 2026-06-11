@@ -242,9 +242,9 @@ public class CodexBatchBuildCsTestModule : ModuleRules
 bool FGenerateCppClassBatchDryRunTest::RunTest(const FString& Parameters)
 {
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_batch_dry_run.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_batch_dry_run.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_batch_dry_run_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_batch_dry_run_report.json"));
 
     const TArray<FString> ClassNames = { TEXT("CodexBatchDryRunWeapon"), TEXT("CodexBatchDryRunArmor") };
     const FString OutputSubPath = TEXT("GeneratedBatchTests/DryRun");
@@ -280,9 +280,9 @@ bool FGenerateCppClassBatchDryRunTest::RunTest(const FString& Parameters)
 bool FGenerateCppClassBatchApplyTest::RunTest(const FString& Parameters)
 {
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_batch_apply.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_batch_apply.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_batch_apply_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_batch_apply_report.json"));
 
     const TArray<FString> ClassNames = { TEXT("CodexBatchApplyWeapon"), TEXT("CodexBatchApplyArmor") };
     const FString OutputSubPath = TEXT("GeneratedBatchTests/Apply");
@@ -320,9 +320,9 @@ bool FGenerateCppClassBatchApplyTest::RunTest(const FString& Parameters)
 bool FGenerateCppClassBatchRollbackTest::RunTest(const FString& Parameters)
 {
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_batch_rollback.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_batch_rollback.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_batch_rollback_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_batch_rollback_report.json"));
 
     const FString ValidClassName1 = TEXT("CodexRollbackValidClassA");
     const FString ValidClassName2 = TEXT("CodexRollbackValidClassB");
@@ -383,9 +383,9 @@ bool FGenerateCppClassBatchRollbackTest::RunTest(const FString& Parameters)
 bool FGenerateCppClassBatchDuplicateTargetTest::RunTest(const FString& Parameters)
 {
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_batch_dup.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_batch_dup.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_batch_dup_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_batch_dup_report.json"));
 
     // 대소문자만 다른 클래스명을 지정하여 대소문자 비구분 경로 중복 검증
     const TArray<FString> DuplicateClassNames = { TEXT("CodexDuplicateClass"), TEXT("codexduplicateclass") };
@@ -449,9 +449,9 @@ bool FGenerateCppClassBatchDuplicateTargetTest::RunTest(const FString& Parameter
 bool FGenerateCppClassBatchBuildCsRollbackTest::RunTest(const FString& Parameters)
 {
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_batch_buildcs_rollback.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_batch_buildcs_rollback.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_batch_buildcs_rollback_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_batch_buildcs_rollback_report.json"));
 
     const FString ValidClassName1 = TEXT("CodexBuildCsRollbackValidClassA");
     const FString ValidClassName2 = TEXT("CodexBuildCsRollbackValidClassB");
@@ -550,9 +550,9 @@ bool FGenerateCppClassBatchBuildCsRollbackTest::RunTest(const FString& Parameter
 bool FGenerateCppClassBatchDuplicateClassSymbolTest::RunTest(const FString& Parameters)
 {
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_batch_dup_symbol.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_batch_dup_symbol.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_batch_dup_symbol_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_batch_dup_symbol_report.json"));
 
     // MyActor(EnsureUnrealClassSymbol에 의해 AMyActor가 됨)와 AMyActor로 심볼 중복 상황 생성
     const TArray<FString> DuplicateClassNames = { TEXT("MyActor"), TEXT("AMyActor") };

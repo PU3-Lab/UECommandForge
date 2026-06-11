@@ -111,9 +111,9 @@ public class CodexValidateBuildCsTestModule : ModuleRules
 bool FValidateBuildCsSatisfiedPolicyTest::RunTest(const FString& Parameters)
 {
     const FString PolicyPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_buildcs_policy_ok.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_buildcs_policy_ok.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_buildcs_policy_ok_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_buildcs_policy_ok_report.json"));
 
     IFileManager::Get().Delete(*PolicyPath);
     IFileManager::Get().Delete(*ReportPath);
@@ -137,9 +137,9 @@ bool FValidateBuildCsSatisfiedPolicyTest::RunTest(const FString& Parameters)
 bool FValidateBuildCsMissingDependencyTest::RunTest(const FString& Parameters)
 {
     const FString PolicyPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_buildcs_policy_missing.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_buildcs_policy_missing.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_buildcs_policy_missing_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_buildcs_policy_missing_report.json"));
 
     IFileManager::Get().Delete(*PolicyPath);
     IFileManager::Get().Delete(*ReportPath);
@@ -180,9 +180,9 @@ bool FValidateBuildCsMissingDependencyTest::RunTest(const FString& Parameters)
 bool FValidateBuildCsInvalidDependencyNameTest::RunTest(const FString& Parameters)
 {
     const FString PolicyPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_buildcs_policy_invalid_dep.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_buildcs_policy_invalid_dep.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_buildcs_policy_invalid_dep_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_buildcs_policy_invalid_dep_report.json"));
 
     const FString PolicyJson = TEXT(R"({
         "version": "1",
@@ -237,9 +237,9 @@ bool FValidateBuildCsInvalidDependencyNameTest::RunTest(const FString& Parameter
 bool FValidateBuildCsMultipleAddRangeBlocksTest::RunTest(const FString& Parameters)
 {
     const FString PolicyPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_buildcs_policy_multi_addrange.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_buildcs_policy_multi_addrange.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_buildcs_policy_multi_addrange_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_buildcs_policy_multi_addrange_report.json"));
 
     IFileManager::Get().Delete(*PolicyPath);
     IFileManager::Get().Delete(*ReportPath);

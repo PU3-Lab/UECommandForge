@@ -30,9 +30,9 @@ namespace
 bool FValidateAssetRulesCommandletTest::RunTest(const FString& Parameters)
 {
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_validate_asset_rules.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_validate_asset_rules.json"));
     const FString PolicyPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_asset_policy.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_asset_policy.json"));
 
     IFileManager::Get().Delete(*ReportPath);
     IFileManager::Get().Delete(*PolicyPath);

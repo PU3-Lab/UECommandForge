@@ -11,7 +11,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 bool FUECommandForgeJsonReportWriterTest::RunTest(const FString& Parameters)
 {
     const FString OutPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_writer.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_writer.json"));
     IFileManager::Get().Delete(*OutPath);
 
     FCommandForgeReport Report;
@@ -23,7 +23,7 @@ bool FUECommandForgeJsonReportWriterTest::RunTest(const FString& Parameters)
     Report.bApplied = false;
     Report.ChangedAssets.Add(TEXT("/Game/BP_Guard"));
     Report.ChangedFiles.Add(TEXT("Content/AI/GuardAI.json"));
-    Report.RollbackPlanPath = TEXT("Saved/CodexReports/rollback_tx-123.json");
+    Report.RollbackPlanPath = TEXT("Saved/UECommandForge/Reports/rollback_tx-123.json");
     Report.PostValidation.Add(TEXT("asset_registry"), TEXT("passed"));
 
     FCommandForgeValidationIssue Issue;
@@ -63,7 +63,7 @@ bool FUECommandForgeJsonReportWriterTest::RunTest(const FString& Parameters)
     TestTrue(TEXT("changed_files 포함"),
         Content.Contains(TEXT("\"changed_files\"")) && Content.Contains(TEXT("\"Content/AI/GuardAI.json\"")));
     TestTrue(TEXT("rollback_plan_path 포함"),
-        Content.Contains(TEXT("\"rollback_plan_path\": \"Saved/CodexReports/rollback_tx-123.json\"")));
+        Content.Contains(TEXT("\"rollback_plan_path\": \"Saved/UECommandForge/Reports/rollback_tx-123.json\"")));
     TestTrue(TEXT("post_validation 포함"),
         Content.Contains(TEXT("\"post_validation\"")) && Content.Contains(TEXT("\"asset_registry\": \"passed\"")));
     TestTrue(TEXT("issues 포함"),

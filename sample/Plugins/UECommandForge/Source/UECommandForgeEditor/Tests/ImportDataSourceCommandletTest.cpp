@@ -83,11 +83,11 @@ namespace
 bool FImportDataSourceDryRunTest::RunTest(const FString& Parameters)
 {
     const FString SchemaPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_import_data_source_schema_dry_run.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_import_data_source_schema_dry_run.json"));
     const FString SourcePath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_import_data_source_dry_run.csv"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_import_data_source_dry_run.csv"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_import_data_source_dry_run_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_import_data_source_dry_run_report.json"));
 
     DeleteImportDataSourceAsset();
     IFileManager::Get().Delete(*SchemaPath);
@@ -127,13 +127,13 @@ bool FImportDataSourceDryRunTest::RunTest(const FString& Parameters)
 bool FImportDataSourceApplyDataTableTest::RunTest(const FString& Parameters)
 {
     const FString SchemaPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_import_data_source_schema_apply.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_import_data_source_schema_apply.json"));
     const FString SourcePath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_import_data_source_apply.csv"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_import_data_source_apply.csv"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_import_data_source_apply_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_import_data_source_apply_report.json"));
     const FString RollbackPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_import_data_source_rollback.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_import_data_source_rollback.json"));
 
     DeleteImportDataSourceAsset();
     IFileManager::Get().Delete(*SchemaPath);

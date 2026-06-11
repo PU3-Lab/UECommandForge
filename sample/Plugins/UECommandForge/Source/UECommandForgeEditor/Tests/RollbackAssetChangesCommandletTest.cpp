@@ -48,9 +48,9 @@ namespace
 bool FRollbackAssetChangesNonEmptyFolderTest::RunTest(const FString& Parameters)
 {
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_rollback_asset_changes_non_empty_folder.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_rollback_asset_changes_non_empty_folder.json"));
     const FString RollbackPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_rollback_asset_changes_non_empty_folder_plan.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_rollback_asset_changes_non_empty_folder_plan.json"));
     const FString FolderPackagePath = TEXT("/Game/Tests/RollbackNonEmptyFolder");
     const FString FolderDiskPath = FPackageName::LongPackageNameToFilename(FolderPackagePath);
     const FString MarkerPath = FPaths::Combine(FolderDiskPath, TEXT("marker.txt"));
@@ -117,9 +117,9 @@ bool FRollbackAssetChangesNonEmptyFolderTest::RunTest(const FString& Parameters)
 bool FRollbackAssetChangesDeleteFolderTest::RunTest(const FString& Parameters)
 {
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_rollback_asset_changes_delete_folder.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_rollback_asset_changes_delete_folder.json"));
     const FString RollbackPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_rollback_asset_changes_delete_folder_plan.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_rollback_asset_changes_delete_folder_plan.json"));
     const FString FolderPackagePath = TEXT("/Game/Tests/RollbackCommandletFolder");
     const FString FolderDiskPath = FPackageName::LongPackageNameToFilename(FolderPackagePath);
 
@@ -165,9 +165,9 @@ bool FRollbackAssetChangesDeleteFolderTest::RunTest(const FString& Parameters)
 bool FRollbackAssetChangesDeleteCreatedDataTableTest::RunTest(const FString& Parameters)
 {
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_rollback_asset_changes_delete_datatable.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_rollback_asset_changes_delete_datatable.json"));
     const FString RollbackPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_rollback_asset_changes_delete_datatable_plan.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_rollback_asset_changes_delete_datatable_plan.json"));
     const FString DataTablePackagePath = TEXT("/Game/Tests/RollbackCommandlet/DT_CreatedByImport");
     const FString DataTableDiskPath = FPackageName::LongPackageNameToFilename(
         DataTablePackagePath, FPackageName::GetAssetPackageExtension());
@@ -214,9 +214,9 @@ bool FRollbackAssetChangesDeleteCreatedDataTableTest::RunTest(const FString& Par
 bool FRollbackAssetChangesCollisionTest::RunTest(const FString& Parameters)
 {
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_rollback_asset_changes_collision.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_rollback_asset_changes_collision.json"));
     const FString RollbackPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_rollback_asset_changes_collision_plan.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_rollback_asset_changes_collision_plan.json"));
 
     IFileManager::Get().Delete(*ReportPath);
     IFileManager::Get().Delete(*RollbackPath);

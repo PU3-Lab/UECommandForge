@@ -16,7 +16,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 bool FAssetSnapshotCommandletTest::RunTest(const FString& Parameters)
 {
     const FString OutPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_asset_snapshot.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_asset_snapshot.json"));
     IFileManager::Get().Delete(*OutPath);
 
     UAssetSnapshotCommandlet* Commandlet = NewObject<UAssetSnapshotCommandlet>();

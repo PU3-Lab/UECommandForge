@@ -28,7 +28,7 @@ namespace
     FString ReflectionTestRoot()
     {
         return FPaths::ConvertRelativePathToFull(
-            FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("CodexReports"), TEXT("ReflectionPolicy")));
+            FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("UECommandForge"), TEXT("Reports"), TEXT("ReflectionPolicy")));
     }
 
     bool LoadReflectionJsonObject(const FString& Path, TSharedPtr<FJsonObject>& OutObject)

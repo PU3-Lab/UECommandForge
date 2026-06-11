@@ -135,9 +135,9 @@ bool FSetBlueprintDefaultsCommandletTest::RunTest(const FString& Parameters)
         UECommandForge::FGenericBlueprintBuilder::Build(BlueprintSpec, Options, BuildErrors, BuildValidation));
 
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("set_blueprint_defaults_spec.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("set_blueprint_defaults_spec.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("set_blueprint_defaults_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("set_blueprint_defaults_report.json"));
     FScopedFileCleanup SpecFileCleanup(SpecPath);
     FScopedFileCleanup ReportFileCleanup(ReportPath);
     const FString Json = FString::Printf(TEXT(R"JSON(

@@ -45,11 +45,11 @@ namespace
 bool FValidateConfigRulesCommandletTest::RunTest(const FString& Parameters)
 {
     const FString SchemaPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_config_rules_schema.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_config_rules_schema.json"));
     const FString ConfigPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_config_rules.ini"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_config_rules.ini"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_validate_config_rules_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_validate_config_rules_report.json"));
 
     IFileManager::Get().Delete(*SchemaPath);
     IFileManager::Get().Delete(*ConfigPath);

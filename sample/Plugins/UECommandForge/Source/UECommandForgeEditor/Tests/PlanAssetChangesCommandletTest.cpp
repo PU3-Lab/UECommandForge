@@ -40,11 +40,11 @@ namespace
 bool FPlanAssetChangesCommandletTest::RunTest(const FString& Parameters)
 {
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_plan_asset_changes.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_plan_asset_changes.json"));
     const FString PlanPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_asset_change_plan.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_asset_change_plan.json"));
     const FString RollbackPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_asset_change_rollback.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_asset_change_rollback.json"));
 
     IFileManager::Get().Delete(*ReportPath);
     IFileManager::Get().Delete(*PlanPath);
@@ -105,9 +105,9 @@ bool FPlanAssetChangesCommandletTest::RunTest(const FString& Parameters)
 bool FPlanAssetChangesDeleteGuardTest::RunTest(const FString& Parameters)
 {
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_plan_asset_changes_delete_guard.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_plan_asset_changes_delete_guard.json"));
     const FString PlanPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_asset_change_delete_guard_plan.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_asset_change_delete_guard_plan.json"));
 
     IFileManager::Get().Delete(*ReportPath);
     IFileManager::Get().Delete(*PlanPath);
@@ -159,9 +159,9 @@ bool FPlanAssetChangesDeleteGuardTest::RunTest(const FString& Parameters)
 bool FPlanAssetChangesRollbackPathGuardTest::RunTest(const FString& Parameters)
 {
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_plan_asset_changes_rollback_path_guard.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_plan_asset_changes_rollback_path_guard.json"));
     const FString PlanPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_asset_change_rollback_path_guard_plan.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_asset_change_rollback_path_guard_plan.json"));
     const FString UnsafeRollbackPath = FPaths::Combine(FPaths::ProjectDir(),
         TEXT("unsafe_rollback.json"));
 
