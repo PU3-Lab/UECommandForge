@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.9.0 - 2026-06-12
+
+### Added
+
+- Multi-agent support with profile-based installations (`--codex`, `--claude`, `--antigravity`).
+- Support for installing to alternative LLM agent home paths (using `AGENT_HOME` environment variable).
+
+### Changed
+
+- Renamed codex references to agent references in tools packaging.
+- Updated release, install, and uninstall scripts to support multiple agents concurrently.
+
 ## 0.8.0 - 2026-05-28
 
 ### Added

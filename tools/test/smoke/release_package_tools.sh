@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 # shellcheck disable=SC1091
 source "${REPO_ROOT}/tools/release/common.sh"
 WORK_DIR="${REPO_ROOT}/sample/Saved/UECommandForge/Reports/ReleasePackageTools"
-VERSION="0.8.0-test"
+VERSION="0.9.0-test"
 SOURCE_REPARSE_LINK="${REPO_ROOT}/tools/test/smoke/.release_package_reparse_fixture"
 OUTPUT_REPARSE_LINK=""
 PACKAGE_REPARSE_LINK=""
