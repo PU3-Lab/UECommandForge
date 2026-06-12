@@ -15,9 +15,9 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 bool FCreateBlueprintBatchSuccessTest::RunTest(const FString& Parameters)
 {
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_bp_batch_success_spec.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_bp_batch_success_spec.json"));
     const FString OutPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_bp_batch_success_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_bp_batch_success_report.json"));
 
     IFileManager& FileManager = IFileManager::Get();
     FileManager.Delete(*SpecPath);
@@ -86,9 +86,9 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 bool FCreateBlueprintBatchRollbackTest::RunTest(const FString& Parameters)
 {
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_bp_batch_rollback_spec.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_bp_batch_rollback_spec.json"));
     const FString OutPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_bp_batch_rollback_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_bp_batch_rollback_report.json"));
 
     IFileManager& FileManager = IFileManager::Get();
     FileManager.Delete(*SpecPath);

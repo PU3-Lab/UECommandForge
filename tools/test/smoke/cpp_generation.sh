@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 SAMPLE_DIR="${REPO_ROOT}/sample"
 SPEC_PATH="${REPO_ROOT}/specs/examples/cpp_health_component.json"
-WORK_DIR="${SAMPLE_DIR}/Saved/CodexReports/CppGenerationSmoke"
+WORK_DIR="${SAMPLE_DIR}/Saved/UECommandForge/Reports/CppGenerationSmoke"
 HEADER_PATH="${SAMPLE_DIR}/Plugins/UECommandForge/Source/UECommandForgeRuntime/Public/Generated/Components/UCFHealthComponent.h"
 SOURCE_PATH="${SAMPLE_DIR}/Plugins/UECommandForge/Source/UECommandForgeRuntime/Private/Generated/Components/UCFHealthComponent.cpp"
 BUILD_LOG="${WORK_DIR}/build_plugin.log"
@@ -13,7 +13,7 @@ BUILD_LOG="${WORK_DIR}/build_plugin.log"
 export UE_COMMANDLET_TIMEOUT="${UE_COMMANDLET_TIMEOUT:-90}"
 
 mkdir -p "${WORK_DIR}"
-rm -f "${SAMPLE_DIR}/Saved/CodexReports/GenerateCppClass_"*.json
+rm -f "${SAMPLE_DIR}/Saved/UECommandForge/Reports/GenerateCppClass_"*.json
 rm -f "${HEADER_PATH}" "${SOURCE_PATH}"
 
 cleanup_generated_class() {
@@ -26,7 +26,7 @@ cleanup_generated_class() {
 trap cleanup_generated_class EXIT
 
 "${REPO_ROOT}/tools/ue/generate_cpp_class.sh" "${SPEC_PATH}" >/dev/null
-REPORT="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/GenerateCppClass_"*.json | head -1)"
+REPORT="$(ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/GenerateCppClass_"*.json | head -1)"
 
 test -f "${REPORT}"
 jq -e '.ok == true' "${REPORT}" >/dev/null
@@ -38,10 +38,10 @@ jq -e '.validation.header_preview | contains("UCLASS(BlueprintType")' "${REPORT}
 jq -e '.validation.header_sha1 | length == 40' "${REPORT}" >/dev/null
 jq -e '(.changed_files | length) == 0' "${REPORT}" >/dev/null
 
-rm -f "${SAMPLE_DIR}/Saved/CodexReports/GenerateCppClass_"*.json
+rm -f "${SAMPLE_DIR}/Saved/UECommandForge/Reports/GenerateCppClass_"*.json
 
 "${REPO_ROOT}/tools/ue/generate_cpp_class.sh" "${SPEC_PATH}" -Apply >/dev/null
-APPLY_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/GenerateCppClass_"*.json | head -1)"
+APPLY_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/GenerateCppClass_"*.json | head -1)"
 
 test -f "${APPLY_REPORT}"
 jq -e '.ok == true' "${APPLY_REPORT}" >/dev/null

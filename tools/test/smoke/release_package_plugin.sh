@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 # shellcheck disable=SC1091
 source "${REPO_ROOT}/tools/release/common.sh"
-WORK_DIR="${REPO_ROOT}/sample/Saved/CodexReports/ReleasePackagePlugin"
+WORK_DIR="${REPO_ROOT}/sample/Saved/UECommandForge/Reports/ReleasePackagePlugin"
 VERSION="$(jq -r '.VersionName' "${REPO_ROOT}/sample/Plugins/UECommandForge/UECommandForge.uplugin")"
 PLATFORM="Mac"
 RUNTIME_BINARY="Binaries/Mac/UnrealEditor-UECommandForgeRuntime.dylib"

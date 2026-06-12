@@ -7,7 +7,7 @@ SAMPLE_DIR="${REPO_ROOT}/sample"
 
 "${REPO_ROOT}/tools/ue/plan_asset_changes.sh" \
   "${REPO_ROOT}/specs/policies/asset_changes.plan.json"
-REPORT="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/PlanAssetChanges_"*.json | head -1)"
+REPORT="$(ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/PlanAssetChanges_"*.json | head -1)"
 ROLLBACK="$(jq -r '.rollback_plan_path' "${REPORT}")"
 
 test -f "${REPORT}"

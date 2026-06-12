@@ -18,7 +18,7 @@ Usage:
     .\install-uecommandforge.ps1 --project "C:\Path\To\MyProject\MyProject.uproject"
 
   Git Bash, macOS, or Linux:
-    ./install-uecommandforge.sh --project "/path/to/MyProject.uproject"
+    ./install-uecommandforge.sh --project "/path/to/MyProject.uproject" --codex
 
 Required:
   --project <path.uproject|project-dir>
@@ -29,8 +29,10 @@ Optional:
       Use existing release packages. Provide both options together.
       If omitted, the installer creates local plugin/tools packages first.
 
-  --codex-home <path>
-      Install Codex-side tools under this Codex home. Defaults to ~/.codex.
+  --codex | --claude | --antigravity
+      설치 대상 AI 코딩 에이전트(전역 폴더). 하나 이상 지정한다.
+      --codex -> ~/.codex/AGENTS.md, --claude -> ~/.claude/CLAUDE.md,
+      --antigravity -> ~/.gemini/GEMINI.md
 
 Notes:
   Set UECF_INSTALL_SKIP_PLUGIN_BUILD=1 to reuse sample/Saved/PluginBuild.
@@ -75,10 +77,14 @@ while [ $# -gt 0 ]; do
       INSTALL_ARGS+=("$1" "$2")
       shift 2
       ;;
-    --codex-home|--backup|--run-commandlet-check)
+    --backup|--run-commandlet-check)
       require_value "$1" "${2:-}"
       INSTALL_ARGS+=("$1" "$2")
       shift 2
+      ;;
+    --codex|--claude|--antigravity)
+      INSTALL_ARGS+=("$1")
+      shift
       ;;
     -h|--help)
       usage

@@ -373,13 +373,13 @@ git commit -m "feat: PlaceActorCommandlet + Shell Wrapper"
 # 3. Actor 배치
 ./tools/ue/place_actor.sh specs/examples/guard_ai.json
 jq -e '.ok and .validation.actor_placed == "ok"' \
-  "$(ls -t Saved/CodexReports/PlaceActor_*.json | head -1)"
+  "$(ls -t Saved/UECommandForge/Reports/PlaceActor_*.json | head -1)"
 ```
 
 Phase 6 완료 조건: 지정 맵에 BP_Guard Actor가 배치되고, `actor_placed: "ok"`가 Result JSON에 기록됨.
 
 ## Phase 6 검증 결과
 
-- `sample/Saved/CodexReports/PlaceActor_20260527T122059Z.json` 기준 `ok: true`
+- `sample/Saved/UECommandForge/Reports/PlaceActor_20260527T122059Z.json` 기준 `ok: true`
 - 같은 리포트 기준 `validation.actor_placed: ok`
 - `MapActorPlacerTest`는 배치 성공, 검증 성공, 반복 실행 성공, 반복 실행 후 actor 1개 유지 조건을 포함한다.

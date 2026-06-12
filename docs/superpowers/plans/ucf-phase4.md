@@ -342,7 +342,7 @@ git commit -m "feat: CreateStateTreeCommandlet + Shell Wrapper"
 # 3. StateTree 생성
 ./tools/test/smoke/create_statetree.sh specs/examples/guard_ai.json
 jq -e '.ok == true and .validation.compile_status == "ok" and .validation.asset_on_disk == "true"' \
-   "$(ls -t sample/Saved/CodexReports/CreateStateTree_*.json | head -1)"
+   "$(ls -t sample/Saved/UECommandForge/Reports/CreateStateTree_*.json | head -1)"
 ```
 
 Phase 4 완료 조건: `ST_Guard.uasset`가 `Content/` 에 생성되고, `ok: true`가 Result JSON에 기록됨.

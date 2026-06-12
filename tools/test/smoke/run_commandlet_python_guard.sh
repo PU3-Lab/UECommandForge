@@ -4,7 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 PROJECT_FILE="${REPO_ROOT}/sample/UECommandForgeSample.uproject"
-REPORT_DIR="${REPO_ROOT}/sample/Saved/CodexReports/RunCommandletPythonGuard"
+REPORT_DIR="${REPO_ROOT}/sample/Saved/UECommandForge/Reports/RunCommandletPythonGuard"
 
 rm -rf "${REPORT_DIR}"
 mkdir -p "${REPORT_DIR}"

@@ -280,9 +280,9 @@ public class CodexBuildCsTestModule : ModuleRules
 bool FGenerateCppClassDryRunTest::RunTest(const FString& Parameters)
 {
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_dry_run.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_dry_run.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_dry_run_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_dry_run_report.json"));
     const FString ClassName = TEXT("CodexDryRunHealthComponent");
 
     IFileManager::Get().Delete(*SpecPath);
@@ -315,9 +315,9 @@ bool FGenerateCppClassDryRunTest::RunTest(const FString& Parameters)
 bool FGenerateCppClassApplyTest::RunTest(const FString& Parameters)
 {
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_apply.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_apply.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_apply_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_apply_report.json"));
     const FString ClassName = TEXT("CodexApplyHealthComponent");
     const FString HeaderPath = GeneratedCppHeaderPath(ClassName);
     const FString SourcePath = GeneratedCppSourcePath(ClassName);
@@ -358,9 +358,9 @@ bool FGenerateCppClassApplyTest::RunTest(const FString& Parameters)
 bool FGenerateCppClassRejectsOutsideModuleTest::RunTest(const FString& Parameters)
 {
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_invalid.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_invalid.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_invalid_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_invalid_report.json"));
 
     IFileManager::Get().Delete(*SpecPath);
     IFileManager::Get().Delete(*ReportPath);
@@ -390,9 +390,9 @@ bool FGenerateCppClassRejectsOutsideModuleTest::RunTest(const FString& Parameter
 bool FGenerateCppClassRejectsInvalidTokensTest::RunTest(const FString& Parameters)
 {
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_invalid_tokens.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_invalid_tokens.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_invalid_tokens_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_invalid_tokens_report.json"));
 
     IFileManager::Get().Delete(*SpecPath);
     IFileManager::Get().Delete(*ReportPath);
@@ -438,9 +438,9 @@ bool FGenerateCppClassRejectsInvalidTokensTest::RunTest(const FString& Parameter
 bool FGenerateCppClassApplyBuildCsTest::RunTest(const FString& Parameters)
 {
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_apply_buildcs.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_apply_buildcs.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_apply_buildcs_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_apply_buildcs_report.json"));
     const FString ClassName = TEXT("CodexBuildCsHealthComponent");
     const FString BuildCsPath = FPaths::Combine(BuildCsTestModuleRoot(), TEXT("CodexBuildCsTestModule.Build.cs"));
 
@@ -478,9 +478,9 @@ bool FGenerateCppClassApplyBuildCsTest::RunTest(const FString& Parameters)
 bool FGenerateCppClassRejectsInvalidBuildDependencyArrayTest::RunTest(const FString& Parameters)
 {
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_invalid_build_dep_array.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_invalid_build_dep_array.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_invalid_build_dep_array_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_invalid_build_dep_array_report.json"));
     const FString ClassName = TEXT("CodexInvalidBuildDependencyComponent");
 
     IFileManager::Get().Delete(*SpecPath);
@@ -510,9 +510,9 @@ bool FGenerateCppClassMissingBuildCsDoesNotWriteClassFilesTest::RunTest(const FS
 {
     const FString ModuleName = TEXT("CodexMissingBuildCsTestModule");
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_missing_buildcs.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_missing_buildcs.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_cpp_class_missing_buildcs_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_missing_buildcs_report.json"));
     const FString ClassName = TEXT("CodexMissingBuildCsHealthComponent");
     const FString ModuleRoot = PluginModuleRoot(ModuleName);
     const FString HeaderPath = GeneratedCppHeaderPathForModule(ModuleName, ClassName);

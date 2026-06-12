@@ -45,11 +45,11 @@ namespace
 bool FValidateDataSourceCommandletTest::RunTest(const FString& Parameters)
 {
     const FString SchemaPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_data_schema.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_data_schema.json"));
     const FString SourcePath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_data_source.csv"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_data_source.csv"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_validate_data_source_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_validate_data_source_report.json"));
 
     IFileManager::Get().Delete(*SchemaPath);
     IFileManager::Get().Delete(*SourcePath);

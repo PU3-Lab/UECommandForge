@@ -36,7 +36,7 @@ echo ""
 export UE_COMMANDLET_TIMEOUT="${UE_COMMANDLET_TIMEOUT:-120}"
 
 "${UE_TOOLS}/create_ai_flow.sh" "${SPEC_FILE}" -nullrhi "$@"
-REPORT="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/CreateAIFlow_"*.json | head -1)"
+REPORT="$(ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/CreateAIFlow_"*.json | head -1)"
 
 OK=$(jq -r '.ok' "${REPORT}")
 ROLLBACK=$(jq -r '.rollback_available' "${REPORT}")

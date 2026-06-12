@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 SAMPLE_DIR="${REPO_ROOT}/sample"
 UE_TOOLS="${REPO_ROOT}/tools/ue"
-FIXTURE_DIR="${SAMPLE_DIR}/Saved/CodexReports/data_validation_smoke"
+FIXTURE_DIR="${SAMPLE_DIR}/Saved/UECommandForge/Reports/data_validation_smoke"
 
 export UE_COMMANDLET_TIMEOUT="${UE_COMMANDLET_TIMEOUT:-90}"
 
@@ -36,7 +36,7 @@ run_validation() {
   local status=$?
   set -e
   local report
-  report="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/ValidateDataSource_"*.json | head -1)"
+  report="$(ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/ValidateDataSource_"*.json | head -1)"
   printf '%s\n%s\n' "${status}" "${report}"
 }
 
@@ -116,7 +116,7 @@ MaxCount=5
 INI
 
 "${UE_TOOLS}/validate_config_rules.sh" "${FIXTURE_DIR}/config_rules.json" "${FIXTURE_DIR}/config.ini" >/dev/null
-CONFIG_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/ValidateConfigRules_"*.json | head -1)"
+CONFIG_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/ValidateConfigRules_"*.json | head -1)"
 jq -e '.ok == true' "${CONFIG_REPORT}" >/dev/null
 
 cat >"${FIXTURE_DIR}/config_invalid.ini" <<'INI'
@@ -129,7 +129,7 @@ set +e
 "${UE_TOOLS}/validate_config_rules.sh" "${FIXTURE_DIR}/config_rules.json" "${FIXTURE_DIR}/config_invalid.ini" >/dev/null
 CONFIG_STATUS=$?
 set -e
-CONFIG_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/ValidateConfigRules_"*.json | head -1)"
+CONFIG_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/ValidateConfigRules_"*.json | head -1)"
 test "${CONFIG_STATUS}" != "0"
 require_issue "${CONFIG_REPORT}" CONFIG_RANGE_VIOLATION
 

@@ -30,7 +30,7 @@ if "!PROJECT_DIR:~-1!"=="\" set "PROJECT_DIR=!PROJECT_DIR:~0,-1!"
 if defined UECF_REPORT_DIR (
   set "REPORT_DIR=%UECF_REPORT_DIR%"
 ) else (
-  set "REPORT_DIR=!PROJECT_DIR!\Saved\CodexReports"
+  set "REPORT_DIR=!PROJECT_DIR!\Saved\UECommandForge\Reports"
 )
 if not exist "%REPORT_DIR%" mkdir "%REPORT_DIR%"
 

@@ -69,10 +69,10 @@ C:\Users\Sam\.codex\UECommandForge\tools\ue\hello.bat
 
 실제 결과: PASS
 
-- report: `C:\Workspaces\projects\factory-space\frontend\Saved\CodexReports\Hello_3267517207.json`
+- report: `C:\Workspaces\projects\factory-space\frontend\Saved\UECommandForge/Reports\Hello_3267517207.json`
 - `.ok == true`
 - `.validation.engine_boot == "ok"`
-- 최종 wrapper 동기화 후 재확인 report: `C:\Workspaces\projects\factory-space\frontend\Saved\CodexReports\Hello_257384142.json`
+- 최종 wrapper 동기화 후 재확인 report: `C:\Workspaces\projects\factory-space\frontend\Saved\UECommandForge/Reports\Hello_257384142.json`
 
 ### 2. 설치본 기준 read-only commandlet 확인
 
@@ -92,7 +92,7 @@ C:\Users\Sam\.codex\UECommandForge\tools\ue\snapshot_assets.bat -RootPaths=/Game
 
 실제 결과: PASS
 
-- report: `C:\Workspaces\projects\factory-space\frontend\Saved\CodexReports\AssetSnapshot_11708.json`
+- report: `C:\Workspaces\projects\factory-space\frontend\Saved\UECommandForge/Reports\AssetSnapshot_11708.json`
 - `.ok == true`
 - `.validation.asset_count == "491"`
 
@@ -115,14 +115,14 @@ C:\Users\Sam\.codex\UECommandForge\tools\ue\validate_asset_rules.bat C:\Users\Sa
 
 - 최초 실행은 wrapper 인자 전달 문제로 `MISSING_ARG`가 발생했다.
 - `run_commandlet.bat` 수정 후 `-Policy=...`, `-RootPaths=/Game`이 정상 전달됐다.
-- report: `C:\Workspaces\projects\factory-space\frontend\Saved\CodexReports\ValidateAssetRules_118014782.json`
+- report: `C:\Workspaces\projects\factory-space\frontend\Saved\UECommandForge/Reports\ValidateAssetRules_118014782.json`
 - `.errors == []`
 - `.validation.asset_count == "491"`
 - `.validation.issue_count == "18"`
 - exit code는 정책 위반 때문에 실패로 반환됐다.
-- 최종 수정본 설치 경로 반영 후 재확인 report: `C:\Workspaces\projects\factory-space\frontend\Saved\CodexReports\ValidateAssetRules_232794288.json`
+- 최종 수정본 설치 경로 반영 후 재확인 report: `C:\Workspaces\projects\factory-space\frontend\Saved\UECommandForge/Reports\ValidateAssetRules_232794288.json`
 - 재확인 결과도 `.errors == []`, `.validation.root_paths == "/Game"`, `.validation.issue_count == "18"`이다.
-- 사용자-facing wrapper delayed expansion 보강 후 재확인 report: `C:\Workspaces\projects\factory-space\frontend\Saved\CodexReports\ValidateAssetRules_2580322502.json`
+- 사용자-facing wrapper delayed expansion 보강 후 재확인 report: `C:\Workspaces\projects\factory-space\frontend\Saved\UECommandForge/Reports\ValidateAssetRules_2580322502.json`
 - 재확인 결과도 `.errors == []`, `.validation.root_paths == "/Game"`, `.validation.issue_count == "18"`이다.
 
 정책 위반 요약:
@@ -154,14 +154,14 @@ C:\Users\Sam\.codex\UECommandForge\tools\ue\create_project_folders.bat C:\Users\
 
 실제 결과: PASS
 
-- report: `C:\Workspaces\projects\factory-space\frontend\Saved\CodexReports\CreateProjectFolders_125532619.json`
+- report: `C:\Workspaces\projects\factory-space\frontend\Saved\UECommandForge/Reports\CreateProjectFolders_125532619.json`
 - `.ok == true`
 - `.dry_run == true`
 - `.validation.folder_count == "14"`
 - `.validation.expanded_folder_count == "19"`
 - `.validation.would_create_count == "18"`
 - `.validation.created_folder_count == "0"`
-- 사용자-facing wrapper delayed expansion 보강 후 재확인 report: `C:\Workspaces\projects\factory-space\frontend\Saved\CodexReports\CreateProjectFolders_2580322502.json`
+- 사용자-facing wrapper delayed expansion 보강 후 재확인 report: `C:\Workspaces\projects\factory-space\frontend\Saved\UECommandForge/Reports\CreateProjectFolders_2580322502.json`
 - 재확인 결과도 `.ok == true`, `.dry_run == true`, `.validation.created_folder_count == "0"`이다.
 
 ## 자동 테스트 결과

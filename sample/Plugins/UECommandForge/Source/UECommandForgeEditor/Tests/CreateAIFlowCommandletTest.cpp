@@ -14,7 +14,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 bool FCreateAIFlowCommandletTest::RunTest(const FString& Parameters)
 {
     const FString OutPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_create_ai_flow.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_create_ai_flow.json"));
     IFileManager::Get().Delete(*OutPath);
 
     FAIFlowSpec Spec;
@@ -56,7 +56,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 bool FCreateAIFlowCommandletWriteFailureTest::RunTest(const FString& Parameters)
 {
     const FString BlockingPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("create_ai_flow_report_parent_file"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("create_ai_flow_report_parent_file"));
     IFileManager::Get().DeleteDirectory(*BlockingPath, false, true);
     IFileManager::Get().Delete(*BlockingPath);
     TestTrue(TEXT("blocking file 쓰기"), FFileHelper::SaveStringToFile(TEXT("block"), *BlockingPath));
@@ -95,9 +95,9 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 bool FCreateAIFlowCommandletMainValidationTest::RunTest(const FString& Parameters)
 {
     const FString SpecPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("invalid_create_ai_flow_spec.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("invalid_create_ai_flow_spec.json"));
     const FString OutPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("invalid_create_ai_flow_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("invalid_create_ai_flow_report.json"));
     IFileManager::Get().Delete(*SpecPath);
     IFileManager::Get().Delete(*OutPath);
     TestTrue(TEXT("invalid spec 쓰기"), FFileHelper::SaveStringToFile(TEXT("{}"), *SpecPath));

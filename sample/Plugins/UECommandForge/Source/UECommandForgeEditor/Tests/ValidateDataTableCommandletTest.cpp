@@ -99,9 +99,9 @@ namespace
 bool FValidateDataTableCommandletTest::RunTest(const FString& Parameters)
 {
     const FString SchemaPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_validate_datatable_schema.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_validate_datatable_schema.json"));
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_validate_datatable_report.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_validate_datatable_report.json"));
 
     IFileManager::Get().Delete(*SchemaPath);
     IFileManager::Get().Delete(*ReportPath);

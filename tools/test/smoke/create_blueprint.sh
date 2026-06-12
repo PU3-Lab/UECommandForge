@@ -31,7 +31,7 @@ echo ""
 # --- Character Blueprint ---
 echo "[1] CreateCharacterBlueprint"
 "${UE_TOOLS}/create_character_bp.sh" "${SPEC_FILE}"
-CHAR_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/CreateCharacterBlueprint_"*.json | head -1)"
+CHAR_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/CreateCharacterBlueprint_"*.json | head -1)"
 
 CHAR_OK=$(jq -r '.ok' "${CHAR_REPORT}")
 CHAR_COMPILE=$(jq -r '.validation.compile_status // "missing"' "${CHAR_REPORT}")
@@ -51,7 +51,7 @@ echo ""
 # --- AIController Blueprint ---
 echo "[2] CreateAIControllerBlueprint"
 "${UE_TOOLS}/create_ai_controller.sh" "${SPEC_FILE}"
-AI_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/CodexReports/CreateAIControllerBlueprint_"*.json | head -1)"
+AI_REPORT="$(ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/CreateAIControllerBlueprint_"*.json | head -1)"
 
 AI_OK=$(jq -r '.ok' "${AI_REPORT}")
 AI_COMPILE=$(jq -r '.validation.compile_status // "missing"' "${AI_REPORT}")

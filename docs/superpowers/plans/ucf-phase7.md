@@ -127,7 +127,7 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(
 bool FCreateAIFlowCommandletTest::RunTest(const FString& Parameters)
 {
     const FString OutPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_create_ai_flow.json"));
+        TEXT("UECommandForge/Reports"), TEXT("test_create_ai_flow.json"));
 
     // 테스트용 Spec 직접 구성 (specs/examples/guard_ai.json 내용)
     FAIFlowSpec Spec;
@@ -562,7 +562,7 @@ git commit -m "docs: README 커맨드 표면 업데이트 (Phase 7 전체 반영
 
 # 4. 마스터 플랜 인수 조건 (두 조건 모두 true여야 함)
 jq -e '.ok and .validation.actor_placed and .steps | length == 5' \
-  "$(ls -t Saved/CodexReports/CreateAIFlow_*.json | head -1)"
+  "$(ls -t Saved/UECommandForge/Reports/CreateAIFlow_*.json | head -1)"
 ```
 
 Phase 7 완료 조건 = 마스터 플랜 완료 조건:
@@ -575,7 +575,7 @@ Phase 7 완료 조건 = 마스터 플랜 완료 조건:
 - `./tools/ue/build_plugin.sh` 통과
 - `./tools/test/automation/run.sh` PASS 15 / FAIL 0 / SKIP 0
 - `./tools/ue/create_ai_flow.sh specs/examples/guard_ai.json` 통과
-- `sample/Saved/CodexReports/CreateAIFlow_20260528T003339Z.json` 인수 조건 통과
+- `sample/Saved/UECommandForge/Reports/CreateAIFlow_20260528T003339Z.json` 인수 조건 통과
   - `ok: true`
   - `rollback_available: false`
   - `steps` 길이 5

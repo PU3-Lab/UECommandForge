@@ -11,7 +11,7 @@ unreal-harness/
   docs/                 계획서, 메모리, 설계 문서
 ```
 
-## Codex 명령 표면 (Phase 8)
+## AI 에이전트 명령 표면 (Phase 8)
 
 | macOS/Linux/Git Bash | Windows Command Prompt | 목적 |
 |---|---|---|
@@ -68,14 +68,14 @@ LLM은 이 표에 있는 명령만 호출해야 한다.
 
 ## 설치 및 릴리즈 패키지
 
-릴리즈 설치는 UE 플러그인과 Codex 도구를 분리한다.
+릴리즈 설치는 UE 플러그인과 에이전트 도구를 분리한다.
 
 | 대상 | 설치 위치 |
 |---|---|
 | UE plugin | `<Project>/Plugins/UECommandForge` |
-| Codex tools/specs | `~/.codex/UECommandForge` |
+| 에이전트 도구/스펙 | `<AGENT_HOME>/UECommandForge` (예: `~/.codex/UECommandForge`, `~/.claude/UECommandForge`, `~/.gemini/UECommandForge`) |
 | 프로젝트 연결 manifest | `<Project>/UECommandForge/uecommandforge-project.json` |
-| Codex 설치 manifest | `~/.codex/UECommandForge/uecommandforge-installed.json` |
+| 에이전트 설치 manifest | `<AGENT_HOME>/UECommandForge/uecommandforge-installed.json` |
 
 로컬 릴리즈 패키지 생성:
 
@@ -93,10 +93,20 @@ tools/release/verify_release_package.sh \
   sample/Saved/Release/Tools/checksums.txt
 ```
 
-프로젝트 설치:
+프로젝트 설치 (에이전트 플래그를 필수적으로 하나 이상 지정해야 합니다):
 
 ```bash
-./install-uecommandforge.sh --project /path/to/MyProject.uproject
+./install-uecommandforge.sh --project /path/to/MyProject.uproject --codex
+```
+
+- `--codex`: `~/.codex` 에 설치 (AGENTS.md 연동)
+- `--claude`: `~/.claude` 에 설치 (CLAUDE.md 연동)
+- `--antigravity`: `~/.gemini` 에 설치 (GEMINI.md 연동)
+
+여러 개의 에이전트를 공통 설치하는 예시:
+
+```bash
+./install-uecommandforge.sh --project /path/to/MyProject.uproject --codex --claude
 ```
 
 패키지 ZIP 경로를 생략하면 `sample/Saved/Release/Installer` 아래에 로컬 plugin/tools 패키지를 만든 뒤 설치한다. 기존 `sample/Saved/PluginBuild` 산출물을 재사용하려면 `UECF_INSTALL_SKIP_PLUGIN_BUILD=1`을 설정한다.
@@ -107,7 +117,8 @@ tools/release/verify_release_package.sh \
 ./install-uecommandforge.sh \
   --project /path/to/MyProject.uproject \
   --plugin-package sample/Saved/Release/Plugin/UECommandForge-0.8.0-UE5.7-Mac.zip \
-  --tools-package sample/Saved/Release/Tools/UECommandForge-0.8.0-Tools.zip
+  --tools-package sample/Saved/Release/Tools/UECommandForge-0.8.0-Tools.zip \
+  --codex
 ```
 
 업데이트는 backup을 강제한다.
@@ -116,21 +127,23 @@ tools/release/verify_release_package.sh \
 tools/release/update_install.sh \
   --project /path/to/MyProject.uproject \
   --plugin-package sample/Saved/Release/Plugin/UECommandForge-0.8.0-UE5.7-Mac.zip \
-  --tools-package sample/Saved/Release/Tools/UECommandForge-0.8.0-Tools.zip
+  --tools-package sample/Saved/Release/Tools/UECommandForge-0.8.0-Tools.zip \
+  --codex
 ```
 
 삭제:
 
 ```bash
-tools/release/uninstall.sh --project /path/to/MyProject.uproject
+tools/release/uninstall.sh --project /path/to/MyProject.uproject --codex
 ```
 
-기본 삭제는 프로젝트 플러그인과 project link만 제거하고 Codex tools/specs와 설치 manifest는 보존한다. Codex tools/specs까지 제거하려면 명시적으로 지정한다.
+기본 삭제는 프로젝트 플러그인과 project link만 제거하고 에이전트 도구/스펙 및 설치 manifest는 보존한다. 에이전트의 도구/스펙까지 함께 제거하려면 아래와 같이 제거 옵션을 지정한다.
 
 ```bash
 tools/release/uninstall.sh \
   --project /path/to/MyProject.uproject \
-  --remove-codex-tools true \
+  --codex \
+  --remove-agent-tools true \
   --remove-specs true
 ```
 
@@ -239,7 +252,7 @@ GitHub Actions의 `C++ Static Analysis` workflow는 push/PR에서 `cppcheck`와 
 
 ## Result JSON
 
-모든 commandlet은 `sample/Saved/CodexReports/<Commandlet>_<UTC>.json`에 기록한다. `PrototypeAutomation`은 child commandlet report를 함께 남기고, 통합 JSON과 같은 basename의 Markdown 요약 리포트도 생성한다. 종료 코드:
+모든 commandlet은 `sample/Saved/UECommandForge/Reports/<Commandlet>_<UTC>.json`에 기록한다. `PrototypeAutomation`은 child commandlet report를 함께 남기고, 통합 JSON과 같은 basename의 Markdown 요약 리포트도 생성한다. 종료 코드:
 
 | 코드 | 의미 |
 |---|---|

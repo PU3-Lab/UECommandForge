@@ -10,7 +10,7 @@ export UE_COMMANDLET_TIMEOUT="${UE_COMMANDLET_TIMEOUT:-90}"
 
 latest_report() {
   local commandlet="$1"
-  ls -t "${SAMPLE_DIR}/Saved/CodexReports/${commandlet}_"*.json | head -1
+  ls -t "${SAMPLE_DIR}/Saved/UECommandForge/Reports/${commandlet}_"*.json | head -1
 }
 
 folder_disk_path() {
@@ -20,11 +20,11 @@ folder_disk_path() {
 }
 
 cleanup_report_artifacts() {
-  rm -f "${SAMPLE_DIR}/Saved/CodexReports/PlanAssetChanges_"*.json
-  rm -f "${SAMPLE_DIR}/Saved/CodexReports/ApplyAssetChanges_"*.json
-  rm -f "${SAMPLE_DIR}/Saved/CodexReports/RollbackAssetChanges_"*.json
-  rm -f "${SAMPLE_DIR}/Saved/CodexReports/rollback_tx-sample-asset-change-plan.json"
-  rm -f "${SAMPLE_DIR}/Saved/CodexReports/snapshot_tx-sample-asset-change-plan.json"
+  rm -f "${SAMPLE_DIR}/Saved/UECommandForge/Reports/PlanAssetChanges_"*.json
+  rm -f "${SAMPLE_DIR}/Saved/UECommandForge/Reports/ApplyAssetChanges_"*.json
+  rm -f "${SAMPLE_DIR}/Saved/UECommandForge/Reports/RollbackAssetChanges_"*.json
+  rm -f "${SAMPLE_DIR}/Saved/UECommandForge/Reports/rollback_tx-sample-asset-change-plan.json"
+  rm -f "${SAMPLE_DIR}/Saved/UECommandForge/Reports/snapshot_tx-sample-asset-change-plan.json"
 }
 
 cleanup_report_artifacts

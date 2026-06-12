@@ -31,8 +31,8 @@ call "%UE_TOOLS%\create_ai_flow.bat" "%SPEC_FILE%" -nullrhi %EXTRA_ARGS%
 if errorlevel 1 exit /b %ERRORLEVEL%
 
 set "REPORT="
-for /f "delims=" %%F in ('dir /b /o-d "%SAMPLE_DIR%\Saved\CodexReports\CreateAIFlow_*.json" 2^>nul') do (
-  if not defined REPORT set "REPORT=%SAMPLE_DIR%\Saved\CodexReports\%%F"
+for /f "delims=" %%F in ('dir /b /o-d "%SAMPLE_DIR%\Saved\UECommandForge\Reports\CreateAIFlow_*.json" 2^>nul') do (
+  if not defined REPORT set "REPORT=%SAMPLE_DIR%\Saved\UECommandForge\Reports\%%F"
 )
 
 if not defined REPORT (

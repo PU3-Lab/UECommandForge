@@ -35,7 +35,7 @@ namespace
 bool FPrototypeAutomationCommandletTest::RunTest(const FString& Parameters)
 {
     const FString FixtureDir = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("PrototypeAutomationTest"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("PrototypeAutomationTest"));
     const FString AssetPolicyPath = FPaths::Combine(FixtureDir, TEXT("asset_policy.json"));
     const FString BuildCsPolicyPath = FPaths::Combine(FixtureDir, TEXT("buildcs_policy.json"));
     const FString DataSchemaPath = FPaths::Combine(FixtureDir, TEXT("data_schema.json"));
@@ -140,7 +140,7 @@ MaxCount=5
 bool FPrototypeAutomationCommandletFailureTest::RunTest(const FString& Parameters)
 {
     const FString FixtureDir = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("PrototypeAutomationFailureTest"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("PrototypeAutomationFailureTest"));
     const FString DataSchemaPath = FPaths::Combine(FixtureDir, TEXT("data_schema.json"));
     const FString DataSourcePath = FPaths::Combine(FixtureDir, TEXT("data.csv"));
     const FString ReportPath = FPaths::Combine(FixtureDir, TEXT("prototype_report.json"));

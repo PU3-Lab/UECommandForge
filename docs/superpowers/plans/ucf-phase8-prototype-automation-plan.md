@@ -186,7 +186,7 @@ AssetRegistry에서 `/Game`과 project plugin content를 수집한다.
 - GREEN: sample `UnrealEditor` 타깃 빌드 통과.
 - GREEN: `./tools/test/automation/run.sh` 통과, PASS 18 / FAIL 0 / SKIP 0.
 - GREEN: `./tools/test/smoke/windows_command_wrappers.sh` 통과.
-- GREEN: `UE_COMMANDLET_TIMEOUT=90 ./tools/ue/snapshot_assets.sh -RootPaths=/Game/Tests` 외부 실행 통과. 생성 리포트 `sample/Saved/CodexReports/AssetSnapshot_20260528T023445Z.json`의 `asset_count`는 package dedupe 후 `11`, map asset 2개는 `.umap`, duplicate package count는 `0`.
+- GREEN: `UE_COMMANDLET_TIMEOUT=90 ./tools/ue/snapshot_assets.sh -RootPaths=/Game/Tests` 외부 실행 통과. 생성 리포트 `sample/Saved/UECommandForge/Reports/AssetSnapshot_20260528T023445Z.json`의 `asset_count`는 package dedupe 후 `11`, map asset 2개는 `.umap`, duplicate package count는 `0`.
 
 - [x] **Step 2: `ValidateAssetRulesCommandlet` 작성**
 
@@ -243,8 +243,8 @@ rename/move/delete/fixup 작업을 실제 적용 전 preflight한다.
 - 2026-05-28: delete 요청은 wildcard 금지, `allow_delete=true`, `delete_assets` 명시 목록, referencer 없음 조건을 검증한다.
 - 2026-05-28: sample plan `specs/policies/asset_changes.plan.json`, macOS/Linux/Git Bash wrapper `tools/ue/plan_asset_changes.sh`, Windows wrapper `tools/ue/plan_asset_changes.bat`, smoke `tools/test/smoke/asset_change_plan.sh` 추가.
 - 2026-05-28 리뷰 반영: Unity build에서 익명 namespace helper명이 충돌하지 않도록 `ValidateAssetRules` root path helper명을 고유화하고, `PlanAssetChanges` helper를 고유 namespace로 분리했다.
-- 2026-05-28 리뷰 반영: sample plan의 rollback path 상대 경로 의존을 제거하고, 기본 `Saved/CodexReports/rollback_<transaction>.json` 경로를 smoke가 Result JSON에서 읽도록 변경했다.
-- 2026-05-28 리뷰 반영: plan JSON의 `rollback_plan`이 임의 파일 경로로 쓰이지 않도록 상대 경로는 `Saved/CodexReports` 아래로 해석하고, 절대 경로나 `..`로 report 디렉터리를 벗어나는 경로는 `ROLLBACK_PATH_OUTSIDE_REPORT_DIR`로 거부한다.
+- 2026-05-28 리뷰 반영: sample plan의 rollback path 상대 경로 의존을 제거하고, 기본 `Saved/UECommandForge/Reports/rollback_<transaction>.json` 경로를 smoke가 Result JSON에서 읽도록 변경했다.
+- 2026-05-28 리뷰 반영: plan JSON의 `rollback_plan`이 임의 파일 경로로 쓰이지 않도록 상대 경로는 `Saved/UECommandForge/Reports` 아래로 해석하고, 절대 경로나 `..`로 report 디렉터리를 벗어나는 경로는 `ROLLBACK_PATH_OUTSIDE_REPORT_DIR`로 거부한다.
 
 검증:
 - RED: `PlanAssetChangesCommandletTest`를 먼저 추가했고, 구현 전 `./tools/ue/build_plugin.sh`가 누락된 `PlanAssetChangesCommandlet.h`로 실패했다.
@@ -273,7 +273,7 @@ rename/move/delete/fixup 작업을 실제 적용 전 preflight한다.
 진행 상태:
 
 - 2026-05-28: `ApplyAssetChangesCommandlet` 추가. `-Plan=<asset_change_plan.json>`와 `-Output=<report.json>`를 받아 승인된 plan을 실제 적용한다.
-- 2026-05-28: apply 전 `Saved/CodexReports/snapshot_<transaction_id>.json`에 작업 대상 package의 존재 여부와 disk path snapshot을 저장한다.
+- 2026-05-28: apply 전 `Saved/UECommandForge/Reports/snapshot_<transaction_id>.json`에 작업 대상 package의 존재 여부와 disk path snapshot을 저장한다.
 - 2026-05-28: create folder는 long package name을 검증한 뒤 Content 디렉터리를 생성하고, rename/move는 `AssetTools.RenameAssets`를 사용한다.
 - 2026-05-28: delete는 `allow_delete=true`, `delete_assets` 명시 목록, wildcard 금지, referencer 없음 조건을 만족할 때만 `ObjectTools::ForceDeleteObjects`로 적용한다.
 - 2026-05-28: `fix_redirector`는 AssetRegistry에서 `ObjectRedirector`를 수집해 `AssetTools.FixupReferencers`를 실행한다.
@@ -588,13 +588,13 @@ Spec 필드:
 검증 가정:
 - UE 플러그인은 대상 프로젝트에 설치되어 있다.
 - Codex가 호출하는 `tools/ue`, `tools/test`, `specs`는 `~/.codex/UECommandForge`와 같은 Codex 전용 루트에 설치된다.
-- Codex 도구 루트의 wrapper는 `UECF_PROJECT_FILE` 또는 `PROJECT_FILE`로 대상 `.uproject`를 찾고, Result JSON은 대상 프로젝트의 `Saved/CodexReports`에 기록한다.
+- Codex 도구 루트의 wrapper는 `UECF_PROJECT_FILE` 또는 `PROJECT_FILE`로 대상 `.uproject`를 찾고, Result JSON은 대상 프로젝트의 `Saved/UECommandForge/Reports`에 기록한다.
 
 - [x] **Step 1: Codex 도구 루트 분리 실행 지원**
 
 구현 상태:
 - 2026-05-28: `tools/ue/ue_env.sh`와 `tools/ue/ue_env.bat`가 `UECF_PROJECT_FILE`을 우선 사용하도록 수정했다. 기존 `PROJECT_FILE` override도 보존하고, 둘 다 없으면 repo sample project를 기본값으로 사용한다.
-- 2026-05-28: `tools/ue/run_commandlet.sh`와 `tools/ue/run_commandlet.bat`가 Result JSON을 repo-root가 아니라 대상 project directory의 `Saved/CodexReports`에 쓰도록 수정했다. 고급 override는 `UECF_REPORT_DIR`로 제공한다.
+- 2026-05-28: `tools/ue/run_commandlet.sh`와 `tools/ue/run_commandlet.bat`가 Result JSON을 repo-root가 아니라 대상 project directory의 `Saved/UECommandForge/Reports`에 쓰도록 수정했다. 고급 override는 `UECF_REPORT_DIR`로 제공한다.
 - 2026-05-28: `windows_command_wrappers.sh`에 `UECF_PROJECT_FILE`, `UECF_REPORT_DIR` 정적 검증을 추가했다.
 
 검증:
@@ -609,10 +609,10 @@ Spec 필드:
 - `tools/test/smoke/mid_real_project_flow.sh`
 
 검증 흐름:
-- repo `tools`와 `specs`를 `sample/Saved/CodexReports/MidRealProject/codex-home/UECommandForge`에 복사한다.
+- repo `tools`와 `specs`를 `sample/Saved/UECommandForge/Reports/MidRealProject/codex-home/UECommandForge`에 복사한다.
 - `UECF_PROJECT_FILE`로 sample `.uproject`를 지정한다.
 - Codex 도구 루트에서 `Hello`, `AssetSnapshot`, `ValidateAssetRules`, `ValidateBuildCs`, `GenerateCppClass` dry-run, `ValidateCppReflection` 실패 리포트, `AnalyzeUhtLog` 실패 리포트/Markdown을 실행한다.
-- 결과 요약은 `sample/Saved/CodexReports/MidRealProject/mid_real_project_flow.md`에 기록한다.
+- 결과 요약은 `sample/Saved/UECommandForge/Reports/MidRealProject/mid_real_project_flow.md`에 기록한다.
 
 검증 결과:
 - GREEN: `mid_real_project_flow.md` 기준 PASS 8개.
@@ -709,8 +709,8 @@ CSV/JSON source를 스키마와 비교한다.
 2026-05-29 완료:
 - `UImportDataSourceCommandlet`를 추가해 `-Schema`, `-Source`, `-Output`, 선택 `-RollbackPlan`, `-DryRun` 인자로 CSV/JSON source를 UE `UDataTable` asset으로 import한다.
 - dry-run은 target asset 존재 여부 기준 diff, row count, source hash, rollback plan 후보 경로를 Result JSON에 기록하되 asset을 생성하지 않는다.
-- apply는 import 전 snapshot JSON과 rollback plan을 `Saved/CodexReports` 아래에 만들고, `row_struct_path`로 지정한 `FTableRowBase` 기반 struct에 CSV/JSON을 import한 뒤 package를 저장한다.
-- rollback plan 경로는 `Saved/CodexReports` 하위로 제한하면서, commandlet 실행 환경에서 전달되는 project-relative report 경로도 허용하도록 보강했다.
+- apply는 import 전 snapshot JSON과 rollback plan을 `Saved/UECommandForge/Reports` 아래에 만들고, `row_struct_path`로 지정한 `FTableRowBase` 기반 struct에 CSV/JSON을 import한 뒤 package를 저장한다.
+- rollback plan 경로는 `Saved/UECommandForge/Reports` 하위로 제한하면서, commandlet 실행 환경에서 전달되는 project-relative report 경로도 허용하도록 보강했다.
 - TDD 검증: 누락 커맨드렛 헤더로 RED를 확인한 뒤 구현했고, `./tools/ue/build_plugin.sh`, sample plugin in-place 빌드, `./tools/test/automation/run.sh`를 통과했다. 자동화 테스트는 49개 PASS, 0개 FAIL, 0개 SKIP이다.
 
 - [x] **Step 4: `ValidateDataTableCommandlet` 작성**
@@ -787,7 +787,7 @@ asset policy, C++ policy, data policy를 한 번에 실행하는 통합 검증 C
 
 - [x] **Step 3: 통합 Markdown 리포트 생성**
 
-`sample/Saved/CodexReports/PrototypeAutomation_<UTC>.md`에 사람이 읽는 요약 리포트를 생성한다.
+`sample/Saved/UECommandForge/Reports/PrototypeAutomation_<UTC>.md`에 사람이 읽는 요약 리포트를 생성한다.
 
 2026-05-29 완료:
 - `UPrototypeAutomationCommandlet`를 추가해 `ValidateAssetRules`, `ValidateBuildCs`, `ValidateDataSource`, `ValidateConfigRules`를 하나의 품질 게이트로 실행한다.
@@ -902,7 +902,7 @@ Phase 8은 내부 개발용 코드만 머지하는 것으로 끝내지 않는다
 - GREEN: manifest 확장 후 `./tools/test/smoke/release_package_tools.sh`, `./tools/test/smoke/windows_command_wrappers.sh`, `git diff --check` 재실행 통과.
 - REVIEW-FIX: `package_plugin.sh` full build 경로에서 `--out-dir` 상대 경로를 전달하면 build 성공 후 zip 생성이 실패하는 문제를 확인했다. `package_plugin.sh`와 `package_tools.sh` 모두 `OUT_DIR`를 절대 경로로 정규화하도록 수정했다.
 - GREEN: 상대 `--out-dir` 보정 후 `./tools/test/smoke/release_package_plugin.sh`와 `./tools/test/smoke/release_package_tools.sh` 재실행 통과.
-- GREEN: `/bin/zsh -lc "./tools/release/package_plugin.sh --version 0.1.0 --channel local-smoke --out-dir sample/Saved/CodexReports/ReleasePackagePluginFull"` 승인된 샌드박스 외부 실행 통과. `build_plugin.sh`가 Mac Development/Shipping plugin build를 완료하고 `UECommandForge-0.1.0-UE5.7-Mac.zip`을 생성했다.
+- GREEN: `/bin/zsh -lc "./tools/release/package_plugin.sh --version 0.1.0 --channel local-smoke --out-dir sample/Saved/UECommandForge/Reports/ReleasePackagePluginFull"` 승인된 샌드박스 외부 실행 통과. `build_plugin.sh`가 Mac Development/Shipping plugin build를 완료하고 `UECommandForge-0.1.0-UE5.7-Mac.zip`을 생성했다.
 - INDEPENDENT-REVIEW: `code-reviewer`, `security-reviewer`, `reviewer` 독립 리뷰에서 platform mislabel, plugin VersionName/package version mismatch, 미구현 installer 명령 광고, zip traversal/checksum 검증 부족, skip-build smoke 의존성 문제가 지적됐다.
 - REVIEW-FIX: `package_plugin.sh`가 `--version`과 packaged `.uplugin` VersionName 불일치 시 실패하도록 수정했다. `--platform`은 `Binaries/<Platform>` 산출물이 실제로 있을 때만 통과한다.
 - REVIEW-FIX: manifest의 `install_commands`는 installer 구현 전까지 빈 배열로 두고, install notes는 수동 복사/`UECF_PROJECT_FILE` 사용 안내로 변경했다.

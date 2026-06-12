@@ -5,7 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 # shellcheck disable=SC1091
 source "${REPO_ROOT}/tools/release/common.sh"
-WORK_DIR="${REPO_ROOT}/sample/Saved/CodexReports/ReleasePackageTools"
+WORK_DIR="${REPO_ROOT}/sample/Saved/UECommandForge/Reports/ReleasePackageTools"
 VERSION="0.8.0-test"
 SOURCE_REPARSE_LINK="${REPO_ROOT}/tools/test/smoke/.release_package_reparse_fixture"
 OUTPUT_REPARSE_LINK=""
@@ -99,7 +99,7 @@ grep -q '^tools/ue/set_blueprint_defaults.bat$' "${ZIP_LIST}"
 grep -q '^tools/test/smoke/mid_real_project_flow.sh$' "${ZIP_LIST}"
 grep -q '^tools/release/package_tools.sh$' "${ZIP_LIST}"
 grep -q '^specs/policies/assets.policy.json$' "${ZIP_LIST}"
-grep -q '^specs/codex/unreal-automation-agents.md$' "${ZIP_LIST}"
+grep -q '^specs/agent/unreal-automation-agents.md$' "${ZIP_LIST}"
 grep -q '^specs/examples/blueprint_defaults.json$' "${ZIP_LIST}"
 grep -q '^skills/uecommandforge/SKILL.md$' "${ZIP_LIST}"
 grep -q '^install-uecommandforge.sh$' "${ZIP_LIST}"
@@ -132,7 +132,7 @@ unzip -p "${TOOLS_ZIP}" uecommandforge-manifest.json | jq -e \
    and (.tool_files | index("tools/ue/set_blueprint_defaults.bat"))
    and (.tool_files | index("tools/test/smoke/mid_real_project_flow.sh"))
    and (.spec_files | index("specs/policies/assets.policy.json"))
-   and (.spec_files | index("specs/codex/unreal-automation-agents.md"))
+   and (.spec_files | index("specs/agent/unreal-automation-agents.md"))
    and (.spec_files | index("specs/examples/blueprint_defaults.json"))
    and (.skill_files | index("skills/uecommandforge/SKILL.md"))
    and (.install_commands | index("./install-uecommandforge.sh"))

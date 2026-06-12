@@ -7,7 +7,7 @@ source "${SCRIPT_DIR}/common.sh"
 PROJECT_FILE="${UECF_PROJECT:-${PROJECT_FILE:-}}"
 PLUGIN_PACKAGE=""
 TOOLS_PACKAGE=""
-CODEX_HOME="${CODEX_HOME:-${HOME}/.codex}"
+AGENTS=()
 BACKUP=true
 RUN_COMMANDLET_CHECK=false
 
@@ -25,9 +25,17 @@ while [ $# -gt 0 ]; do
       TOOLS_PACKAGE="$2"
       shift 2
       ;;
-    --codex-home)
-      CODEX_HOME="$2"
-      shift 2
+    --codex)
+      AGENTS+=("codex")
+      shift
+      ;;
+    --claude)
+      AGENTS+=("claude")
+      shift
+      ;;
+    --antigravity)
+      AGENTS+=("antigravity")
+      shift
       ;;
     --backup)
       BACKUP="$2"
@@ -48,9 +56,21 @@ case "${BACKUP}" in true|false) ;; *) echo "[install_local] --backup must be tru
 case "${RUN_COMMANDLET_CHECK}" in true|false) ;; *) echo "[install_local] --run-commandlet-check must be true or false" >&2; exit 2 ;; esac
 
 if [ -z "${PROJECT_FILE}" ] || [ -z "${PLUGIN_PACKAGE}" ] || [ -z "${TOOLS_PACKAGE}" ]; then
-  echo "Usage: $0 --project <path.uproject> --plugin-package <zip> --tools-package <zip> [--codex-home <path>]" >&2
+  echo "Usage: $0 --project <path.uproject> --plugin-package <zip> --tools-package <zip> --codex | --claude | --antigravity" >&2
   exit 2
 fi
+
+if [ "${#AGENTS[@]}" -eq 0 ]; then
+  echo "[install_local] 최소 하나의 에이전트 플래그가 필요합니다: --codex | --claude | --antigravity" >&2
+  exit 2
+fi
+
+# 중복 플래그 제거(순서 유지)
+DEDUP_AGENTS=()
+for agent in "${AGENTS[@]}"; do
+  case " ${DEDUP_AGENTS[*]:-} " in *" ${agent} "*) ;; *) DEDUP_AGENTS+=("${agent}") ;; esac
+done
+AGENTS=("${DEDUP_AGENTS[@]}")
 
 if [ ! -f "${PROJECT_FILE}" ]; then
   echo "[install_local] project file not found: ${PROJECT_FILE}" >&2
@@ -65,22 +85,32 @@ if [ ! -f "${TOOLS_PACKAGE}" ]; then
   exit 2
 fi
 
-uecf_reject_link_ancestors "${CODEX_HOME}" "install_local"
+agent_home_for() {
+  case "$1" in
+    codex) printf '%s/.codex' "${HOME}" ;;
+    claude) printf '%s/.claude' "${HOME}" ;;
+    antigravity) printf '%s/.gemini' "${HOME}" ;;
+    *) echo "[install_local] unknown agent: $1" >&2; exit 2 ;;
+  esac
+}
+
+agent_instructions_filename_for() {
+  case "$1" in
+    codex) printf 'AGENTS.md' ;;
+    claude) printf 'CLAUDE.md' ;;
+    antigravity) printf 'GEMINI.md' ;;
+    *) echo "[install_local] unknown agent: $1" >&2; exit 2 ;;
+  esac
+}
+
 uecf_reject_link_ancestors "${PROJECT_FILE}" "install_local"
 uecf_reject_link_ancestors "$(dirname "${PROJECT_FILE}")" "install_local"
 PROJECT_FILE="$(cd "$(dirname "${PROJECT_FILE}")" && pwd)/$(basename "${PROJECT_FILE}")"
 PROJECT_DIR="$(cd "$(dirname "${PROJECT_FILE}")" && pwd)"
-CODEX_HOME="$(mkdir -p "${CODEX_HOME}" && cd "${CODEX_HOME}" && pwd -P)"
-INSTALL_ROOT="${CODEX_HOME}/UECommandForge"
-CODEX_SKILL_DIR="${CODEX_HOME}/skills/uecommandforge"
 PLUGIN_DIR="${PROJECT_DIR}/Plugins/UECommandForge"
 PROJECT_LINK_DIR="${PROJECT_DIR}/UECommandForge"
 LOG_DIR="${PROJECT_DIR}/Saved/UECommandForge"
 LOG_FILE="${LOG_DIR}/install.log"
-CODEX_AGENTS_FILE="${CODEX_HOME}/AGENTS.md"
-CODEX_ENV_FILE="${INSTALL_ROOT}/uecommandforge.env"
-CODEX_SHELL_ENV_FILE="${INSTALL_ROOT}/uecommandforge.env.sh"
-INSTALLED_MANIFEST="${INSTALL_ROOT}/uecommandforge-installed.json"
 PROJECT_MANIFEST="${PROJECT_LINK_DIR}/uecommandforge-project.json"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 BACKUP_ROOT="${PROJECT_DIR}/Saved/UECommandForge/Backups/${STAMP}"
@@ -89,24 +119,66 @@ reject_symlink_path() {
   uecf_reject_link_path "$1" "install_local"
 }
 
-require_managed_existing_targets() {
-  local has_project_state=false
-  local has_codex_state=false
+# 공통 프로젝트 심링크/경로 거부 가드
+reject_symlink_path "${PROJECT_DIR}/Plugins"
+reject_symlink_path "${PROJECT_DIR}/Plugins/UECommandForge"
+reject_symlink_path "${PROJECT_DIR}/UECommandForge"
+reject_symlink_path "${PROJECT_DIR}/Saved"
+reject_symlink_path "${PROJECT_DIR}/Saved/UECommandForge"
+uecf_reject_output_file_path "${PROJECT_MANIFEST}" "install_local"
+uecf_reject_output_file_path "${LOG_FILE}" "install_local"
+uecf_reject_link_tree "${PLUGIN_DIR}" "install_local"
 
+# 기존 설치된 리소스 검증
+require_managed_existing_targets_for_agent() {
+  local AGENT="$1"
+  local AGENT_HOME
+  AGENT_HOME="$(agent_home_for "${AGENT}")"
+  local AGENT_INSTALL_ROOT="${AGENT_HOME}/UECommandForge"
+  local AGENT_SKILL_DIR="${AGENT_HOME}/skills/uecommandforge"
+  local AGENT_ENV_FILE="${AGENT_INSTALL_ROOT}/uecommandforge.env"
+  local AGENT_SHELL_ENV_FILE="${AGENT_INSTALL_ROOT}/uecommandforge.env.sh"
+  local AGENT_MANIFEST="${AGENT_INSTALL_ROOT}/uecommandforge-installed.json"
+
+  local has_agent_state=false
+  if [ -e "${AGENT_INSTALL_ROOT}/tools" ] || [ -e "${AGENT_INSTALL_ROOT}/specs" ] \
+    || [ -e "${AGENT_SKILL_DIR}" ] \
+    || [ -e "${AGENT_ENV_FILE}" ] || [ -e "${AGENT_SHELL_ENV_FILE}" ] \
+    || [ -e "${AGENT_MANIFEST}" ]; then
+    has_agent_state=true
+  fi
+
+  if [ "${has_agent_state}" = true ]; then
+    if [ ! -f "${AGENT_MANIFEST}" ]; then
+      echo "[install_local] existing ${AGENT} install targets are unmanaged; refusing to overwrite" >&2
+      exit 2
+    fi
+    jq -e \
+      --arg project_file "${PROJECT_FILE}" \
+      --arg plugin_path "${PLUGIN_DIR}" \
+      --arg tools_path "${AGENT_INSTALL_ROOT}/tools" \
+      --arg specs_path "${AGENT_INSTALL_ROOT}/specs" \
+      --arg skill_path "${AGENT_SKILL_DIR}" \
+      '.project_file == $project_file
+       and .plugin_path == $plugin_path
+       and .tools_path == $tools_path
+       and .specs_path == $specs_path
+       and ((.skill_path // $skill_path) == $skill_path)' \
+      "${AGENT_MANIFEST}" >/dev/null
+    if [ -e "${AGENT_SKILL_DIR}" ]; then
+      jq -e \
+        --arg skill_path "${AGENT_SKILL_DIR}" \
+        '.skill_path == $skill_path' \
+        "${AGENT_MANIFEST}" >/dev/null
+    fi
+  fi
+}
+
+require_managed_existing_project_targets() {
+  local has_project_state=false
   if [ -e "${PLUGIN_DIR}" ] || [ -e "${PROJECT_LINK_DIR}" ] || [ -e "${PROJECT_MANIFEST}" ]; then
     has_project_state=true
   fi
-  if [ -e "${INSTALL_ROOT}/tools" ] || [ -e "${INSTALL_ROOT}/specs" ] \
-    || [ -e "${CODEX_SKILL_DIR}" ] \
-    || [ -e "${CODEX_ENV_FILE}" ] || [ -e "${CODEX_SHELL_ENV_FILE}" ] \
-    || [ -e "${INSTALLED_MANIFEST}" ]; then
-    has_codex_state=true
-  fi
-
-  if [ "${has_project_state}" = false ] && [ "${has_codex_state}" = false ]; then
-    return 0
-  fi
-
   if [ "${has_project_state}" = true ]; then
     if [ ! -f "${PROJECT_MANIFEST}" ]; then
       echo "[install_local] existing project install targets are unmanaged; refusing to overwrite" >&2
@@ -118,54 +190,12 @@ require_managed_existing_targets() {
       '.project_file == $project_file and .plugin_path == $plugin_path' \
       "${PROJECT_MANIFEST}" >/dev/null
   fi
-
-  if [ "${has_codex_state}" = true ]; then
-    if [ ! -f "${INSTALLED_MANIFEST}" ]; then
-      echo "[install_local] existing Codex install targets are unmanaged; refusing to overwrite" >&2
-      exit 2
-    fi
-    jq -e \
-      --arg project_file "${PROJECT_FILE}" \
-      --arg plugin_path "${PLUGIN_DIR}" \
-      --arg tools_path "${INSTALL_ROOT}/tools" \
-      --arg specs_path "${INSTALL_ROOT}/specs" \
-      --arg skill_path "${CODEX_SKILL_DIR}" \
-      '.project_file == $project_file
-       and .plugin_path == $plugin_path
-       and .tools_path == $tools_path
-       and .specs_path == $specs_path
-       and ((.skill_path // $skill_path) == $skill_path)' \
-      "${INSTALLED_MANIFEST}" >/dev/null
-    if [ -e "${CODEX_SKILL_DIR}" ]; then
-      jq -e \
-        --arg skill_path "${CODEX_SKILL_DIR}" \
-        '.skill_path == $skill_path' \
-        "${INSTALLED_MANIFEST}" >/dev/null
-    fi
-  fi
 }
 
-reject_symlink_path "${PROJECT_DIR}/Plugins"
-reject_symlink_path "${PROJECT_DIR}/Plugins/UECommandForge"
-reject_symlink_path "${PROJECT_DIR}/UECommandForge"
-reject_symlink_path "${PROJECT_DIR}/Saved"
-reject_symlink_path "${PROJECT_DIR}/Saved/UECommandForge"
-reject_symlink_path "${INSTALL_ROOT}"
-reject_symlink_path "${INSTALL_ROOT}/tools"
-reject_symlink_path "${INSTALL_ROOT}/specs"
-reject_symlink_path "${CODEX_HOME}/skills"
-reject_symlink_path "${CODEX_SKILL_DIR}"
-reject_symlink_path "${CODEX_AGENTS_FILE}"
-uecf_reject_output_file_path "${CODEX_ENV_FILE}" "install_local"
-uecf_reject_output_file_path "${CODEX_SHELL_ENV_FILE}" "install_local"
-uecf_reject_output_file_path "${INSTALLED_MANIFEST}" "install_local"
-uecf_reject_output_file_path "${PROJECT_MANIFEST}" "install_local"
-uecf_reject_output_file_path "${LOG_FILE}" "install_local"
-uecf_reject_link_tree "${PLUGIN_DIR}" "install_local"
-uecf_reject_link_tree "${INSTALL_ROOT}/tools" "install_local"
-uecf_reject_link_tree "${INSTALL_ROOT}/specs" "install_local"
-uecf_reject_link_tree "${CODEX_SKILL_DIR}" "install_local"
-require_managed_existing_targets
+require_managed_existing_project_targets
+for agent in "${AGENTS[@]}"; do
+  require_managed_existing_targets_for_agent "${agent}"
+done
 
 verify_package() {
   local zip_path="$1"
@@ -249,7 +279,7 @@ require_ordered_marker_pair() {
 require_instruction_source() {
   local instructions_file="$1"
   if [ ! -f "${instructions_file}" ]; then
-    echo "[install_local] Codex instruction source is missing: ${instructions_file}" >&2
+    echo "[install_local] 에이전트 지침 소스 파일이 없습니다: ${instructions_file}" >&2
     exit 2
   fi
   require_ordered_marker_pair \
@@ -257,89 +287,111 @@ require_instruction_source() {
     "BEGIN UECOMMANDFORGE MANAGED CONTENT" \
     "END UECOMMANDFORGE MANAGED CONTENT" \
     required \
-    "[install_local] Codex instruction source has invalid managed content markers: ${instructions_file}"
+    "[install_local] 에이전트 지침 소스 파일에 올바른 관리 마커가 없습니다: ${instructions_file}"
 }
 
-require_codex_agents_appendable() {
-  if [ ! -w "${CODEX_HOME}" ]; then
-    echo "[install_local] Codex home is not writable: ${CODEX_HOME}" >&2
+require_agent_instructions_appendable() {
+  local AGENT_HOME="$1"
+  local INSTRUCTIONS_FILE="$2"
+
+  if [ ! -w "${AGENT_HOME}" ]; then
+    echo "[install_local] 에이전트 홈 디렉터리에 쓰기 권한이 없습니다: ${AGENT_HOME}" >&2
     exit 2
   fi
 
   local probe_file
-  probe_file="$(mktemp "${CODEX_HOME}/.AGENTS.md.preflight.XXXXXX")"
+  probe_file="$(mktemp "${AGENT_HOME}/.instructions.preflight.XXXXXX")"
   if ! mv "${probe_file}" "${probe_file}.rename"; then
     rm -f "${probe_file}" "${probe_file}.rename"
-    echo "[install_local] Codex home cannot atomically update AGENTS.md: ${CODEX_HOME}" >&2
+    echo "[install_local] 에이전트 홈에서 지침 파일을 원자적으로 수정할 수 없습니다: ${AGENT_HOME}" >&2
     exit 2
   fi
   rm -f "${probe_file}.rename"
 
-  if [ -e "${CODEX_AGENTS_FILE}" ]; then
-    if [ ! -f "${CODEX_AGENTS_FILE}" ]; then
-      echo "[install_local] Codex AGENTS path is not a regular file: ${CODEX_AGENTS_FILE}" >&2
+  if [ -e "${INSTRUCTIONS_FILE}" ]; then
+    if [ ! -f "${INSTRUCTIONS_FILE}" ]; then
+      echo "[install_local] 에이전트 지침 경로가 일반 파일이 아닙니다: ${INSTRUCTIONS_FILE}" >&2
       exit 2
     fi
-    if [ ! -w "${CODEX_AGENTS_FILE}" ]; then
-      echo "[install_local] Codex AGENTS file is not writable: ${CODEX_AGENTS_FILE}" >&2
-      echo "[install_local] Existing AGENTS.md was preserved; fix file permissions and retry." >&2
+    if [ ! -w "${INSTRUCTIONS_FILE}" ]; then
+      echo "[install_local] 에이전트 지침 파일에 쓰기 권한이 없습니다: ${INSTRUCTIONS_FILE}" >&2
+      echo "[install_local] 기존 지침 파일을 보존하기 위해 설치를 중단합니다. 권한을 수정하고 재시도하세요." >&2
       exit 2
     fi
     require_ordered_marker_pair \
-      "${CODEX_AGENTS_FILE}" \
-      "BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS" \
-      "END UECOMMANDFORGE CODEX INSTRUCTIONS" \
+      "${INSTRUCTIONS_FILE}" \
+      "BEGIN UECOMMANDFORGE INSTRUCTIONS" \
+      "END UECOMMANDFORGE INSTRUCTIONS" \
       optional \
-      "[install_local] Existing Codex AGENTS.md has an invalid UECommandForge managed block; fix markers and retry: ${CODEX_AGENTS_FILE}"
+      "[install_local] 기존 지침 파일의 UECommandForge 마커가 잘못되었습니다: ${INSTRUCTIONS_FILE}"
   fi
 }
 
-append_codex_agents_instructions() {
+append_agent_instructions() {
+  local AGENT_HOME="$1"
+  local INSTRUCTIONS_FILE="$2"
   local temp_file
   local begin_count=0
-  local instructions_file="${TOOLS_ROOT}/specs/codex/unreal-automation-agents.md"
-  require_instruction_source "${instructions_file}"
-  reject_symlink_path "${CODEX_AGENTS_FILE}"
+  local instructions_source="${TOOLS_ROOT}/specs/agent/unreal-automation-agents.md"
+  require_instruction_source "${instructions_source}"
+  reject_symlink_path "${INSTRUCTIONS_FILE}"
 
-  temp_file="$(mktemp "${CODEX_HOME}/.AGENTS.md.XXXXXX")"
-  if [ -f "${CODEX_AGENTS_FILE}" ]; then
-    cp -p "${CODEX_AGENTS_FILE}" "${temp_file}"
-    require_ordered_marker_pair \
-      "${CODEX_AGENTS_FILE}" \
-      "BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS" \
-      "END UECOMMANDFORGE CODEX INSTRUCTIONS" \
-      optional \
-      "[install_local] Existing Codex AGENTS.md has an invalid UECommandForge managed block; fix markers and retry: ${CODEX_AGENTS_FILE}"
-    begin_count="$(grep -c 'BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS' "${CODEX_AGENTS_FILE}" || true)"
-    if [ "${begin_count}" -eq 1 ]; then
+  temp_file="$(mktemp "${AGENT_HOME}/.instructions.XXXXXX")"
+  if [ -f "${INSTRUCTIONS_FILE}" ]; then
+    cp -p "${INSTRUCTIONS_FILE}" "${temp_file}"
+    # 옛/새 마커가 모두 유효한 쌍인지 검사
+    local begin_count_old
+    local begin_count_new
+    begin_count_old="$(grep -c 'BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS' "${INSTRUCTIONS_FILE}" || true)"
+    begin_count_new="$(grep -c 'BEGIN UECOMMANDFORGE INSTRUCTIONS' "${INSTRUCTIONS_FILE}" || true)"
+    
+    if [ "${begin_count_old}" -gt 0 ]; then
+      require_ordered_marker_pair \
+        "${INSTRUCTIONS_FILE}" \
+        "BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS" \
+        "END UECOMMANDFORGE CODEX INSTRUCTIONS" \
+        optional \
+        "[install_local] 기존 지침 파일의 옛 UECommandForge 마커가 잘못되었습니다: ${INSTRUCTIONS_FILE}"
+    fi
+    if [ "${begin_count_new}" -gt 0 ]; then
+      require_ordered_marker_pair \
+        "${INSTRUCTIONS_FILE}" \
+        "BEGIN UECOMMANDFORGE INSTRUCTIONS" \
+        "END UECOMMANDFORGE INSTRUCTIONS" \
+        optional \
+        "[install_local] 기존 지침 파일의 새 UECommandForge 마커가 잘못되었습니다: ${INSTRUCTIONS_FILE}"
+    fi
+
+    # 옛 마커 및 새 마커 블록 제거
+    if [ "${begin_count_old}" -eq 1 ] || [ "${begin_count_new}" -eq 1 ]; then
       awk '
-        /BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS/ { skipping = 1; next }
-        /END UECOMMANDFORGE CODEX INSTRUCTIONS/ { skipping = 0; next }
+        /BEGIN UECOMMANDFORGE (CODEX )?INSTRUCTIONS/ { skipping = 1; next }
+        /END UECOMMANDFORGE (CODEX )?INSTRUCTIONS/ { skipping = 0; next }
         skipping != 1 { print }
-      ' "${CODEX_AGENTS_FILE}" > "${temp_file}.stripped"
+      ' "${INSTRUCTIONS_FILE}" > "${temp_file}.stripped"
       cat "${temp_file}.stripped" > "${temp_file}"
       rm -f "${temp_file}.stripped"
     fi
   fi
 
-  if [ -s "${CODEX_AGENTS_FILE}" ]; then
+  if [ -s "${INSTRUCTIONS_FILE}" ]; then
     printf '\n' >> "${temp_file}"
   fi
 
-cat >> "${temp_file}" <<'AGENTS'
-<!-- BEGIN UECOMMANDFORGE CODEX INSTRUCTIONS -->
-AGENTS
+cat >> "${temp_file}" <<'INSTR'
+<!-- BEGIN UECOMMANDFORGE INSTRUCTIONS -->
+INSTR
   awk '
     /BEGIN UECOMMANDFORGE MANAGED CONTENT/ { copying = 1; next }
     /END UECOMMANDFORGE MANAGED CONTENT/ { copying = 0; next }
     copying == 1 { print }
-  ' "${instructions_file}" >> "${temp_file}"
+  ' "${instructions_source}" >> "${temp_file}"
   printf '\n' >> "${temp_file}"
-cat >> "${temp_file}" <<'AGENTS'
-<!-- END UECOMMANDFORGE CODEX INSTRUCTIONS -->
-AGENTS
+cat >> "${temp_file}" <<'INSTR'
+<!-- END UECOMMANDFORGE INSTRUCTIONS -->
+INSTR
 
-  mv "${temp_file}" "${CODEX_AGENTS_FILE}"
+  mv "${temp_file}" "${INSTRUCTIONS_FILE}"
 }
 
 WORK_DIR="$(mktemp -d)"
@@ -349,13 +401,15 @@ cleanup() {
 trap cleanup EXIT
 
 PLUGIN_STAGED_PACKAGE="$(stage_package_for_install "${PLUGIN_PACKAGE}" "plugin")"
-TOOLS_STAGED_PACKAGE="$(stage_package_for_install "${TOOLS_PACKAGE}" "tools")"
-
-PLUGIN_ROOT="${WORK_DIR}/plugin"
+# 이 시점엔 TOOLS_ROOT 가 전역 변수로 필요함. append_agent_instructions 등에서 참조하기 때문.
 TOOLS_ROOT="${WORK_DIR}/tools"
+PLUGIN_ROOT="${WORK_DIR}/plugin"
 mkdir -p "${PLUGIN_ROOT}" "${TOOLS_ROOT}"
 unzip -q "${PLUGIN_STAGED_PACKAGE}" -d "${PLUGIN_ROOT}"
+
+TOOLS_STAGED_PACKAGE="$(stage_package_for_install "${TOOLS_PACKAGE}" "tools")"
 unzip -q "${TOOLS_STAGED_PACKAGE}" -d "${TOOLS_ROOT}"
+
 uecf_reject_link_tree "${PLUGIN_ROOT}" "install_local"
 uecf_reject_link_tree "${TOOLS_ROOT}" "install_local"
 
@@ -373,28 +427,16 @@ VERSION="$(jq -r '.VersionName' "${PLUGIN_ROOT}/UECommandForge.uplugin")"
 PLUGIN_MANIFEST="${PLUGIN_ROOT}/uecommandforge-manifest.json"
 TOOLS_MANIFEST="${TOOLS_ROOT}/uecommandforge-manifest.json"
 
-jq -e \
-  --arg version "${VERSION}" \
-  '.version == $version' \
-  "${PLUGIN_MANIFEST}" >/dev/null
-jq -e \
-  '.package_type == "plugin"' \
-  "${PLUGIN_MANIFEST}" >/dev/null
-jq -e \
-  --arg version "${VERSION}" \
-  '.version == $version' \
-  "${TOOLS_MANIFEST}" >/dev/null
-jq -e \
-  '.package_type == "tools"' \
-  "${TOOLS_MANIFEST}" >/dev/null
-jq -e \
-  --slurpfile plugin_manifest "${PLUGIN_MANIFEST}" \
-  '.release_channel == $plugin_manifest[0].release_channel' \
-  "${TOOLS_MANIFEST}" >/dev/null
+jq -e --arg version "${VERSION}" '.version == $version' "${PLUGIN_MANIFEST}" >/dev/null
+jq -e '.package_type == "plugin"' "${PLUGIN_MANIFEST}" >/dev/null
+jq -e --arg version "${VERSION}" '.version == $version' "${TOOLS_MANIFEST}" >/dev/null
+jq -e '.package_type == "tools"' "${TOOLS_MANIFEST}" >/dev/null
+jq -e --slurpfile plugin_manifest "${PLUGIN_MANIFEST}" '.release_channel == $plugin_manifest[0].release_channel' "${TOOLS_MANIFEST}" >/dev/null
 
-require_instruction_source "${TOOLS_ROOT}/specs/codex/unreal-automation-agents.md"
-require_codex_agents_appendable
-mkdir -p "${LOG_DIR}" "${INSTALL_ROOT}" "${PROJECT_LINK_DIR}"
+require_instruction_source "${TOOLS_ROOT}/specs/agent/unreal-automation-agents.md"
+
+# 프로젝트 리소스 백업 및 설치 (1회)
+mkdir -p "${LOG_DIR}" "${PROJECT_LINK_DIR}"
 
 if [ "${BACKUP}" = true ]; then
   uecf_reject_link_ancestors "${BACKUP_ROOT}" "install_local"
@@ -407,30 +449,9 @@ if [ "${BACKUP}" = true ]; then
     mkdir -p "${BACKUP_ROOT}/Plugins"
     mv "${PLUGIN_DIR}" "${BACKUP_ROOT}/Plugins/UECommandForge"
   fi
-  if [ -d "${INSTALL_ROOT}/tools" ]; then
-    uecf_reject_link_tree "${INSTALL_ROOT}/tools" "install_local"
-    uecf_reject_link_ancestors "${BACKUP_ROOT}/Codex/tools" "install_local"
-    mkdir -p "${BACKUP_ROOT}/Codex"
-    mv "${INSTALL_ROOT}/tools" "${BACKUP_ROOT}/Codex/tools"
-  fi
-  if [ -d "${INSTALL_ROOT}/specs" ]; then
-    uecf_reject_link_tree "${INSTALL_ROOT}/specs" "install_local"
-    uecf_reject_link_ancestors "${BACKUP_ROOT}/Codex/specs" "install_local"
-    mkdir -p "${BACKUP_ROOT}/Codex"
-    mv "${INSTALL_ROOT}/specs" "${BACKUP_ROOT}/Codex/specs"
-  fi
-  if [ -d "${CODEX_SKILL_DIR}" ]; then
-    uecf_reject_link_tree "${CODEX_SKILL_DIR}" "install_local"
-    uecf_reject_link_ancestors "${BACKUP_ROOT}/Codex/skills/uecommandforge" "install_local"
-    mkdir -p "${BACKUP_ROOT}/Codex/skills"
-    mv "${CODEX_SKILL_DIR}" "${BACKUP_ROOT}/Codex/skills/uecommandforge"
-  fi
 else
   uecf_reject_link_tree "${PLUGIN_DIR}" "install_local"
-  uecf_reject_link_tree "${INSTALL_ROOT}/tools" "install_local"
-  uecf_reject_link_tree "${INSTALL_ROOT}/specs" "install_local"
-  uecf_reject_link_tree "${CODEX_SKILL_DIR}" "install_local"
-  rm -rf "${PLUGIN_DIR}" "${INSTALL_ROOT}/tools" "${INSTALL_ROOT}/specs" "${CODEX_SKILL_DIR}"
+  rm -rf "${PLUGIN_DIR}"
 fi
 
 mkdir -p "$(dirname "${PLUGIN_DIR}")"
@@ -442,87 +463,188 @@ rm -f "${PLUGIN_DIR}/uecommandforge-manifest.json" \
   "${PLUGIN_DIR}/release-notes.md" \
   "${PLUGIN_DIR}/validation-report.json"
 
-copy_tree "${TOOLS_ROOT}/tools" "${INSTALL_ROOT}/tools"
-copy_tree "${TOOLS_ROOT}/specs" "${INSTALL_ROOT}/specs"
-copy_tree "${TOOLS_ROOT}/skills/uecommandforge" "${CODEX_SKILL_DIR}"
-find "${INSTALL_ROOT}/tools" -type f -name '*.sh' -exec chmod +x {} +
-append_codex_agents_instructions
+# 에이전트별 설치 함수
+install_for_agent() {
+  local AGENT="$1"
+  local AGENT_HOME
+  AGENT_HOME="$(agent_home_for "${AGENT}")"
+  uecf_reject_link_ancestors "${AGENT_HOME}" "install_local"
+  AGENT_HOME="$(mkdir -p "${AGENT_HOME}" && cd "${AGENT_HOME}" && pwd -P)"
+  local INSTALL_ROOT="${AGENT_HOME}/UECommandForge"
+  local SKILL_DIR="${AGENT_HOME}/skills/uecommandforge"
+  local INSTRUCTIONS_FILE="${AGENT_HOME}/$(agent_instructions_filename_for "${AGENT}")"
+  local AGENT_ENV_FILE="${INSTALL_ROOT}/uecommandforge.env"
+  local AGENT_SHELL_ENV_FILE="${INSTALL_ROOT}/uecommandforge.env.sh"
+  local INSTALLED_MANIFEST="${INSTALL_ROOT}/uecommandforge-installed.json"
 
-uecf_reject_output_file_path "${CODEX_ENV_FILE}" "install_local"
-uecf_write_file_from_stdin "${CODEX_ENV_FILE}" "install_local" <<ENV
+  # 에이전트 파일 거부 가드
+  reject_symlink_path "${INSTALL_ROOT}"
+  reject_symlink_path "${INSTALL_ROOT}/tools"
+  reject_symlink_path "${INSTALL_ROOT}/specs"
+  reject_symlink_path "${AGENT_HOME}/skills"
+  reject_symlink_path "${SKILL_DIR}"
+  reject_symlink_path "${INSTRUCTIONS_FILE}"
+  uecf_reject_output_file_path "${AGENT_ENV_FILE}" "install_local"
+  uecf_reject_output_file_path "${AGENT_SHELL_ENV_FILE}" "install_local"
+  uecf_reject_output_file_path "${INSTALLED_MANIFEST}" "install_local"
+  uecf_reject_link_tree "${INSTALL_ROOT}/tools" "install_local"
+  uecf_reject_link_tree "${INSTALL_ROOT}/specs" "install_local"
+  uecf_reject_link_tree "${SKILL_DIR}" "install_local"
+
+  require_agent_instructions_appendable "${AGENT_HOME}" "${INSTRUCTIONS_FILE}"
+  mkdir -p "${INSTALL_ROOT}"
+
+  if [ "${BACKUP}" = true ]; then
+    if [ -d "${INSTALL_ROOT}/tools" ]; then
+      uecf_reject_link_tree "${INSTALL_ROOT}/tools" "install_local"
+      uecf_reject_link_ancestors "${BACKUP_ROOT}/${AGENT}/tools" "install_local"
+      mkdir -p "${BACKUP_ROOT}/${AGENT}"
+      mv "${INSTALL_ROOT}/tools" "${BACKUP_ROOT}/${AGENT}/tools"
+    fi
+    if [ -d "${INSTALL_ROOT}/specs" ]; then
+      uecf_reject_link_tree "${INSTALL_ROOT}/specs" "install_local"
+      uecf_reject_link_ancestors "${BACKUP_ROOT}/${AGENT}/specs" "install_local"
+      mkdir -p "${BACKUP_ROOT}/${AGENT}"
+      mv "${INSTALL_ROOT}/specs" "${BACKUP_ROOT}/${AGENT}/specs"
+    fi
+    if [ -d "${SKILL_DIR}" ]; then
+      uecf_reject_link_tree "${SKILL_DIR}" "install_local"
+      uecf_reject_link_ancestors "${BACKUP_ROOT}/${AGENT}/skills/uecommandforge" "install_local"
+      mkdir -p "${BACKUP_ROOT}/${AGENT}/skills"
+      mv "${SKILL_DIR}" "${BACKUP_ROOT}/${AGENT}/skills/uecommandforge"
+    fi
+  else
+    uecf_reject_link_tree "${INSTALL_ROOT}/tools" "install_local"
+    uecf_reject_link_tree "${INSTALL_ROOT}/specs" "install_local"
+    uecf_reject_link_tree "${SKILL_DIR}" "install_local"
+    rm -rf "${INSTALL_ROOT}/tools" "${INSTALL_ROOT}/specs" "${SKILL_DIR}"
+  fi
+
+  copy_tree "${TOOLS_ROOT}/tools" "${INSTALL_ROOT}/tools"
+  copy_tree "${TOOLS_ROOT}/specs" "${INSTALL_ROOT}/specs"
+  copy_tree "${TOOLS_ROOT}/skills/uecommandforge" "${SKILL_DIR}"
+  find "${INSTALL_ROOT}/tools" -type f -name '*.sh' -exec chmod +x {} +
+  append_agent_instructions "${AGENT_HOME}" "${INSTRUCTIONS_FILE}"
+
+  uecf_reject_output_file_path "${AGENT_ENV_FILE}" "install_local"
+  uecf_write_file_from_stdin "${AGENT_ENV_FILE}" "install_local" <<ENV
 UECF_PROJECT_FILE=${PROJECT_FILE}
-CODEX_HOME=${CODEX_HOME}
+AGENT_HOME=${AGENT_HOME}
 UECF_INSTALL_ROOT=${INSTALL_ROOT}
 ENV
 
-uecf_reject_output_file_path "${CODEX_SHELL_ENV_FILE}" "install_local"
-uecf_write_file_from_stdin "${CODEX_SHELL_ENV_FILE}" "install_local" <<ENV
+  uecf_reject_output_file_path "${AGENT_SHELL_ENV_FILE}" "install_local"
+  uecf_write_file_from_stdin "${AGENT_SHELL_ENV_FILE}" "install_local" <<ENV
 export UECF_PROJECT_FILE=$(uecf_shell_quote "${PROJECT_FILE}")
-export CODEX_HOME=$(uecf_shell_quote "${CODEX_HOME}")
+export AGENT_HOME=$(uecf_shell_quote "${AGENT_HOME}")
 export UECF_INSTALL_ROOT=$(uecf_shell_quote "${INSTALL_ROOT}")
 ENV
 
-uecf_reject_output_file_path "${INSTALLED_MANIFEST}" "install_local"
-installed_manifest_temp="$(uecf_prepare_output_temp_file "${INSTALLED_MANIFEST}" "install_local")"
-if ! jq -n \
-  --arg installed_at "${STAMP}" \
-  --arg version "${VERSION}" \
-  --arg project_file "${PROJECT_FILE}" \
-  --arg plugin_path "${PLUGIN_DIR}" \
-  --arg tools_path "${INSTALL_ROOT}/tools" \
-  --arg specs_path "${INSTALL_ROOT}/specs" \
-  --arg skill_path "${CODEX_SKILL_DIR}" \
-  --arg codex_home "${CODEX_HOME}" \
-  --arg env_path "${CODEX_ENV_FILE}" \
-  --arg shell_env_path "${CODEX_SHELL_ENV_FILE}" \
-  --arg source_release "${PLUGIN_PACKAGE}" \
-  --arg backup_path "${BACKUP_ROOT}" \
-  --slurpfile plugin_manifest "${PLUGIN_MANIFEST}" \
-  --slurpfile tools_manifest "${TOOLS_MANIFEST}" \
-  '{
-    installed_at: $installed_at,
-    version: $version,
-    project_file: $project_file,
-    plugin_path: $plugin_path,
-    tools_path: $tools_path,
-    specs_path: $specs_path,
-    skill_path: $skill_path,
-    codex_home: $codex_home,
-    env_path: $env_path,
-    shell_env_path: $shell_env_path,
-    source_release: $source_release,
-    checksums: {
-      plugin: $plugin_manifest[0].checksums,
-      tools: $tools_manifest[0].checksums
-    },
-    backup_path: $backup_path,
-    last_validation_report: null
-  }' > "${installed_manifest_temp}"; then
-  rm -f "${installed_manifest_temp}"
-  exit 2
-fi
-uecf_commit_output_temp_file "${installed_manifest_temp}" "${INSTALLED_MANIFEST}" "install_local"
+  uecf_reject_output_file_path "${INSTALLED_MANIFEST}" "install_local"
+  local installed_manifest_temp
+  installed_manifest_temp="$(uecf_prepare_output_temp_file "${INSTALLED_MANIFEST}" "install_local")"
+  if ! jq -n \
+    --arg installed_at "${STAMP}" \
+    --arg version "${VERSION}" \
+    --arg project_file "${PROJECT_FILE}" \
+    --arg plugin_path "${PLUGIN_DIR}" \
+    --arg tools_path "${INSTALL_ROOT}/tools" \
+    --arg specs_path "${INSTALL_ROOT}/specs" \
+    --arg skill_path "${SKILL_DIR}" \
+    --arg agent_home "${AGENT_HOME}" \
+    --arg agent_name "${AGENT}" \
+    --arg env_path "${AGENT_ENV_FILE}" \
+    --arg shell_env_path "${AGENT_SHELL_ENV_FILE}" \
+    --arg source_release "${PLUGIN_PACKAGE}" \
+    --arg backup_path "${BACKUP_ROOT}" \
+    --slurpfile plugin_manifest "${PLUGIN_MANIFEST}" \
+    --slurpfile tools_manifest "${TOOLS_MANIFEST}" \
+    '{
+      installed_at: $installed_at,
+      version: $version,
+      project_file: $project_file,
+      plugin_path: $plugin_path,
+      tools_path: $tools_path,
+      specs_path: $specs_path,
+      skill_path: $skill_path,
+      agent_home: $agent_home,
+      agent_name: $agent_name,
+      env_path: $env_path,
+      shell_env_path: $shell_env_path,
+      source_release: $source_release,
+      checksums: {
+        plugin: $plugin_manifest[0].checksums,
+        tools: $tools_manifest[0].checksums
+      },
+      backup_path: $backup_path,
+      last_validation_report: null
+    }' > "${installed_manifest_temp}"; then
+    rm -f "${installed_manifest_temp}"
+    exit 2
+  fi
+  uecf_commit_output_temp_file "${installed_manifest_temp}" "${INSTALLED_MANIFEST}" "install_local"
 
-uecf_reject_output_file_path "${PROJECT_MANIFEST}" "install_local"
+  uecf_reject_output_file_path "${LOG_FILE}" "install_local"
+  {
+    echo "installed_at=${STAMP}"
+    echo "version=${VERSION}"
+    echo "project_file=${PROJECT_FILE}"
+    echo "plugin_path=${PLUGIN_DIR}"
+    echo "agent_name=${AGENT}"
+    echo "tools_path=${INSTALL_ROOT}/tools"
+    echo "specs_path=${INSTALL_ROOT}/specs"
+    echo "skill_path=${SKILL_DIR}"
+    echo "agent_instructions_path=${INSTRUCTIONS_FILE}"
+  } | uecf_append_file_from_stdin "${LOG_FILE}" "install_local"
+
+  echo "${INSTALLED_MANIFEST}"
+}
+
+# 에이전트별 순회 설치 진행
+FIRST_INSTALLED_MANIFEST=""
+for agent in "${AGENTS[@]}"; do
+  manifest_result="$(install_for_agent "${agent}")"
+  if [ -z "${FIRST_INSTALLED_MANIFEST}" ]; then
+    FIRST_INSTALLED_MANIFEST="${manifest_result}"
+  fi
+done
+
+# 설치 검증 (1회)
+if [ "${RUN_COMMANDLET_CHECK}" = true ]; then
+  FIRST_AGENT="${AGENTS[0]}"
+  FIRST_AGENT_HOME="$(agent_home_for "${FIRST_AGENT}")"
+  FIRST_INSTALL_ROOT="${FIRST_AGENT_HOME}/UECommandForge"
+  UECF_PROJECT_FILE="${PROJECT_FILE}" "${FIRST_INSTALL_ROOT}/tools/ue/hello.sh" >/dev/null
+fi
+
+# 첫 에이전트의 홈 정보 기준으로 대표 project-manifest 작성 (1회)
+FIRST_AGENT="${AGENTS[0]}"
+FIRST_AGENT_HOME="$(agent_home_for "${FIRST_AGENT}")"
+FIRST_INSTALL_ROOT="${FIRST_AGENT_HOME}/UECommandForge"
+FIRST_SKILL_DIR="${FIRST_AGENT_HOME}/skills/uecommandforge"
+FIRST_ENV_FILE="${FIRST_INSTALL_ROOT}/uecommandforge.env"
+FIRST_SHELL_ENV_FILE="${FIRST_INSTALL_ROOT}/uecommandforge.env.sh"
+FIRST_MANIFEST_PATH="${FIRST_INSTALL_ROOT}/uecommandforge-installed.json"
+
 project_manifest_temp="$(uecf_prepare_output_temp_file "${PROJECT_MANIFEST}" "install_local")"
 if ! jq -n \
   --arg project_file "${PROJECT_FILE}" \
   --arg plugin_path "${PLUGIN_DIR}" \
-  --arg codex_home "${CODEX_HOME}" \
-  --arg codex_tools_path "${INSTALL_ROOT}/tools" \
-  --arg codex_specs_path "${INSTALL_ROOT}/specs" \
-  --arg codex_skill_path "${CODEX_SKILL_DIR}" \
+  --arg agent_home "${FIRST_AGENT_HOME}" \
+  --arg tools_path "${FIRST_INSTALL_ROOT}/tools" \
+  --arg specs_path "${FIRST_INSTALL_ROOT}/specs" \
+  --arg skill_path "${FIRST_SKILL_DIR}" \
   --arg installed_version "${VERSION}" \
-  --arg installed_manifest_path "${INSTALLED_MANIFEST}" \
-  --arg default_env_path "${CODEX_ENV_FILE}" \
-  --arg shell_env_path "${CODEX_SHELL_ENV_FILE}" \
+  --arg installed_manifest_path "${FIRST_MANIFEST_PATH}" \
+  --arg default_env_path "${FIRST_ENV_FILE}" \
+  --arg shell_env_path "${FIRST_SHELL_ENV_FILE}" \
   '{
     project_file: $project_file,
     plugin_path: $plugin_path,
-    codex_home: $codex_home,
-    codex_tools_path: $codex_tools_path,
-    codex_specs_path: $codex_specs_path,
-    codex_skill_path: $codex_skill_path,
+    agent_home: $agent_home,
+    tools_path: $tools_path,
+    specs_path: $specs_path,
+    skill_path: $skill_path,
     installed_version: $installed_version,
     installed_manifest_path: $installed_manifest_path,
     default_env_path: $default_env_path,
@@ -533,20 +655,5 @@ if ! jq -n \
 fi
 uecf_commit_output_temp_file "${project_manifest_temp}" "${PROJECT_MANIFEST}" "install_local"
 
-uecf_reject_output_file_path "${LOG_FILE}" "install_local"
-{
-  echo "installed_at=${STAMP}"
-  echo "version=${VERSION}"
-  echo "project_file=${PROJECT_FILE}"
-  echo "plugin_path=${PLUGIN_DIR}"
-  echo "tools_path=${INSTALL_ROOT}/tools"
-  echo "specs_path=${INSTALL_ROOT}/specs"
-  echo "skill_path=${CODEX_SKILL_DIR}"
-  echo "codex_agents_path=${CODEX_AGENTS_FILE}"
-} | uecf_append_file_from_stdin "${LOG_FILE}" "install_local"
-
-if [ "${RUN_COMMANDLET_CHECK}" = true ]; then
-  UECF_PROJECT_FILE="${PROJECT_FILE}" "${INSTALL_ROOT}/tools/ue/hello.sh" >/dev/null
-fi
-
-echo "${INSTALLED_MANIFEST}"
+echo "installed agents: ${AGENTS[*]}"
+echo "${FIRST_INSTALLED_MANIFEST}"

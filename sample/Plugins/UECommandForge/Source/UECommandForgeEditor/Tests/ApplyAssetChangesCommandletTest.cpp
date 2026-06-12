@@ -37,11 +37,11 @@ namespace
 bool FApplyAssetChangesCreateFolderTest::RunTest(const FString& Parameters)
 {
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_apply_asset_changes_create_folder.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_apply_asset_changes_create_folder.json"));
     const FString PlanPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_apply_asset_change_plan.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_apply_asset_change_plan.json"));
     const FString RollbackPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_apply_asset_change_rollback.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_apply_asset_change_rollback.json"));
     const FString FolderPackagePath = TEXT("/Game/Tests/ApplyCommandletFolder");
     const FString FolderDiskPath = FPackageName::LongPackageNameToFilename(FolderPackagePath);
 
@@ -92,9 +92,9 @@ bool FApplyAssetChangesCreateFolderTest::RunTest(const FString& Parameters)
 bool FApplyAssetChangesDeleteGuardTest::RunTest(const FString& Parameters)
 {
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_apply_asset_changes_delete_guard.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_apply_asset_changes_delete_guard.json"));
     const FString PlanPath = FPaths::Combine(FPaths::ProjectSavedDir(),
-        TEXT("CodexReports"), TEXT("test_apply_asset_change_delete_guard_plan.json"));
+        TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_apply_asset_change_delete_guard_plan.json"));
 
     IFileManager::Get().Delete(*ReportPath);
     IFileManager::Get().Delete(*PlanPath);

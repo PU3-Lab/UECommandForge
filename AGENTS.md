@@ -23,9 +23,9 @@ UECommandForge는 Unreal Engine 자동화를 commandlet과 운영체제별 wrapp
 ## Unreal 자동화
 
 - Unreal Editor, Asset, Blueprint, C++ Reflection, DataTable, Config 자동화 전에는 `skills/uecommandforge/SKILL.md`를 사용한다.
-- 안전 규칙은 `specs/codex/unreal-automation-agents.md`를 따른다.
+- 안전 규칙은 `specs/agent/unreal-automation-agents.md`를 따른다.
 - Unreal Python으로 자동화를 우회하지 않는다.
-- 기존 commandlet과 wrapper를 우선하고 최신 `Saved/CodexReports/*.json`으로 결과를 검증한다.
+- 기존 commandlet과 wrapper를 우선하고 최신 `Saved/UECommandForge/Reports/*.json`으로 결과를 검증한다.
 
 ## 코드 리뷰
 

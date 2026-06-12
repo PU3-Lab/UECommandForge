@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
-OUT_DIR="${REPO_ROOT}/sample/Saved/CodexReports/WindowsReleaseValidation"
+OUT_DIR="${REPO_ROOT}/sample/Saved/UECommandForge/Reports/WindowsReleaseValidation"
 REPORT="${OUT_DIR}/windows-package-wrapper-validation.json"
 
 rm -rf "${OUT_DIR}"

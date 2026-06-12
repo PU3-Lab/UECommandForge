@@ -4,7 +4,7 @@
 
 **목표:** `ue_commandlet_based_llm_automation_plan.md`에 기술된 Commandlet 기반 Unreal Engine LLM 자동화 브리지 구축. LLM이 JSON Spec을 생성하면, Shell 래퍼가 `UnrealEditor-Cmd`를 호출하고, C++ 플러그인이 Commandlet을 실행하여 Builders/Validators가 UE 에디터 API를 호출한 뒤 Result JSON을 출력한다.
 
-**아키텍처:** 새 샘플 `UECommandForgeSample.uproject` (UE 5.7)에 `Plugins/UECommandForge` 플러그인을 두 모듈로 분리한다 — `UECommandForgeRuntime` (POD 타입) + `UECommandForgeEditor` (Commandlet, Spec 파서, Builder, Validator, Report 작성기). Cross-platform Shell 래퍼는 `tools/ue/` 아래에 위치 (macOS + Windows via Git Bash/WSL). Result JSON은 항상 `Saved/CodexReports/`에 저장된다.
+**아키텍처:** 새 샘플 `UECommandForgeSample.uproject` (UE 5.7)에 `Plugins/UECommandForge` 플러그인을 두 모듈로 분리한다 — `UECommandForgeRuntime` (POD 타입) + `UECommandForgeEditor` (Commandlet, Spec 파서, Builder, Validator, Report 작성기). Cross-platform Shell 래퍼는 `tools/ue/` 아래에 위치 (macOS + Windows via Git Bash/WSL). Result JSON은 항상 `Saved/UECommandForge/Reports/`에 저장된다.
 
 **기술 스택:** Unreal Engine 5.7 (C++20), `UnrealEd`, `Json`/`JsonUtilities`, `BlueprintGraph`, `KismetCompiler`, `AssetTools`, `StateTreeModule`, `StateTreeEditorModule`, `AIModule`. macOS에서는 POSIX shell (bash), Windows에서는 Git Bash.
 
@@ -15,7 +15,7 @@
 ```bash
 ./tools/ue/create_ai_flow.sh specs/examples/guard_ai.json
 jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "ok"' \
-   "$(ls -t sample/Saved/CodexReports/CreateAIFlow_*.json | head -1)"
+   "$(ls -t sample/Saved/UECommandForge/Reports/CreateAIFlow_*.json | head -1)"
 ```
 
 ---
@@ -69,7 +69,7 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
   - 샘플 `UnrealEditor` 타깃 빌드 성공
   - `./tools/test/automation/run.sh` PASS 9 / FAIL 0 / SKIP 0
   - `./tools/test/smoke/create_statetree.sh specs/examples/guard_ai.json` PASS 5 / FAIL 0
-  - `sample/Saved/CodexReports/CreateStateTree_20260527T091001Z.json` 기준 `ok: true`, `compile_status: ok`, `asset_on_disk: true`, `asset_in_registry: true`
+  - `sample/Saved/UECommandForge/Reports/CreateStateTree_20260527T091001Z.json` 기준 `ok: true`, `compile_status: ok`, `asset_on_disk: true`, `asset_in_registry: true`
 
 ### 2026-05-27 Phase 5 마감 노트
 
@@ -81,8 +81,8 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
   - 샘플 `UnrealEditor` 타깃 빌드 성공
   - `./tools/test/automation/run.sh` PASS 10 / FAIL 0 / SKIP 0
   - `./tools/test/smoke/ai_flow_binding.sh specs/examples/guard_ai.json` PASS 8 / FAIL 0
-  - `sample/Saved/CodexReports/BindAIFlow_20260527T094750Z.json` 기준 `ok: true`, `ai_controller_class: ok`, `auto_possess_ai: ok`, `statetree_component: ok`
-  - `sample/Saved/CodexReports/ValidateAIFlow_20260527T094757Z.json` 기준 `ok: true`, `ai_controller_class: ok`, `auto_possess_ai: ok`, `statetree_component: ok`
+  - `sample/Saved/UECommandForge/Reports/BindAIFlow_20260527T094750Z.json` 기준 `ok: true`, `ai_controller_class: ok`, `auto_possess_ai: ok`, `statetree_component: ok`
+  - `sample/Saved/UECommandForge/Reports/ValidateAIFlow_20260527T094757Z.json` 기준 `ok: true`, `ai_controller_class: ok`, `auto_possess_ai: ok`, `statetree_component: ok`
 
 ### 2026-05-27 Phase 6 마감 노트
 
@@ -90,7 +90,7 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
 - `MapActorPlacer`는 `/Game/` 맵 경로 검증, 기존 맵 로드, 신규 빈 맵 생성·저장, Blueprint actor 배치, 저장 후 재검증을 수행한다.
 - 반복 실행 시 같은 Blueprint actor가 중복 배치되지 않도록 기존 actor를 제거한 뒤 다시 배치한다.
 - 검증 결과:
-  - `sample/Saved/CodexReports/PlaceActor_20260527T122059Z.json` 기준 `ok: true`, `actor_placed: ok`
+  - `sample/Saved/UECommandForge/Reports/PlaceActor_20260527T122059Z.json` 기준 `ok: true`, `actor_placed: ok`
   - `MapActorPlacerTest`는 배치, 검증, 반복 실행 후 actor 1개 유지 조건을 포함한다.
 
 ### 2026-05-28 Phase 7 마감 노트
@@ -102,7 +102,7 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
   - `./tools/ue/build_plugin.sh` 성공
   - `./tools/test/automation/run.sh` PASS 15 / FAIL 0 / SKIP 0
   - `./tools/ue/create_ai_flow.sh specs/examples/guard_ai.json` 성공
-  - `sample/Saved/CodexReports/CreateAIFlow_20260528T003339Z.json` 기준 `ok: true`, `steps` 길이 5, `validation.actor_placed: ok`
+  - `sample/Saved/UECommandForge/Reports/CreateAIFlow_20260528T003339Z.json` 기준 `ok: true`, `steps` 길이 5, `validation.actor_placed: ok`
 - 리뷰 및 eval 결과: [ucf-phase7-review-eval-report.md](ucf-phase7-review-eval-report.md)
 - 완성도 판단: 단순 뼈대가 아니라 동작하는 MVP/스프린트 완료본이며, 남은 범위는 Windows 실기 검증, rollback 자동화, UE runner 기반 CI, 프로파일 확장 같은 제품화 작업이다.
 
