@@ -19,7 +19,8 @@ public class UECommandForgeEditor : ModuleRules
             "GameplayTags",
             "AIModule", "GameplayTasks", "NavigationSystem",
             "StateTreeModule", "StateTreeEditorModule", "GameplayStateTreeModule",
-            "PropertyBindingUtils"
+            "PropertyBindingUtils",
+            "Projects"
         });
     }
 }
