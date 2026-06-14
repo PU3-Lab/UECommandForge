@@ -212,6 +212,26 @@ int32 UValidatePluginDependenciesCommandlet::Main(const FString& Params)
         }
     }
 
+    const FString Configuration = ParamsMap.FindRef(TEXT("Configuration"));
+    const bool bShipping = Configuration.Equals(TEXT("Shipping"), ESearchCase::IgnoreCase);
+    Report.Validation.Add(TEXT("configuration"),
+        Configuration.IsEmpty() ? TEXT("Development") : Configuration);
+
+    if (bShipping)
+    {
+        for (const FString& Name : Policy.ForbiddenInShipping)
+        {
+            const bool* Enabled = EnabledPlugins.Find(Name);
+            if (Enabled != nullptr && *Enabled)
+            {
+                Private::AddIssue(Report, TEXT("error"), TEXT("PLUGIN_FORBIDDEN_IN_SHIPPING_ENABLED"),
+                    TEXT("Plugin is forbidden in Shipping configuration but currently enabled."),
+                    FString::Printf(TEXT("Plugins.%s.Enabled"), *Name), ProjectPath,
+                    FString::Printf(TEXT("Disable %s for Shipping builds."), *Name));
+            }
+        }
+    }
+
     Report.Validation.Add(TEXT("issue_count"), FString::FromInt(Report.ValidationIssues.Num()));
     Report.bOk = Report.Errors.IsEmpty() && !Private::HasErrorIssue(Report.ValidationIssues);
     const bool bWrote = UECommandForge::FJsonReportWriter::Write(OutPath, Report);

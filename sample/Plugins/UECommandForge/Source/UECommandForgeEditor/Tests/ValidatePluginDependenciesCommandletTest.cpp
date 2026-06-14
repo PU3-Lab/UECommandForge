@@ -196,3 +196,43 @@ bool FValidatePluginDepsRequiredRulesTest::RunTest(const FString& Parameters)
     }
     return true;
 }
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FValidatePluginDepsForbiddenShippingTest,
+    "UECommandForge.Commandlets.ValidatePluginDeps.FlagsForbiddenOnlyInShipping",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FValidatePluginDepsForbiddenShippingTest::RunTest(const FString& Parameters)
+{
+    using namespace PluginDepsTestHelpers;
+    const FString ProjPath = FPaths::Combine(TempDir(), TEXT("Forb"), TEXT("T.uproject"));
+    const FString PolicyPath = FPaths::Combine(TempDir(), TEXT("forb.policy.json"));
+    TestTrue(TEXT("uproject"), SaveUProject(ProjPath)); // Niagara enabled
+    TestTrue(TEXT("policy"), SavePolicy(PolicyPath, TEXT("plugin_dependency_policy"),
+        TEXT("[]"), TEXT(R"(["Niagara"])")));
+
+    {
+        const FString OutDev = FPaths::Combine(TempDir(), TEXT("forb_dev.json"));
+        UValidatePluginDependenciesCommandlet* C = NewObject<UValidatePluginDependenciesCommandlet>();
+        const int32 Exit = C->Main(FString::Printf(
+            TEXT("-Output=\"%s\" -Policy=\"%s\" -Project=\"%s\" -Configuration=Development"),
+            *OutDev, *PolicyPath, *ProjPath));
+        TestEqual(TEXT("dev ok"), Exit, 0);
+    }
+    {
+        const FString OutShip = FPaths::Combine(TempDir(), TEXT("forb_ship.json"));
+        UValidatePluginDependenciesCommandlet* C = NewObject<UValidatePluginDependenciesCommandlet>();
+        const int32 Exit = C->Main(FString::Printf(
+            TEXT("-Output=\"%s\" -Policy=\"%s\" -Project=\"%s\" -Configuration=Shipping"),
+            *OutShip, *PolicyPath, *ProjPath));
+        TestEqual(TEXT("ship fail"), Exit,
+            static_cast<int32>(ECommandForgeExitCode::ValidationFailed));
+        TSharedPtr<FJsonObject> Report;
+        if (LoadReport(OutShip, Report) && Report.IsValid())
+        {
+            TestTrue(TEXT("forbidden flagged"),
+                ReportHasIssueCode(Report, TEXT("PLUGIN_FORBIDDEN_IN_SHIPPING_ENABLED")));
+        }
+    }
+    return true;
+}
