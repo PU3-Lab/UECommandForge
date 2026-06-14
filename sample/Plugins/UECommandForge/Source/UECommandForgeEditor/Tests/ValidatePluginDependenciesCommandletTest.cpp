@@ -29,6 +29,22 @@ namespace PluginDepsTestHelpers
         return FJsonSerializer::Deserialize(Reader, OutObject) && OutObject.IsValid();
     }
 
+    inline bool ReportHasIssueCode(const TSharedPtr<FJsonObject>& Report, const FString& Code)
+    {
+        const TArray<TSharedPtr<FJsonValue>>* Issues = nullptr;
+        if (!Report->TryGetArrayField(TEXT("issues"), Issues) || !Issues) { return false; }
+        for (const TSharedPtr<FJsonValue>& V : *Issues)
+        {
+            const TSharedPtr<FJsonObject>* Obj = nullptr;
+            if (V->TryGetObject(Obj) && Obj)
+            {
+                FString C;
+                if ((*Obj)->TryGetStringField(TEXT("code"), C) && C == Code) { return true; }
+            }
+        }
+        return false;
+    }
+
     inline bool SavePolicy(const FString& Path, const FString& Kind,
         const FString& RequiredJsonArray, const FString& ForbiddenJsonArray)
     {
@@ -144,6 +160,39 @@ bool FValidatePluginDepsReadsEnabledPluginsTest::RunTest(const FString& Paramete
         {
             AddError(TEXT("validation object missing in report"));
         }
+    }
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FValidatePluginDepsRequiredRulesTest,
+    "UECommandForge.Commandlets.ValidatePluginDeps.FlagsMissingAndDisabledRequired",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FValidatePluginDepsRequiredRulesTest::RunTest(const FString& Parameters)
+{
+    using namespace PluginDepsTestHelpers;
+    const FString ProjPath = FPaths::Combine(TempDir(), TEXT("Req"), TEXT("T.uproject"));
+    const FString PolicyPath = FPaths::Combine(TempDir(), TEXT("req.policy.json"));
+    const FString OutPath = FPaths::Combine(TempDir(), TEXT("req.json"));
+    TestTrue(TEXT("uproject"), SaveUProject(ProjPath)); // Niagara enabled, OnlineSubsystem disabled
+    TestTrue(TEXT("policy"), SavePolicy(PolicyPath, TEXT("plugin_dependency_policy"),
+        TEXT(R"(["OnlineSubsystem","Paper2D"])"), TEXT("[]")));
+
+    UValidatePluginDependenciesCommandlet* Commandlet =
+        NewObject<UValidatePluginDependenciesCommandlet>();
+    const int32 ExitCode = Commandlet->Main(FString::Printf(
+        TEXT("-Output=\"%s\" -Policy=\"%s\" -Project=\"%s\""), *OutPath, *PolicyPath, *ProjPath));
+
+    TestEqual(TEXT("exit ValidationFailed"), ExitCode,
+        static_cast<int32>(ECommandForgeExitCode::ValidationFailed));
+    TSharedPtr<FJsonObject> Report;
+    TestTrue(TEXT("report"), LoadReport(OutPath, Report));
+    if (Report.IsValid())
+    {
+        TestFalse(TEXT("ok false"), Report->GetBoolField(TEXT("ok")));
+        TestTrue(TEXT("disabled flagged"), ReportHasIssueCode(Report, TEXT("PLUGIN_REQUIRED_DISABLED")));
+        TestTrue(TEXT("missing flagged"), ReportHasIssueCode(Report, TEXT("PLUGIN_REQUIRED_MISSING")));
     }
     return true;
 }

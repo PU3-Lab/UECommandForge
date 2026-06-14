@@ -36,6 +36,29 @@ namespace UECommandForge::ValidatePluginDepsPrivate
         Report.Errors.Add(Error);
     }
 
+    void AddIssue(FCommandForgeReport& Report, const FString& Severity, const FString& Code,
+        const FString& Message, const FString& Field, const FString& FilePath,
+        const FString& SuggestedFix)
+    {
+        FCommandForgeValidationIssue Issue;
+        Issue.Severity = Severity;
+        Issue.Code = Code;
+        Issue.Message = Message;
+        Issue.Field = Field;
+        Issue.FilePath = FilePath;
+        Issue.SuggestedFix = SuggestedFix;
+        Report.ValidationIssues.Add(Issue);
+    }
+
+    bool HasErrorIssue(const TArray<FCommandForgeValidationIssue>& Issues)
+    {
+        for (const FCommandForgeValidationIssue& I : Issues)
+        {
+            if (I.Severity.Equals(TEXT("error"), ESearchCase::IgnoreCase)) { return true; }
+        }
+        return false;
+    }
+
     bool TryGetStringArray(const TSharedPtr<FJsonObject>& Object, const FString& FieldName,
         TArray<FString>& OutValues)
     {
@@ -170,7 +193,28 @@ int32 UValidatePluginDependenciesCommandlet::Main(const FString& Params)
     }
     Report.Validation.Add(TEXT("enabled_plugin_count"), FString::FromInt(EnabledCount));
 
-    Report.bOk = true; // rules added in later tasks
-    UECommandForge::FJsonReportWriter::Write(OutPath, Report);
-    return 0;
+    for (const FString& Name : Policy.Required)
+    {
+        const bool* Enabled = EnabledPlugins.Find(Name);
+        if (Enabled == nullptr)
+        {
+            Private::AddIssue(Report, TEXT("error"), TEXT("PLUGIN_REQUIRED_MISSING"),
+                TEXT("Required plugin is missing."),
+                FString::Printf(TEXT("required[%s]"), *Name), ProjectPath,
+                TEXT("Enable the plugin in the project or remove it from the required policy."));
+        }
+        else if (!*Enabled)
+        {
+            Private::AddIssue(Report, TEXT("error"), TEXT("PLUGIN_REQUIRED_DISABLED"),
+                TEXT("Required plugin is present but disabled."),
+                FString::Printf(TEXT("required[%s]"), *Name), ProjectPath,
+                TEXT("Set Enabled=true for this plugin in the .uproject."));
+        }
+    }
+
+    Report.Validation.Add(TEXT("issue_count"), FString::FromInt(Report.ValidationIssues.Num()));
+    Report.bOk = Report.Errors.IsEmpty() && !Private::HasErrorIssue(Report.ValidationIssues);
+    const bool bWrote = UECommandForge::FJsonReportWriter::Write(OutPath, Report);
+    if (!bWrote) { return static_cast<int32>(ECommandForgeExitCode::EngineError); }
+    return Report.bOk ? 0 : static_cast<int32>(ECommandForgeExitCode::ValidationFailed);
 }
