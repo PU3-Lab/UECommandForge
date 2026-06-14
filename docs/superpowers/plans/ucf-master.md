@@ -32,6 +32,9 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
 | 6 | [ucf-phase6.md](ucf-phase6.md) | 맵 배치 | Phase 5 |
 | 7 | [ucf-phase7.md](ucf-phase7.md) | 워크플로우 Commandlet (원스톱) | Phase 6 |
 | 8 | [ucf-phase8-prototype-automation-plan.md](ucf-phase8-prototype-automation-plan.md) | prototype 기반 에셋 정책, C++ 생성, 데이터 검증 제품화 및 배포 | Phase 7 |
+| 9 | [references/10_packaging_cook_build_plan.md](references/10_packaging_cook_build_plan.md) | **출시(릴리즈) 지향** — Packaging / Cook / 플랫폼 Build 설정 자동 검증·리포트로 배포 가능한 빌드 산출 | Phase 8 |
+
+**현재 마일스톤:** 0.9.0 게시 완료. 다음 목표는 **출시 가능한 게임 빌드 자동화(1.0.0)** — Phase 9에서 Cook/Packaging/플랫폼 Build 파이프라인을 "읽기 전용 분석 → 리포트 → 제한적 생성 → 사람 승인 → 적용" 원칙으로 구축한다.
 
 ---
 
@@ -46,7 +49,8 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
 | 5 | 완료 | `./tools/test/automation/run.sh` PASS 10 / FAIL 0, `./tools/test/smoke/ai_flow_binding.sh specs/examples/guard_ai.json` PASS 8 / FAIL 0 |
 | 6 | 완료 | `PlaceActor` 리포트 `ok: true`, `actor_placed: ok` |
 | 7 | 완료 | `./tools/ue/build_plugin.sh` 통과, `./tools/test/automation/run.sh` PASS 15 / FAIL 0, `CreateAIFlow` 인수 조건 통과 |
-| 8 | 로컬 최종 검증 완료, Windows 실기 검증 및 GitHub Release 게시 전 | `./tools/ue/build_plugin.sh`, `./tools/test/automation/run.sh` PASS 52 / FAIL 0 / SKIP 0, Phase 8 smoke/package/installer 게이트 PASS |
+| 8 | 완료 — v0.9.0 GitHub Release 게시 (2026-06-14, Mac plugin + Tools + Source 에셋). 잔여: Windows `.bat` wrapper 실기 검증(Windows 호스트 필요) | `./tools/ue/build_plugin.sh`, `./tools/test/automation/run.sh` PASS 52 / FAIL 0 / SKIP 0, Phase 8 smoke/package/installer 게이트 PASS, Release: https://github.com/PU3-Lab/UECommandForge/releases/tag/v0.9.0 |
+| 9 | 미착수 — 출시(릴리즈) 지향 Packaging/Cook/Build 파이프라인 | — |
 
 ### 2026-05-27 Phase 3 마감 노트
 
