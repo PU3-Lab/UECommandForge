@@ -2,8 +2,10 @@
 
 #include "CommandForgeTypes.h"
 #include "Dom/JsonObject.h"
+#include "HAL/FileManager.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
+#include "PluginDescriptor.h"
 #include "ProjectDescriptor.h"
 #include "Reports/JsonReportWriter.h"
 #include "Specs/CommandForgePolicyParser.h"
@@ -116,6 +118,38 @@ namespace UECommandForge::ValidatePluginDepsPrivate
         }
         return true;
     }
+
+    // True if the plugin (located under the target project's Plugins dir) has a module
+    // whose type ships into runtime/cooked builds. If the descriptor can't be found,
+    // returns true conservatively (avoid silently passing a real shipping risk).
+    bool PluginHasRuntimeModule(const FString& ProjectPath, const FString& PluginName)
+    {
+        const FString PluginsDir = FPaths::Combine(FPaths::GetPath(ProjectPath), TEXT("Plugins"));
+        TArray<FString> Found;
+        IFileManager::Get().FindFilesRecursive(Found, *PluginsDir,
+            *(PluginName + TEXT(".uplugin")), true, false);
+        if (Found.Num() == 0) { return true; }
+        FPluginDescriptor Desc;
+        FText FailReason;
+        if (!Desc.Load(Found[0], FailReason)) { return true; }
+        for (const FModuleDescriptor& Module : Desc.Modules)
+        {
+            switch (Module.Type)
+            {
+                case EHostType::Runtime:
+                case EHostType::RuntimeNoCommandlet:
+                case EHostType::RuntimeAndProgram:
+                case EHostType::ClientOnly:
+                case EHostType::ServerOnly:
+                case EHostType::ClientOnlyNoCommandlet:
+                case EHostType::CookedOnly:
+                    return true;
+                default:
+                    break;
+            }
+        }
+        return false;
+    }
 }
 
 int32 UValidatePluginDependenciesCommandlet::Main(const FString& Params)
@@ -222,7 +256,8 @@ int32 UValidatePluginDependenciesCommandlet::Main(const FString& Params)
         for (const FString& Name : Policy.ForbiddenInShipping)
         {
             const bool* Enabled = EnabledPlugins.Find(Name);
-            if (Enabled != nullptr && *Enabled)
+            if (Enabled != nullptr && *Enabled &&
+                Private::PluginHasRuntimeModule(ProjectPath, Name))
             {
                 Private::AddIssue(Report, TEXT("error"), TEXT("PLUGIN_FORBIDDEN_IN_SHIPPING_ENABLED"),
                     TEXT("Plugin is forbidden in Shipping configuration but currently enabled."),

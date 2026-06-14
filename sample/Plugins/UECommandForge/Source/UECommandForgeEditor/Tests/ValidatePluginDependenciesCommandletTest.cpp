@@ -75,6 +75,31 @@ namespace PluginDepsTestHelpers
         return FFileHelper::SaveStringToFile(Json, *Path,
             FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
     }
+
+    inline bool SaveEditorOnlyPlugin(const FString& ProjectDir, const FString& PluginName)
+    {
+        const FString PluginPath = FPaths::Combine(ProjectDir, TEXT("Plugins"), PluginName,
+            PluginName + TEXT(".uplugin"));
+        const FString Json = FString::Printf(TEXT(R"({
+  "FileVersion": 3,
+  "FriendlyName": "%s",
+  "Modules": [ { "Name": "%sEditor", "Type": "Editor", "LoadingPhase": "Default" } ]
+})"), *PluginName, *PluginName);
+        FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*FPaths::GetPath(PluginPath));
+        return FFileHelper::SaveStringToFile(Json, *PluginPath,
+            FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+    }
+
+    inline bool SaveUProjectWithPlugin(const FString& Path, const FString& PluginName)
+    {
+        const FString Json = FString::Printf(TEXT(R"({
+  "FileVersion": 3, "EngineAssociation": "5.7",
+  "Plugins": [ { "Name": "%s", "Enabled": true } ]
+})"), *PluginName);
+        FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*FPaths::GetPath(Path));
+        return FFileHelper::SaveStringToFile(Json, *Path,
+            FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+    }
 }
 
 bool FValidatePluginDepsMissingPolicyArgTest::RunTest(const FString& Parameters)
@@ -233,6 +258,38 @@ bool FValidatePluginDepsForbiddenShippingTest::RunTest(const FString& Parameters
             TestTrue(TEXT("forbidden flagged"),
                 ReportHasIssueCode(Report, TEXT("PLUGIN_FORBIDDEN_IN_SHIPPING_ENABLED")));
         }
+    }
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FValidatePluginDepsEditorOnlyNotForbiddenTest,
+    "UECommandForge.Commandlets.ValidatePluginDeps.EditorOnlyModuleNotForbiddenInShipping",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FValidatePluginDepsEditorOnlyNotForbiddenTest::RunTest(const FString& Parameters)
+{
+    using namespace PluginDepsTestHelpers;
+    const FString ProjDir = FPaths::Combine(TempDir(), TEXT("EdOnly"));
+    const FString ProjPath = FPaths::Combine(ProjDir, TEXT("T.uproject"));
+    const FString PolicyPath = FPaths::Combine(TempDir(), TEXT("edonly.policy.json"));
+    const FString OutPath = FPaths::Combine(TempDir(), TEXT("edonly.json"));
+    TestTrue(TEXT("uproject"), SaveUProjectWithPlugin(ProjPath, TEXT("MyEditorTool")));
+    TestTrue(TEXT("uplugin"), SaveEditorOnlyPlugin(ProjDir, TEXT("MyEditorTool")));
+    TestTrue(TEXT("policy"), SavePolicy(PolicyPath, TEXT("plugin_dependency_policy"),
+        TEXT("[]"), TEXT(R"(["MyEditorTool"])")));
+
+    UValidatePluginDependenciesCommandlet* C = NewObject<UValidatePluginDependenciesCommandlet>();
+    const int32 Exit = C->Main(FString::Printf(
+        TEXT("-Output=\"%s\" -Policy=\"%s\" -Project=\"%s\" -Configuration=Shipping"),
+        *OutPath, *PolicyPath, *ProjPath));
+
+    TestEqual(TEXT("ok exit 0"), Exit, 0);
+    TSharedPtr<FJsonObject> Report;
+    if (LoadReport(OutPath, Report) && Report.IsValid())
+    {
+        TestFalse(TEXT("forbidden NOT flagged"),
+            ReportHasIssueCode(Report, TEXT("PLUGIN_FORBIDDEN_IN_SHIPPING_ENABLED")));
     }
     return true;
 }
