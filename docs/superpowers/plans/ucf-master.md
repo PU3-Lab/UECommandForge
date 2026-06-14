@@ -50,7 +50,7 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
 | 6 | 완료 | `PlaceActor` 리포트 `ok: true`, `actor_placed: ok` |
 | 7 | 완료 | `./tools/ue/build_plugin.sh` 통과, `./tools/test/automation/run.sh` PASS 15 / FAIL 0, `CreateAIFlow` 인수 조건 통과 |
 | 8 | 완료 — v0.9.0 GitHub Release 게시 (2026-06-14, Mac plugin + Tools + Source 에셋). 잔여: Windows `.bat` wrapper 실기 검증(Windows 호스트 필요) | `./tools/ue/build_plugin.sh`, `./tools/test/automation/run.sh` PASS 52 / FAIL 0 / SKIP 0, Phase 8 smoke/package/installer 게이트 PASS, Release: https://github.com/PU3-Lab/UECommandForge/releases/tag/v0.9.0 |
-| 9 | 미착수 — 출시(릴리즈) 지향 Packaging/Cook/Build 파이프라인 | — |
+| 9 | 진행 중 — 출시(릴리즈) 지향 Packaging/Cook/Build 파이프라인. **9A 사전점검 검증 계층 완료**: `ValidatePluginDependencies` 커맨드렛 Task 1–7 구현, 빌드/테스트/스모크 실기 그린 재현 완료. 잔여: 스펙 M3 심화·Editor 모듈 warning·smoke test 파일, `DiffPlatformConfig`(H1 스파이크 선행) | 완료 (실기 검증 완료). 계획: [2026-06-14-phase9a-plugin-dependency-validation.md](2026-06-14-phase9a-plugin-dependency-validation.md), 스펙: [2026-06-14-phase9a-pre-release-validation-design.md](../specs/2026-06-14-phase9a-pre-release-validation-design.md) |
 
 ### 2026-05-27 Phase 3 마감 노트
 

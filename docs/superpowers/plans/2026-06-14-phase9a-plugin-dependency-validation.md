@@ -12,6 +12,26 @@
 
 ---
 
+## 진행 상태 (2026-06-15 업데이트)
+
+**Task 1–7 구현·검증 완료** (branch `docs/harness-scope-and-release-roadmap`, worktree `worktree-phase9a-plugin-deps` 병합).
+
+| Task | 내용 | 커밋 | 상태 |
+|---|---|---|---|
+| 1 | 스켈레톤 + `Projects` 의존성 | `8adc993` | ✅ 커밋 및 실기 검증 완료 |
+| 2 | 정책 JSON 파싱 | `23f8a8b` | ✅ 커밋 및 실기 검증 완료 |
+| 3 | 대상 `.uproject` 플러그인 활성 상태 읽기 | `fbd5e0a` | ✅ 커밋 및 실기 검증 완료 |
+| 4 | required 누락/비활성 규칙 | `0ce52e2` | ✅ 커밋 및 실기 검증 완료 |
+| 5 | forbiddenInShipping + `-Configuration` 게이트 | `3c2809f` | ✅ 커밋 및 실기 검증 완료 |
+| 6 | `.uplugin` 모듈 타입으로 금지 정밀화 | `9affb42` | ✅ 커밋 및 실기 검증 완료 |
+| 7 | 래퍼 + 예시 정책 + README | `bf1e85d` | ✅ 커밋 및 실기 검증 완료 |
+
+> **검증 상태:** UE 5.7 빌드 및 자동화 테스트 59개 전체 통과(`PASS: 59 / FAIL: 0`), 그리고 `tools/ue/validate_plugin_deps.sh` 래퍼 스모크 테스트를 완료하고 리포트 생성 및 정상 판정(`ok: true`, `issue_count: 0`)을 확인 완료함.
+
+> **스펙 대비 잔여(별도 작업):** 스펙 §3.4 M3 심화(`EnabledByDefault`·`PlatformAllowList/DenyList`/`TargetAllowList` 반영), §3.5–3.6 Editor 모듈 warning(`PLUGIN_EDITOR_MODULE_IN_RUNTIME_PLUGIN`, `PLUGIN_MODULE_TYPE_SUSPECT`), §2.3 `summary` 필드, §7.3 커밋된 smoke test 파일(`tools/test/smoke/validate_plugin_deps.sh`)은 본 계획 범위 밖이며 후속 작업으로 남는다.
+
+---
+
 ## File Structure
 
 | 파일 | 책임 |
@@ -36,7 +56,7 @@
 - Create: `EDITOR/Private/Commandlets/ValidatePluginDependenciesCommandlet.cpp`
 - Test: `EDITOR/Tests/ValidatePluginDependenciesCommandletTest.cpp`
 
-- [ ] **Step 1: Build.cs에 `Projects` 의존성 추가**
+- [x] **Step 1: Build.cs에 `Projects` 의존성 추가**
 
 `UECommandForgeEditor.Build.cs`의 `PrivateDependencyModuleNames` 배열 끝에 `"Projects"`를 추가한다 (`FProjectDescriptor`/`FPluginDescriptor` 사용 위함):
 
@@ -55,7 +75,7 @@ PrivateDependencyModuleNames.AddRange(new[]
 });
 ```
 
-- [ ] **Step 2: 헤더 생성**
+- [x] **Step 2: 헤더 생성**
 
 `ValidatePluginDependenciesCommandlet.h`:
 
@@ -76,7 +96,7 @@ public:
 };
 ```
 
-- [ ] **Step 3: 실패 테스트 작성 — `-Policy` 누락 시 SpecParseFailed**
+- [x] **Step 3: 실패 테스트 작성 — `-Policy` 누락 시 SpecParseFailed**
 
 `ValidatePluginDependenciesCommandletTest.cpp`:
 
@@ -134,12 +154,12 @@ bool FValidatePluginDepsMissingPolicyArgTest::RunTest(const FString& Parameters)
 }
 ```
 
-- [ ] **Step 4: 테스트 실패 확인**
+- [x] **Step 4: 테스트 실패 확인**
 
 Run: `tools/ue/build_plugin.sh && tools/test/automation/run.sh`
 Expected: 컴파일 실패 (`Main` 미구현) 또는 링크 실패 — 테스트가 RED.
 
-- [ ] **Step 5: 최소 구현 — 인자 파싱 + 빈 리포트 기록**
+- [x] **Step 5: 최소 구현 — 인자 파싱 + 빈 리포트 기록**
 
 `ValidatePluginDependenciesCommandlet.cpp`:
 
@@ -206,12 +226,12 @@ int32 UValidatePluginDependenciesCommandlet::Main(const FString& Params)
 }
 ```
 
-- [ ] **Step 6: 테스트 통과 확인**
+- [x] **Step 6: 테스트 통과 확인**
 
 Run: `tools/ue/build_plugin.sh && tools/test/automation/run.sh`
 Expected: `FValidatePluginDepsMissingPolicyArgTest` PASS.
 
-- [ ] **Step 7: 커밋**
+- [x] **Step 7: 커밋**
 
 ```bash
 git add sample/Plugins/UECommandForge/Source/UECommandForgeEditor/UECommandForgeEditor.Build.cs \
@@ -231,7 +251,7 @@ git commit -m "feat: scaffold ValidatePluginDependencies commandlet"
 
 정책 스키마: `kind: "plugin_dependency_policy"`, 배열 `required`/`forbiddenInShipping`/`optional`/`allowedEditorOnly`.
 
-- [ ] **Step 1: 실패 테스트 — 잘못된 kind는 SpecParseFailed**
+- [x] **Step 1: 실패 테스트 — 잘못된 kind는 SpecParseFailed**
 
 테스트 파일에 추가:
 
@@ -279,12 +299,12 @@ bool FValidatePluginDepsRejectsWrongKindTest::RunTest(const FString& Parameters)
 }
 ```
 
-- [ ] **Step 2: 테스트 실패 확인**
+- [x] **Step 2: 테스트 실패 확인**
 
 Run: `tools/test/automation/run.sh`
 Expected: FAIL — 현재 구현은 kind를 검사하지 않아 0을 반환.
 
-- [ ] **Step 3: 정책 파싱 구현**
+- [x] **Step 3: 정책 파싱 구현**
 
 `.cpp` 상단 include 추가: `#include "Dom/JsonObject.h"`, `#include "Specs/CommandForgePolicyParser.h"`.
 
@@ -375,12 +395,12 @@ Expected: FAIL — 현재 구현은 kind를 검사하지 않아 0을 반환.
     return 0;
 ```
 
-- [ ] **Step 4: 테스트 통과 확인**
+- [x] **Step 4: 테스트 통과 확인**
 
 Run: `tools/ue/build_plugin.sh && tools/test/automation/run.sh`
 Expected: `FValidatePluginDepsRejectsWrongKindTest` PASS, 기존 테스트 유지.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add -A && git commit -m "feat: parse plugin dependency policy JSON"
@@ -396,7 +416,7 @@ git add -A && git commit -m "feat: parse plugin dependency policy JSON"
 
 `-Project=<.uproject>`를 `FProjectDescriptor::Load`로 읽어, 플러그인 이름 → 활성 여부 맵을 만든다. 활성 = `.uproject` `Plugins[]`에 `bEnabled:true`.
 
-- [ ] **Step 1: 실패 테스트 — 활성 플러그인 집합 노출**
+- [x] **Step 1: 실패 테스트 — 활성 플러그인 집합 노출**
 
 테스트에 합성 .uproject 헬퍼 + 케이스 추가:
 
@@ -458,12 +478,12 @@ bool FValidatePluginDepsReadsEnabledPluginsTest::RunTest(const FString& Paramete
 
 > 참고: 리포트 JSON의 `validation` 객체는 `FCommandForgeReport.Validation`(TMap) 직렬화 결과다.
 
-- [ ] **Step 2: 테스트 실패 확인**
+- [x] **Step 2: 테스트 실패 확인**
 
 Run: `tools/test/automation/run.sh`
 Expected: FAIL — `enabled_plugin_count` 미기록.
 
-- [ ] **Step 3: 프로젝트 로드 구현**
+- [x] **Step 3: 프로젝트 로드 구현**
 
 `.cpp` include 추가: `#include "ProjectDescriptor.h"`, `#include "Misc/Paths.h"`.
 
@@ -514,12 +534,12 @@ Expected: FAIL — `enabled_plugin_count` 미기록.
     Report.Validation.Add(TEXT("enabled_plugin_count"), FString::FromInt(EnabledCount));
 ```
 
-- [ ] **Step 4: 테스트 통과 확인**
+- [x] **Step 4: 테스트 통과 확인**
 
 Run: `tools/ue/build_plugin.sh && tools/test/automation/run.sh`
 Expected: `FValidatePluginDepsReadsEnabledPluginsTest` PASS.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add -A && git commit -m "feat: read enabled plugins from target .uproject"
@@ -533,7 +553,7 @@ git add -A && git commit -m "feat: read enabled plugins from target .uproject"
 - Modify: `EDITOR/Private/Commandlets/ValidatePluginDependenciesCommandlet.cpp`
 - Test: `EDITOR/Tests/ValidatePluginDependenciesCommandletTest.cpp`
 
-- [ ] **Step 1: 실패 테스트 — 누락/비활성 각각 error**
+- [x] **Step 1: 실패 테스트 — 누락/비활성 각각 error**
 
 ```cpp
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
@@ -595,12 +615,12 @@ bool FValidatePluginDepsRequiredRulesTest::RunTest(const FString& Parameters)
 }
 ```
 
-- [ ] **Step 2: 테스트 실패 확인**
+- [x] **Step 2: 테스트 실패 확인**
 
 Run: `tools/test/automation/run.sh`
 Expected: FAIL — 규칙 미구현.
 
-- [ ] **Step 3: 규칙 구현**
+- [x] **Step 3: 규칙 구현**
 
 `Private`에 `AddIssue` 헬퍼 추가(ValidateBuildCs와 동일하나 severity 인자화):
 
@@ -664,12 +684,12 @@ Expected: FAIL — 규칙 미구현.
 
 (앞 Task들에서 임시로 둔 `Report.bOk = true; Write; return 0;` 라인은 제거.)
 
-- [ ] **Step 4: 테스트 통과 확인**
+- [x] **Step 4: 테스트 통과 확인**
 
 Run: `tools/ue/build_plugin.sh && tools/test/automation/run.sh`
 Expected: `FValidatePluginDepsRequiredRulesTest` PASS, 기존 PASS 유지.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add -A && git commit -m "feat: flag missing/disabled required plugins"
@@ -685,7 +705,7 @@ git add -A && git commit -m "feat: flag missing/disabled required plugins"
 
 `-Configuration=Shipping`일 때만 `forbiddenInShipping` 위반을 error로 본다. (정밀화: 런타임 모듈 보유 여부는 Task 6에서 .uplugin 분석과 함께 보강. 본 Task는 "활성 + Shipping 구성"까지.)
 
-- [ ] **Step 1: 실패 테스트 — Shipping에서만 금지 위반**
+- [x] **Step 1: 실패 테스트 — Shipping에서만 금지 위반**
 
 ```cpp
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
@@ -731,12 +751,12 @@ bool FValidatePluginDepsForbiddenShippingTest::RunTest(const FString& Parameters
 }
 ```
 
-- [ ] **Step 2: 테스트 실패 확인**
+- [x] **Step 2: 테스트 실패 확인**
 
 Run: `tools/test/automation/run.sh`
 Expected: FAIL.
 
-- [ ] **Step 3: 규칙 구현**
+- [x] **Step 3: 규칙 구현**
 
 `Main`의 required 검사 다음에 추가:
 
@@ -761,12 +781,12 @@ Expected: FAIL.
     }
 ```
 
-- [ ] **Step 4: 테스트 통과 확인**
+- [x] **Step 4: 테스트 통과 확인**
 
 Run: `tools/ue/build_plugin.sh && tools/test/automation/run.sh`
 Expected: `FValidatePluginDepsForbiddenShippingTest` PASS.
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add -A && git commit -m "feat: flag forbidden-in-shipping plugins under Shipping config"
@@ -782,7 +802,7 @@ git add -A && git commit -m "feat: flag forbidden-in-shipping plugins under Ship
 
 대상 프로젝트의 `Plugins/**.uplugin`을 스캔해 모듈 타입을 본다. (M2/M3) 활성 플러그인에 Editor/DeveloperTool 전용 모듈만 있고 Runtime 모듈이 없으면 `forbiddenInShipping` 위반에서 제외하고, runtime 플러그인에 Editor 모듈이 섞여 있으면 warning.
 
-- [ ] **Step 1: 실패 테스트 — Editor 전용 모듈 플러그인은 Shipping 금지 오탐 안 됨**
+- [x] **Step 1: 실패 테스트 — Editor 전용 모듈 플러그인은 Shipping 금지 오탐 안 됨**
 
 ```cpp
 IMPLEMENT_SIMPLE_AUTOMATION_TEST(
@@ -847,12 +867,12 @@ bool FValidatePluginDepsEditorOnlyNotForbiddenTest::RunTest(const FString& Param
 }
 ```
 
-- [ ] **Step 2: 테스트 실패 확인**
+- [x] **Step 2: 테스트 실패 확인**
 
 Run: `tools/test/automation/run.sh`
 Expected: FAIL — 현재 구현은 모듈 타입 무시, Niagara 외 케이스에서 금지 오탐.
 
-- [ ] **Step 3: .uplugin 모듈 분석 구현**
+- [x] **Step 3: .uplugin 모듈 분석 구현**
 
 `.cpp` include 추가: `#include "PluginDescriptor.h"`, `#include "HAL/FileManager.h"`.
 
@@ -907,12 +927,12 @@ Task 5의 forbiddenInShipping 루프 내부 조건을 정밀화:
             }
 ```
 
-- [ ] **Step 4: 테스트 통과 확인**
+- [x] **Step 4: 테스트 통과 확인**
 
 Run: `tools/ue/build_plugin.sh && tools/test/automation/run.sh`
 Expected: `FValidatePluginDepsEditorOnlyNotForbiddenTest` PASS, Task 5의 Niagara 케이스도 PASS 유지(Niagara는 runtime 모듈 보유 — 단, 합성 .uproject엔 .uplugin이 없어 보수적 true로 처리되어 유지됨).
 
-- [ ] **Step 5: 커밋**
+- [x] **Step 5: 커밋**
 
 ```bash
 git add -A && git commit -m "feat: refine forbidden-in-shipping using .uplugin module types"
@@ -928,7 +948,7 @@ git add -A && git commit -m "feat: refine forbidden-in-shipping using .uplugin m
 - Create: `specs/policies/plugin.policy.example.json`
 - Modify: `README.md`
 
-- [ ] **Step 1: 예시 정책 작성**
+- [x] **Step 1: 예시 정책 작성**
 
 `specs/policies/plugin.policy.example.json`:
 
@@ -943,7 +963,7 @@ git add -A && git commit -m "feat: refine forbidden-in-shipping using .uplugin m
 }
 ```
 
-- [ ] **Step 2: 셸 래퍼 작성 (validate_buildcs.sh 패턴)**
+- [x] **Step 2: 셸 래퍼 작성 (validate_buildcs.sh 패턴)**
 
 `tools/ue/validate_plugin_deps.sh`:
 
@@ -970,11 +990,11 @@ exec "${SCRIPT_DIR}/run_commandlet.sh" ValidatePluginDependencies -Policy="${POL
 
 실행 권한: `chmod +x tools/ue/validate_plugin_deps.sh`
 
-- [ ] **Step 3: 배치 래퍼 작성**
+- [x] **Step 3: 배치 래퍼 작성**
 
 `tools/ue/validate_plugin_deps.bat` — 기존 `tools/ue/validate_buildcs.bat`를 복사해 commandlet 이름만 `ValidatePluginDependencies`로 바꾸고 인자 안내 문구를 수정한다. (기존 .bat 구조 그대로 따른다.)
 
-- [ ] **Step 4: README 명령 표면 표에 등재**
+- [x] **Step 4: README 명령 표면 표에 등재**
 
 `README.md`의 "AI 에이전트 명령 표면" 표에 행 추가:
 
@@ -982,7 +1002,7 @@ exec "${SCRIPT_DIR}/run_commandlet.sh" ValidatePluginDependencies -Policy="${POL
 | `tools/ue/validate_plugin_deps.sh <policy.json>` | `tools\ue\validate_plugin_deps.bat <policy.json>` | 플러그인 의존성 정책 검증 |
 ```
 
-- [ ] **Step 5: 스모크 검증 (수동/CI)**
+- [x] **Step 5: 스모크 검증 (수동/CI)**
 
 Run:
 ```bash
@@ -993,7 +1013,7 @@ jq -e '.ok != null and (.command == "ValidatePluginDependencies")' \
 ```
 Expected: Result JSON 생성, `command` 일치, `ok` 필드 존재.
 
-- [ ] **Step 6: 커밋**
+- [x] **Step 6: 커밋**
 
 ```bash
 git add tools/ue/validate_plugin_deps.sh tools/ue/validate_plugin_deps.bat \
