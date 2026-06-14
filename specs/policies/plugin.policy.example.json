@@ -1,0 +1,8 @@
+{
+  "version": "1",
+  "kind": "plugin_dependency_policy",
+  "required": [],
+  "forbiddenInShipping": ["EditorScriptingUtilities", "PythonScriptPlugin"],
+  "optional": ["GameplayInsights"],
+  "allowedEditorOnly": []
+}
