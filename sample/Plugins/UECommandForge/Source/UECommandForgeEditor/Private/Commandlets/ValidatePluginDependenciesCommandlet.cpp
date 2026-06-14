@@ -3,6 +3,8 @@
 #include "CommandForgeTypes.h"
 #include "Dom/JsonObject.h"
 #include "Misc/FileHelper.h"
+#include "Misc/Paths.h"
+#include "ProjectDescriptor.h"
 #include "Reports/JsonReportWriter.h"
 #include "Specs/CommandForgePolicyParser.h"
 
@@ -72,6 +74,25 @@ namespace UECommandForge::ValidatePluginDepsPrivate
         }
         return bValid;
     }
+
+    bool LoadEnabledPlugins(const FString& ProjectPath, TMap<FString, bool>& OutEnabled,
+        FCommandForgeReport& Report)
+    {
+        FProjectDescriptor Descriptor;
+        FText FailReason;
+        if (!Descriptor.Load(ProjectPath, FailReason))
+        {
+            AddError(Report, TEXT("PROJECT_READ_FAILED"),
+                FString::Printf(TEXT(".uproject 로드 실패: %s"), *FailReason.ToString()),
+                TEXT("Project"));
+            return false;
+        }
+        for (const FPluginReferenceDescriptor& Ref : Descriptor.Plugins)
+        {
+            OutEnabled.Add(Ref.Name, Ref.bEnabled);
+        }
+        return true;
+    }
 }
 
 int32 UValidatePluginDependenciesCommandlet::Main(const FString& Params)
@@ -129,6 +150,25 @@ int32 UValidatePluginDependenciesCommandlet::Main(const FString& Params)
         UECommandForge::FJsonReportWriter::Write(OutPath, Report);
         return static_cast<int32>(ECommandForgeExitCode::SpecParseFailed);
     }
+
+    const FString ProjectPath = ParamsMap.FindRef(TEXT("Project"));
+    TMap<FString, bool> EnabledPlugins;
+    if (!ProjectPath.IsEmpty())
+    {
+        if (!Private::LoadEnabledPlugins(ProjectPath, EnabledPlugins, Report))
+        {
+            Report.bOk = false;
+            UECommandForge::FJsonReportWriter::Write(OutPath, Report);
+            return static_cast<int32>(ECommandForgeExitCode::SpecParseFailed);
+        }
+    }
+
+    int32 EnabledCount = 0;
+    for (const TPair<FString, bool>& Pair : EnabledPlugins)
+    {
+        if (Pair.Value) { ++EnabledCount; }
+    }
+    Report.Validation.Add(TEXT("enabled_plugin_count"), FString::FromInt(EnabledCount));
 
     Report.bOk = true; // rules added in later tasks
     UECommandForge::FJsonReportWriter::Write(OutPath, Report);
