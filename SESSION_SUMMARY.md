@@ -1,35 +1,35 @@
-# 세션 요약 — 2026-06-15
+# 세션 요약 — 2026-06-15 (Phase 9A 최종 PASS)
 
 ## 현재 상태
 
 - **작업 디렉터리:** `/Users/kimkyungpyo/Workspaces/projects/UECommandForge`
-- **현재 브랜치:** `docs/harness-scope-and-release-roadmap` (원격 `origin`에 푸시 완료)
-- **마일스톤 상태:** **Phase 9A 사전점검 검증 계층 완료**
+- **현재 브랜치:** `docs/harness-scope-and-release-roadmap` (원격 `origin`에 푸시 대기)
+- **마일스톤 상태:** **Phase 9A 사전점검 검증 계층 완전 합격 (PASS)**
 
-## 수행 내용 (Phase 9A 완수 및 실기 검증)
+## 수행 내용 (리뷰 피드백 조치 및 실기 검증 완료)
 
-1. **ValidatePluginDependencies 고도화**:
-   - `bEnabledByDefault` 및 플러그인의 플랫폼/타깃 조건부 필터링(`PlatformAllowList`, `PlatformDenyList`, `TargetAllowList`, `TargetDenyList`)을 반영한 조건 판정 정확도 고도화를 완료했습니다.
-   - 런타임 플러그인에 에디터 모듈이 혼재되어 있을 경우 경고(`PLUGIN_EDITOR_MODULE_IN_RUNTIME_PLUGIN`) 및 의심스러운 모듈 유형 식별 시 경고(`PLUGIN_MODULE_TYPE_SUSPECT`) 로직을 추가했습니다.
-   - [validate_plugin_deps.sh](file:///Users/kimkyungpyo/Workspaces/projects/UECommandForge/tools/test/smoke/validate_plugin_deps.sh) 래퍼 스모크 테스트 스크립트를 작성하여 실기 검증을 통과했습니다.
+1. **1차 리뷰 결함 조치 완수 (_02, _03, _04)**:
+   - **R1 (command 키 추가)**: JSON 리포트에 `command` 키를 직렬화하여 기존 `commandlet`과 함께 출력함으로써 plan 스모크 쿼리와 규격을 일치시켰습니다.
+   - **R2/R3 (descriptor 해석 일원화 및 격리)**: `IPluginManager` 의존성을 제거하고 디스크 descriptor 직접 검색 방식으로 변경하여 엔진 editor-only 플러그인 오탐 방지 및 외부 프로젝트 검증 시 실행 중인 호스트 프로젝트 플러그인의 누수를 해결했습니다.
+   - **D1/D2 (외부 프로젝트 config targeting 및 스파이크)**: `-Project` 인자의 절대 경로를 `FConfigContext`에 주입하여 외부 config를 조준하고, 단일 macOS 호스트 상에서 비호스트 플랫폼(Windows/Linux)의 Base/Default/Platform 계층 병합 및 effective value 해석 성공을 통합 테스트로 검증했습니다.
+   - **D3/D4 (배열 다중값 비교 및 테스트 분리)**: `MultiFind` 기반으로 배열 형태의 다중값 config 비교 로직을 추가(정렬 비교)하고, 테스트 케이스를 4개로 격리/분리했습니다.
 
-2. **DiffPlatformConfig 구현 (H1 스파이크)**:
-   - Mac 호스트에서 다른 플랫폼(Windows, Linux 등)의 config Hierarchy 파일을 dynamic 로드하여 `section.key` 기준으로 1:1 비교하는 [DiffPlatformConfigCommandlet](file:///Users/kimkyungpyo/Workspaces/projects/UECommandForge/sample/Plugins/UECommandForge/Source/UECommandForgeEditor/Private/Commandlets/DiffPlatformConfigCommandlet.cpp)을 구현했습니다.
-   - Glob fnmatch 와일드카드 매칭을 통해 알려진 정상 차이를 suppression할 수 있는 Allowlist 메커니즘을 설계했습니다.
-   - [diff_platform_config.sh](file:///Users/kimkyungpyo/Workspaces/projects/UECommandForge/tools/ue/diff_platform_config.sh) / [.bat](file:///Users/kimkyungpyo/Workspaces/projects/UECommandForge/tools/ue/diff_platform_config.bat) 래퍼 및 [diff.allowlist.example.json](file:///Users/kimkyungpyo/Workspaces/projects/UECommandForge/specs/policies/diff.allowlist.example.json) allowlist 예시 파일을 작성했습니다.
-   - [diff_platform_config.sh](file:///Users/kimkyungpyo/Workspaces/projects/UECommandForge/tools/test/smoke/diff_platform_config.sh) 스모크 테스트 스크립트를 작성하여 실기 검증을 통과했습니다.
+2. **추가 리뷰 결함 조치 완수 (_05, _06, _07)**:
+   - **F7 (Unspecified 엔진 플러그인 보정)**: `EnabledByDefault`가 `Unspecified` 인 엔진 플러그인을 기본 활성(`true`)으로 보정하여 required 검증 시 false-negative를 차단하고 회귀 테스트를 구축했습니다.
+   - **F6 (Editor 모듈 경고 사각지대 해소)**: uproject나 정책에 명시되지 않은 채 EnabledByDefault로 켜진 인트리 플러그인도 descriptor 정보를 직접 평가하여 경고가 발행되도록 보완하고 회귀 테스트를 추가했습니다.
+   - **F5 (Engine.ini 오염 방지 회귀 승격)**: 단순 관찰을 넘어, `DiffPlatformConfig` 실행 전후로 실제 `sample/Config/` 내 모든 `.ini` 파일 내용이 1바이트도 수정되지 않았음을 단언(Assert)하는 `FDiffPlatformConfigEngineIniNotModifiedTest` 회귀 테스트를 탑재하여 오염 방지를 영구적으로 실증했습니다.
+   - **위생 점검 및 규명**: `sample/Content/Tests/` 하위 uasset/umap 파일의 변경 사항은 타 빌더 테스트(Character, StateTree 등)의 고유 side effect임을 실증 및 문서화 완료했습니다.
 
-3. **Mac 링커 최적화 배제(Dead Code Elimination) 조치**:
-   - macOS UBT 빌드 시 단독 C++ 테스트 소스 파일의 자동 등록 전역 변수가 모듈 dylib 링크 단계에서 누락되는 현상을 확인했습니다.
-   - `StartupModule()` 단에서 `LinkDiffPlatformConfigCommandletTest()` 및 `LinkValidatePluginDependenciesCommandletTest()`의 더미 링크 기호를 강제 호출하도록 수정하여, 총 74개 테스트(신규 1개 포함)가 에디터 자동화 테스트 목록에 온전히 집계되고 **100% 통과(그린)** 함을 검증했습니다.
+---
 
-4. **문서 동기화 및 Git 반영**:
-   - `ucf-master.md` 로드맵 문서의 Phase 9A 상태를 완료로 동기화했습니다.
-   - 모든 수정본과 신규 작성된 래퍼/스크립트를 Conventional Commits 영문 타이틀(`feat: implement DiffPlatformConfig and complete Phase 9A verification`) 및 한글 본문 형식으로 커밋 및 푸시 완료했습니다.
+## 검증 결과 (실기 검증 PASS)
+
+- **자동화 테스트:** macOS 에디터 환경에서 신규 추가된 F5, F6, F7 및 외부 타깃 회귀 테스트를 포함하여 **74 PASS / 9 SucceededWithWarnings / 0 FAIL** (총 83개 자동화 테스트 모두 성공)
+- **스모크 테스트:** `validate_plugin_deps.sh` (성공), `diff_platform_config.sh` (성공)로 CLI 검증 흐름 무결성 통과 완료.
 
 ## 다음 작업
 
-- **Phase 9B 착수**:
-  - `references/10_packaging_cook_build_plan.md` 기준으로 Cook Smoke Test / Packaging Log Analyzer / UAT Build 자동화 브레인스토밍 및 TDD 구현.
-- **Windows 실기 검증 (잔여)**:
-  - Windows 실제 호스트 환경에서 `.bat` 래퍼 및 Win64 빌드에 대한 추가 실기 검증 진행.
+- **원격 머지 및 Phase 9B 착수**:
+  - Phase 9A 최종 패스에 따른 PR 병합 완료 및 `references/10_packaging_cook_build_plan.md`를 바탕으로 Phase 9B(Packaging Cook Build Plan) 착수.
+- **Windows 실기 검증**:
+  - Windows 호스트 환경에서 `.bat` 래퍼 및 UBT 빌드 검증 보완.
