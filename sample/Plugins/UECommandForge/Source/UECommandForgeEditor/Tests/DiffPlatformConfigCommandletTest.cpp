@@ -330,4 +330,58 @@ bool FDiffPlatformConfigExternalProjectTest::RunTest(const FString& Parameters)
     return true;
 }
 
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FDiffPlatformConfigEngineIniNotModifiedTest,
+    "UECommandForge.Commandlets.DiffPlatformConfig.EngineIniNotModified",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FDiffPlatformConfigEngineIniNotModifiedTest::RunTest(const FString& Parameters)
+{
+    using namespace DiffPlatformConfigTestHelpers;
+
+    const FString ConfigDir = FPaths::Combine(FPaths::ProjectDir(), TEXT("Config"));
+    TArray<FString> FoundIniFiles;
+    IFileManager::Get().FindFilesRecursive(FoundIniFiles, *ConfigDir, TEXT("*.ini"), true, false);
+
+    TMap<FString, FString> OriginalContents;
+    for (const FString& IniPath : FoundIniFiles)
+    {
+        FString Content;
+        if (FFileHelper::LoadFileToString(Content, *IniPath))
+        {
+            OriginalContents.Add(IniPath, Content);
+        }
+    }
+
+    const FString ProjPath = FPaths::GetProjectFilePath();
+    const FString AllowlistPath = FPaths::Combine(TempDir(), TEXT("allowlist_all_hash.json"));
+    const FString OutPath = FPaths::Combine(TempDir(), TEXT("diff_hash_check.json"));
+
+    IFileManager::Get().Delete(*OutPath);
+    FFileHelper::SaveStringToFile(TEXT("[{\"section\":\"*\",\"key\":\"*\"}]"), *AllowlistPath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+
+    UDiffPlatformConfigCommandlet* Commandlet = NewObject<UDiffPlatformConfigCommandlet>();
+    const FString Params = FString::Printf(
+        TEXT("-Output=\"%s\" -Allowlist=\"%s\" -Project=\"%s\" -Platforms=Windows,Mac -Categories=Engine"),
+        *OutPath, *AllowlistPath, *ProjPath);
+
+    Commandlet->Main(Params);
+
+    for (const auto& Pair : OriginalContents)
+    {
+        FString CurrentContent;
+        TestTrue(TEXT("Ini file should still exist"), IFileManager::Get().FileExists(*Pair.Key));
+        if (FFileHelper::LoadFileToString(CurrentContent, *Pair.Key))
+        {
+            TestEqual(FString::Printf(TEXT("Config 파일 '%s'의 내용이 변하지 않아야 함 (F5 오염 방지 검증)"), *FPaths::GetCleanFilename(Pair.Key)),
+                CurrentContent, Pair.Value);
+        }
+    }
+
+    IFileManager::Get().Delete(*AllowlistPath);
+    IFileManager::Get().Delete(*OutPath);
+    return true;
+}
+
 void LinkDiffPlatformConfigCommandletTest() {}
