@@ -174,6 +174,10 @@ bool FValidatePluginDepsReadsEnabledPluginsTest::RunTest(const FString& Paramete
     TestTrue(TEXT("report"), LoadReport(OutPath, Report));
     if (Report.IsValid())
     {
+        FString CommandVal;
+        TestTrue(TEXT("report has command key"), Report->TryGetStringField(TEXT("command"), CommandVal));
+        TestEqual(TEXT("command is ValidatePluginDependencies"), CommandVal, TEXT("ValidatePluginDependencies"));
+
         const TSharedPtr<FJsonObject>* Validation = nullptr;
         if (Report->TryGetObjectField(TEXT("validation"), Validation) && Validation)
         {

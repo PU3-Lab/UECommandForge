@@ -59,19 +59,37 @@ Saved/UECommandForge/Reports/<Command>_<YYYYMMDDThhmmssZ>.json
 {
   "ok": false,
   "command": "ValidatePluginDependencies",
-  "project": "MyProject.uproject",
-  "timestamp": "2026-06-14T06:30:00Z",
-  "summary": { "issueCount": 2, "errorCount": 1, "warningCount": 1 },
+  "commandlet": "ValidatePluginDependencies",
+  "transaction_id": "",
+  "dry_run": true,
+  "applied": false,
+  "rollback_available": false,
+  "rollback_plan_path": "",
+  "created_assets": [],
+  "modified_assets": [],
+  "changed_assets": [],
+  "changed_files": [],
+  "next_suggestions": [],
+  "assets": [],
+  "validation": {
+    "enabled_plugin_count": "1",
+    "configuration": "Shipping",
+    "target_platform": "Mac",
+    "issue_count": "2"
+  },
+  "post_validation": {},
   "issues": [
     {
       "severity": "error",
       "code": "PLUGIN_REQUIRED_MISSING",
       "message": "Required plugin is missing.",
       "field": "required[OnlineSubsystem]",
-      "filePath": "MyProject.uproject",
-      "suggestedFix": "Enable the plugin in the project or remove it from the required policy."
+      "file_path": "MyProject.uproject",
+      "suggested_fix": "Enable the plugin in the project or remove it from the required policy."
     }
-  ]
+  ],
+  "errors": [],
+  "steps": []
 }
 ```
 
