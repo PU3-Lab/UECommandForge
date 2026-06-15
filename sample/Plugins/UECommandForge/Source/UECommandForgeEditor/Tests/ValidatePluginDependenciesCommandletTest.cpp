@@ -375,5 +375,96 @@ bool FValidatePluginDepsExternalProjectIsolationTest::RunTest(const FString& Par
     return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FValidatePluginDepsEngineUnspecifiedEnabledTest,
+    "UECommandForge.Commandlets.ValidatePluginDeps.EngineUnspecifiedPluginEnabledByDefault",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FValidatePluginDepsEngineUnspecifiedEnabledTest::RunTest(const FString& Parameters)
+{
+    using namespace PluginDepsTestHelpers;
+    const FString ProjDir = FPaths::Combine(TempDir(), TEXT("EngineUnspecified"));
+    const FString ProjPath = FPaths::Combine(ProjDir, TEXT("T.uproject"));
+    const FString PolicyPath = FPaths::Combine(TempDir(), TEXT("unspec.policy.json"));
+    const FString OutPath = FPaths::Combine(TempDir(), TEXT("unspec.json"));
+
+    TestTrue(TEXT("uproject"), SaveUProject(ProjPath));
+
+    const FString FakeEnginePluginsDir = FPaths::Combine(TempDir(), TEXT("FakeEnginePlugins_Unspec"));
+    const FString PluginPath = FPaths::Combine(FakeEnginePluginsDir, TEXT("FakeUnspecifiedPlugin"), TEXT("FakeUnspecifiedPlugin.uplugin"));
+    const FString UPluginJson = TEXT(R"({
+  "FileVersion": 3,
+  "FriendlyName": "FakeUnspecifiedPlugin",
+  "Modules": [ { "Name": "FakeUnspecifiedPlugin", "Type": "Runtime", "LoadingPhase": "Default" } ]
+})");
+    FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*FPaths::GetPath(PluginPath));
+    FFileHelper::SaveStringToFile(UPluginJson, *PluginPath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+
+    TestTrue(TEXT("policy"), SavePolicy(PolicyPath, TEXT("plugin_dependency_policy"),
+        TEXT(R"(["FakeUnspecifiedPlugin"])"), TEXT("[]")));
+
+    UValidatePluginDependenciesCommandlet* C = NewObject<UValidatePluginDependenciesCommandlet>();
+    const int32 Exit = C->Main(FString::Printf(
+        TEXT("-Output=\"%s\" -Policy=\"%s\" -Project=\"%s\" -TestEnginePluginsDir=\"%s\""),
+        *OutPath, *PolicyPath, *ProjPath, *FakeEnginePluginsDir));
+
+    TestEqual(TEXT("ok exit 0"), Exit, 0);
+
+    TSharedPtr<FJsonObject> Report;
+    if (LoadReport(OutPath, Report) && Report.IsValid())
+    {
+        TestTrue(TEXT("ok is true"), Report->GetBoolField(TEXT("ok")));
+        TestFalse(TEXT("no required disabled flagged"),
+            ReportHasIssueCode(Report, TEXT("PLUGIN_REQUIRED_DISABLED")));
+    }
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FValidatePluginDepsInTreeEnabledByDefaultWarningTest,
+    "UECommandForge.Commandlets.ValidatePluginDeps.InTreeEnabledByDefaultPluginTriggersWarning",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FValidatePluginDepsInTreeEnabledByDefaultWarningTest::RunTest(const FString& Parameters)
+{
+    using namespace PluginDepsTestHelpers;
+    const FString ProjDir = FPaths::Combine(TempDir(), TEXT("InTreeWarning"));
+    const FString ProjPath = FPaths::Combine(ProjDir, TEXT("T.uproject"));
+    const FString PolicyPath = FPaths::Combine(TempDir(), TEXT("intree.policy.json"));
+    const FString OutPath = FPaths::Combine(TempDir(), TEXT("intree.json"));
+
+    TestTrue(TEXT("uproject"), SaveUProject(ProjPath));
+    TestTrue(TEXT("policy"), SavePolicy(PolicyPath, TEXT("plugin_dependency_policy"), TEXT("[]"), TEXT("[]")));
+
+    const FString PluginPath = FPaths::Combine(ProjDir, TEXT("Plugins"), TEXT("MixedPlugin"), TEXT("MixedPlugin.uplugin"));
+    const FString UPluginJson = TEXT(R"({
+  "FileVersion": 3,
+  "FriendlyName": "MixedPlugin",
+  "EnabledByDefault": true,
+  "Modules": [
+    { "Name": "MixedRuntime", "Type": "Runtime", "LoadingPhase": "Default" },
+    { "Name": "MixedEditor", "Type": "Editor", "LoadingPhase": "Default" }
+  ]
+})");
+    FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*FPaths::GetPath(PluginPath));
+    FFileHelper::SaveStringToFile(UPluginJson, *PluginPath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+
+    UValidatePluginDependenciesCommandlet* C = NewObject<UValidatePluginDependenciesCommandlet>();
+    const int32 Exit = C->Main(FString::Printf(
+        TEXT("-Output=\"%s\" -Policy=\"%s\" -Project=\"%s\""),
+        *OutPath, *PolicyPath, *ProjPath));
+
+    TestEqual(TEXT("exit 0"), Exit, 0);
+
+    TSharedPtr<FJsonObject> Report;
+    if (LoadReport(OutPath, Report) && Report.IsValid())
+    {
+        TestTrue(TEXT("ok is true"), Report->GetBoolField(TEXT("ok")));
+        TestTrue(TEXT("MixedPlugin warning flagged"),
+            ReportHasIssueCode(Report, TEXT("PLUGIN_EDITOR_MODULE_IN_RUNTIME_PLUGIN")));
+    }
+    return true;
+}
+
 void LinkValidatePluginDependenciesCommandletTest() {}
 

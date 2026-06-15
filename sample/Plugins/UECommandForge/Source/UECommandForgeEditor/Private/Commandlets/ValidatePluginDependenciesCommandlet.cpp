@@ -194,6 +194,16 @@ namespace UECommandForge::ValidatePluginDepsPrivate
             if (ResolvePluginDescriptor(ProjectPath, EnginePluginsDir, PluginName, Desc, DescPath))
             {
                 bool bEnabled = (Desc.EnabledByDefault == EPluginEnabledByDefault::Enabled);
+                if (Desc.EnabledByDefault == EPluginEnabledByDefault::Unspecified)
+                {
+                    FString FullDescPath = FPaths::ConvertRelativePathToFull(DescPath);
+                    FString FullEngineDir = FPaths::ConvertRelativePathToFull(EnginePluginsDir);
+                    if (FullDescPath.StartsWith(FullEngineDir))
+                    {
+                        bEnabled = true;
+                    }
+                }
+
                 if (bEnabled)
                 {
                     bEnabled = Desc.SupportsTargetPlatform(TargetPlatform);
@@ -374,8 +384,23 @@ int32 UValidatePluginDependenciesCommandlet::Main(const FString& Params)
 
             FString PluginName = FPaths::GetBaseFilename(UPluginPath);
 
+            bool bEnabled = false;
             const bool* bEnabledPtr = EnabledPlugins.Find(PluginName);
-            if (bEnabledPtr == nullptr || !*bEnabledPtr)
+            if (bEnabledPtr != nullptr)
+            {
+                bEnabled = *bEnabledPtr;
+            }
+            else
+            {
+                // EnabledPlugins에 없으면 descriptor 기반으로 enabledByDefault 및 targetPlatform 지원 여부 평가
+                bEnabled = (Desc.EnabledByDefault == EPluginEnabledByDefault::Enabled);
+                if (bEnabled)
+                {
+                    bEnabled = Desc.SupportsTargetPlatform(TargetPlatform);
+                }
+            }
+
+            if (!bEnabled)
             {
                 continue;
             }

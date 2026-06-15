@@ -51,15 +51,6 @@ namespace UECommandForge::DiffPlatformConfigPrivate
         Report.ValidationIssues.Add(Issue);
     }
 
-    bool HasErrorIssue(const TArray<FCommandForgeValidationIssue>& Issues)
-    {
-        for (const FCommandForgeValidationIssue& I : Issues)
-        {
-            if (I.Severity.Equals(TEXT("error"), ESearchCase::IgnoreCase)) { return true; }
-        }
-        return false;
-    }
-
     bool LoadAllowlist(const FString& Path, TArray<FAllowlistEntry>& OutAllowlist,
         FCommandForgeReport& Report)
     {
@@ -82,10 +73,17 @@ namespace UECommandForge::DiffPlatformConfigPrivate
                 if (Obj.IsValid())
                 {
                     FAllowlistEntry Entry;
-                    if (Obj->TryGetStringField(TEXT("section"), Entry.SectionPattern) &&
-                        Obj->TryGetStringField(TEXT("key"), Entry.KeyPattern))
+                    bool bHasSection = Obj->TryGetStringField(TEXT("section"), Entry.SectionPattern);
+                    bool bHasKey = Obj->TryGetStringField(TEXT("key"), Entry.KeyPattern);
+                    if (bHasSection && bHasKey)
                     {
                         OutAllowlist.Add(Entry);
+                    }
+                    else
+                    {
+                        AddError(Report, TEXT("CONFIG_ALLOWLIST_INVALID"),
+                            TEXT("Allowlist 엔트리에 'section' 또는 'key' 필드가 누락되었습니다."), TEXT("Allowlist"));
+                        return false;
                     }
                 }
             }
@@ -106,10 +104,17 @@ namespace UECommandForge::DiffPlatformConfigPrivate
                     if (Obj.IsValid())
                     {
                         FAllowlistEntry Entry;
-                        if (Obj->TryGetStringField(TEXT("section"), Entry.SectionPattern) &&
-                            Obj->TryGetStringField(TEXT("key"), Entry.KeyPattern))
+                        bool bHasSection = Obj->TryGetStringField(TEXT("section"), Entry.SectionPattern);
+                        bool bHasKey = Obj->TryGetStringField(TEXT("key"), Entry.KeyPattern);
+                        if (bHasSection && bHasKey)
                         {
                             OutAllowlist.Add(Entry);
+                        }
+                        else
+                        {
+                            AddError(Report, TEXT("CONFIG_ALLOWLIST_INVALID"),
+                                TEXT("Allowlist 엔트리에 'section' 또는 'key' 필드가 누락되었습니다."), TEXT("Allowlist"));
+                            return false;
                         }
                     }
                 }
@@ -209,6 +214,16 @@ int32 UDiffPlatformConfigCommandlet::Main(const FString& Params)
         {
             FConfigFile& File = PlatformConfigs.FindOrAdd(Platform).FindOrAdd(Category);
             FConfigContext Context = FConfigContext::ReadIntoLocalFile(File, Platform);
+
+            // D1: ProjectPath를 실제 config 로드 경로에 반영
+            if (!ProjectPath.IsEmpty())
+            {
+                FString AbsoluteProjectPath = FPaths::ConvertRelativePathToFull(ProjectPath);
+                FString TargetProjectDir = FPaths::GetPath(AbsoluteProjectPath);
+                Context.ProjectRootDir = TargetProjectDir;
+                Context.ProjectConfigDir = FPaths::Combine(TargetProjectDir, TEXT("Config/"));
+            }
+
             if (!Context.Load(*Category))
             {
                 Private::AddError(Report, TEXT("CONFIG_CATEGORY_LOAD_FAILED"),
@@ -223,7 +238,8 @@ int32 UDiffPlatformConfigCommandlet::Main(const FString& Params)
     {
         Report.bOk = false;
         UECommandForge::FJsonReportWriter::Write(OutPath, Report);
-        return static_cast<int32>(ECommandForgeExitCode::EngineError);
+        // D6: 스펙 §4.5에 맞춰 로드 실패도 ValidationFailed(4) 반환
+        return static_cast<int32>(ECommandForgeExitCode::ValidationFailed);
     }
 
     int32 DiffCount = 0;
@@ -262,9 +278,9 @@ int32 UDiffPlatformConfigCommandlet::Main(const FString& Params)
 
             for (const FString& Key : AllKeys)
             {
-                TMap<FString, FString> Values;
+                TMap<FString, TArray<FString>> PlatformArrays;
                 TArray<FString> MissingPlatforms;
-                FString FirstVal;
+                TArray<FString> FirstArray;
                 bool bHasFirst = false;
                 bool bDiffFound = false;
 
@@ -274,19 +290,41 @@ int32 UDiffPlatformConfigCommandlet::Main(const FString& Params)
                     const FConfigSection* Sec = File.FindSection(Section);
                     if (Sec)
                     {
-                        const FConfigValue* Val = Sec->Find(*Key);
-                        if (Val)
+                        TArray<FConfigValue> RawValues;
+                        Sec->MultiFind(*Key, RawValues);
+
+                        if (RawValues.Num() > 0)
                         {
-                            FString SVal = Val->GetValue();
-                            Values.Add(Platform, SVal);
+                            TArray<FString>& Array = PlatformArrays.FindOrAdd(Platform);
+                            for (const FConfigValue& V : RawValues)
+                            {
+                                Array.Add(V.GetValue());
+                            }
+                            // D3: 정렬 후 비교하여 순서가 달라지더라도 요소 값의 차이가 있는 경우에만 차이 감지
+                            Array.Sort();
+
                             if (!bHasFirst)
                             {
-                                FirstVal = SVal;
+                                FirstArray = Array;
                                 bHasFirst = true;
                             }
-                            else if (SVal != FirstVal)
+                            else
                             {
-                                bDiffFound = true;
+                                if (Array.Num() != FirstArray.Num())
+                                {
+                                    bDiffFound = true;
+                                }
+                                else
+                                {
+                                    for (int32 i = 0; i < Array.Num(); ++i)
+                                    {
+                                        if (Array[i] != FirstArray[i])
+                                        {
+                                            bDiffFound = true;
+                                            break;
+                                        }
+                                    }
+                                }
                             }
                         }
                         else
@@ -324,9 +362,10 @@ int32 UDiffPlatformConfigCommandlet::Main(const FString& Params)
                         else
                         {
                             FString ValueDetails;
-                            for (const auto& ValPair : Values)
+                            for (const auto& ValPair : PlatformArrays)
                             {
-                                ValueDetails += FString::Printf(TEXT("[%s]: %s "), *ValPair.Key, *ValPair.Value);
+                                FString ArrayDetails = FString::Join(ValPair.Value, TEXT(", "));
+                                ValueDetails += FString::Printf(TEXT("[%s]: (%s) "), *ValPair.Key, *ArrayDetails);
                             }
                             Private::AddIssue(Report, TEXT("warning"), TEXT("CONFIG_PLATFORM_VALUE_DIFF"),
                                 FString::Printf(TEXT("Value mismatch for key '%s' in section '%s'. Values: %s"), *Key, *Section, *ValueDetails),
