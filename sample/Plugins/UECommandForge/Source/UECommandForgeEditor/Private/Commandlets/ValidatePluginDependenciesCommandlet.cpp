@@ -3,6 +3,7 @@
 #include "CommandForgeTypes.h"
 #include "Dom/JsonObject.h"
 #include "HAL/FileManager.h"
+#include "Interfaces/IPluginManager.h"
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 #include "PluginDescriptor.h"
@@ -100,7 +101,7 @@ namespace UECommandForge::ValidatePluginDepsPrivate
         return bValid;
     }
 
-    bool LoadEnabledPlugins(const FString& ProjectPath, TMap<FString, bool>& OutEnabled,
+    bool LoadEnabledPlugins(const FString& ProjectPath, const FString& TargetPlatform, const FString& TargetConfig, TMap<FString, bool>& OutEnabled,
         FCommandForgeReport& Report)
     {
         FProjectDescriptor Descriptor;
@@ -112,10 +113,63 @@ namespace UECommandForge::ValidatePluginDepsPrivate
                 TEXT("Project"));
             return false;
         }
+
+        EBuildConfiguration TargetConfigEnum = EBuildConfiguration::Development;
+        if (TargetConfig.Equals(TEXT("Shipping"), ESearchCase::IgnoreCase))
+        {
+            TargetConfigEnum = EBuildConfiguration::Shipping;
+        }
+
+        TMap<FString, TSharedRef<IPlugin>> DiscoveredMap;
+        for (const TSharedRef<IPlugin>& Plugin : IPluginManager::Get().GetDiscoveredPlugins())
+        {
+            DiscoveredMap.Add(Plugin->GetName(), Plugin);
+        }
+
+        TSet<FString> UProjectPlugins;
+        int32 EnabledCount = 0;
         for (const FPluginReferenceDescriptor& Ref : Descriptor.Plugins)
         {
-            OutEnabled.Add(Ref.Name, Ref.bEnabled);
+            UProjectPlugins.Add(Ref.Name);
+
+            bool bEnabled = Ref.bEnabled;
+            if (bEnabled)
+            {
+                bEnabled = Ref.IsEnabledForPlatform(TargetPlatform) &&
+                           Ref.IsEnabledForTargetConfiguration(TargetConfigEnum) &&
+                           Ref.IsEnabledForTarget(EBuildTargetType::Game) &&
+                           Ref.IsSupportedTargetPlatform(TargetPlatform);
+            }
+
+            if (bEnabled)
+            {
+                ++EnabledCount;
+            }
+
+            OutEnabled.Add(Ref.Name, bEnabled);
         }
+        Report.Validation.Add(TEXT("enabled_plugin_count"), FString::FromInt(EnabledCount));
+
+        for (const auto& Pair : DiscoveredMap)
+        {
+            const FString& PluginName = Pair.Key;
+            if (UProjectPlugins.Contains(PluginName))
+            {
+                continue;
+            }
+
+            const TSharedRef<IPlugin>& Plugin = Pair.Value;
+            const FPluginDescriptor& Desc = Plugin->GetDescriptor();
+
+            bool bEnabled = (Desc.EnabledByDefault == EPluginEnabledByDefault::Enabled);
+            if (bEnabled)
+            {
+                bEnabled = Desc.SupportsTargetPlatform(TargetPlatform);
+            }
+
+            OutEnabled.Add(PluginName, bEnabled);
+        }
+
         return true;
     }
 
@@ -208,11 +262,36 @@ int32 UValidatePluginDependenciesCommandlet::Main(const FString& Params)
         return static_cast<int32>(ECommandForgeExitCode::SpecParseFailed);
     }
 
+    const FString Configuration = ParamsMap.FindRef(TEXT("Configuration"));
+    Report.Validation.Add(TEXT("configuration"),
+        Configuration.IsEmpty() ? TEXT("Development") : Configuration);
+
+    FString TargetPlatform = ParamsMap.FindRef(TEXT("TargetPlatform"));
+    if (TargetPlatform.IsEmpty())
+    {
+#if PLATFORM_MAC
+        TargetPlatform = TEXT("Mac");
+#elif PLATFORM_WINDOWS
+        TargetPlatform = TEXT("Win64");
+#elif PLATFORM_LINUX
+        TargetPlatform = TEXT("Linux");
+#else
+        TargetPlatform = FPlatformProperties::IniPlatformName();
+#endif
+    }
+    Report.Validation.Add(TEXT("target_platform"), TargetPlatform);
+
+    TMap<FString, TSharedRef<IPlugin>> DiscoveredMap;
+    for (const TSharedRef<IPlugin>& Plugin : IPluginManager::Get().GetDiscoveredPlugins())
+    {
+        DiscoveredMap.Add(Plugin->GetName(), Plugin);
+    }
+
     const FString ProjectPath = ParamsMap.FindRef(TEXT("Project"));
     TMap<FString, bool> EnabledPlugins;
     if (!ProjectPath.IsEmpty())
     {
-        if (!Private::LoadEnabledPlugins(ProjectPath, EnabledPlugins, Report))
+        if (!Private::LoadEnabledPlugins(ProjectPath, TargetPlatform, Configuration, EnabledPlugins, Report))
         {
             Report.bOk = false;
             UECommandForge::FJsonReportWriter::Write(OutPath, Report);
@@ -220,12 +299,6 @@ int32 UValidatePluginDependenciesCommandlet::Main(const FString& Params)
         }
     }
 
-    int32 EnabledCount = 0;
-    for (const TPair<FString, bool>& Pair : EnabledPlugins)
-    {
-        if (Pair.Value) { ++EnabledCount; }
-    }
-    Report.Validation.Add(TEXT("enabled_plugin_count"), FString::FromInt(EnabledCount));
 
     for (const FString& Name : Policy.Required)
     {
@@ -246,11 +319,7 @@ int32 UValidatePluginDependenciesCommandlet::Main(const FString& Params)
         }
     }
 
-    const FString Configuration = ParamsMap.FindRef(TEXT("Configuration"));
     const bool bShipping = Configuration.Equals(TEXT("Shipping"), ESearchCase::IgnoreCase);
-    Report.Validation.Add(TEXT("configuration"),
-        Configuration.IsEmpty() ? TEXT("Development") : Configuration);
-
     if (bShipping)
     {
         for (const FString& Name : Policy.ForbiddenInShipping)
@@ -264,6 +333,65 @@ int32 UValidatePluginDependenciesCommandlet::Main(const FString& Params)
                     FString::Printf(TEXT("Plugins.%s.Enabled"), *Name), ProjectPath,
                     FString::Printf(TEXT("Disable %s for Shipping builds."), *Name));
             }
+        }
+    }
+
+    // Editor 모듈 warning 및 모듈 타입 의심 검사
+    for (const auto& Pair : DiscoveredMap)
+    {
+        const FString& PluginName = Pair.Key;
+        const bool* bEnabledPtr = EnabledPlugins.Find(PluginName);
+        if (bEnabledPtr == nullptr || !*bEnabledPtr)
+        {
+            continue;
+        }
+
+        const TSharedRef<IPlugin>& Plugin = Pair.Value;
+        if (Plugin->GetLoadedFrom() != EPluginLoadedFrom::Project)
+        {
+            continue;
+        }
+
+        const FPluginDescriptor& Desc = Plugin->GetDescriptor();
+        bool bHasRuntimeModule = false;
+        bool bHasEditorModule = false;
+
+        for (const FModuleDescriptor& Module : Desc.Modules)
+        {
+            if (Module.Type == EHostType::Runtime ||
+                Module.Type == EHostType::RuntimeNoCommandlet ||
+                Module.Type == EHostType::RuntimeAndProgram ||
+                Module.Type == EHostType::ClientOnly ||
+                Module.Type == EHostType::ServerOnly ||
+                Module.Type == EHostType::ClientOnlyNoCommandlet ||
+                Module.Type == EHostType::CookedOnly)
+            {
+                bHasRuntimeModule = true;
+            }
+
+            if (Module.Type == EHostType::Editor ||
+                Module.Type == EHostType::EditorNoCommandlet)
+            {
+                bHasEditorModule = true;
+            }
+
+            if (Module.Type == EHostType::Developer)
+            {
+                Private::AddIssue(Report, TEXT("warning"), TEXT("PLUGIN_MODULE_TYPE_SUSPECT"),
+                    FString::Printf(TEXT("Module '%s' uses deprecated 'Developer' host type."), *Module.Name.ToString()),
+                    FString::Printf(TEXT("Plugins.%s.Modules.%s.Type"), *PluginName, *Module.Name.ToString()),
+                    Plugin->GetDescriptorFileName(),
+                    TEXT("Change the module host type to 'DeveloperTool' or 'UncookedOnly'."));
+            }
+        }
+
+        if (bHasRuntimeModule && bHasEditorModule)
+        {
+            Private::AddIssue(Report, TEXT("warning"), TEXT("PLUGIN_EDITOR_MODULE_IN_RUNTIME_PLUGIN"),
+                FString::Printf(TEXT("Plugin '%s' contains both Runtime and Editor modules. Editor modules in runtime plugins are discouraged."), *PluginName),
+                FString::Printf(TEXT("Plugins.%s.Modules"), *PluginName),
+                Plugin->GetDescriptorFileName(),
+                TEXT("Split editor features into a separate editor-only plugin or restructure modules to decouple runtime from editor."));
         }
     }
 

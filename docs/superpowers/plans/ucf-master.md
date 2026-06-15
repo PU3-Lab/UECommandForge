@@ -50,7 +50,8 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
 | 6 | 완료 | `PlaceActor` 리포트 `ok: true`, `actor_placed: ok` |
 | 7 | 완료 | `./tools/ue/build_plugin.sh` 통과, `./tools/test/automation/run.sh` PASS 15 / FAIL 0, `CreateAIFlow` 인수 조건 통과 |
 | 8 | 완료 — v0.9.0 GitHub Release 게시 (2026-06-14, Mac plugin + Tools + Source 에셋). 잔여: Windows `.bat` wrapper 실기 검증(Windows 호스트 필요) | `./tools/ue/build_plugin.sh`, `./tools/test/automation/run.sh` PASS 52 / FAIL 0 / SKIP 0, Phase 8 smoke/package/installer 게이트 PASS, Release: https://github.com/PU3-Lab/UECommandForge/releases/tag/v0.9.0 |
-| 9 | 진행 중 — 출시(릴리즈) 지향 Packaging/Cook/Build 파이프라인. **9A 사전점검 검증 계층 완료**: `ValidatePluginDependencies` 커맨드렛 Task 1–7 구현, 빌드/테스트/스모크 실기 그린 재현 완료. 잔여: 스펙 M3 심화·Editor 모듈 warning·smoke test 파일, `DiffPlatformConfig`(H1 스파이크 선행) | 완료 (실기 검증 완료). 계획: [2026-06-14-phase9a-plugin-dependency-validation.md](2026-06-14-phase9a-plugin-dependency-validation.md), 스펙: [2026-06-14-phase9a-pre-release-validation-design.md](../specs/2026-06-14-phase9a-pre-release-validation-design.md) |
+| 9 | 완료 — 출시(릴리즈) 지향 Packaging/Cook/Build 파이프라인. **9A 사전점검 검증 계층 완료**: `ValidatePluginDependencies` M3 심화, Editor 모듈 경고, 스모크 테스트 작성, `DiffPlatformConfig` 구현 및 테스트/스모크 그린 검증 완료 | 완료 (실기 검증 완료). 계획: [2026-06-14-phase9a-plugin-dependency-validation.md](2026-06-14-phase9a-plugin-dependency-validation.md), 스펙: [2026-06-14-phase9a-pre-release-validation-design.md](../specs/2026-06-14-phase9a-pre-release-validation-design.md) |
+
 
 ### 2026-05-27 Phase 3 마감 노트
 
@@ -146,3 +147,15 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
 - Animation BP / Niagara 자동화.
 - LLM 자체 호출 — 이 계획은 LLM이 사용할 커맨드 표면만 제공.
 - CI 통합 (GitHub Actions / Jenkins).
+
+---
+
+### 2026-06-15 Phase 9A 마감 노트
+
+- `ValidatePluginDependenciesCommandlet` M3 심화 구현: `EnabledByDefault` 및 플랫폼/타깃 조건부 필터링 evaluation을 완수했다.
+- Editor 모듈 warning 및 suspect type 경고 구현을 완료했다.
+- `DiffPlatformConfigCommandlet` (H1 스파이크) 구현 및 Allowlist glob 매칭, config 비교 검증 로직을 구현했다.
+- `tools/test/smoke/validate_plugin_deps.sh` 및 `tools/test/smoke/diff_platform_config.sh` 스모크 테스트 래퍼 작성을 완료했다.
+- macOS 에디터 환경에서 총 74개 자동화 테스트 전체 통과 및 2개 스모크 테스트 그린 성공을 확인했다.
+- macOS linker 최적화 배제(Dead Code Elimination) 방지를 위해 테스트 링킹 강제화(Link Test) 구현을 적용했다.
+

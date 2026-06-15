@@ -202,7 +202,7 @@ bool FValidatePluginDepsRequiredRulesTest::RunTest(const FString& Parameters)
     const FString OutPath = FPaths::Combine(TempDir(), TEXT("req.json"));
     TestTrue(TEXT("uproject"), SaveUProject(ProjPath)); // Niagara enabled, OnlineSubsystem disabled
     TestTrue(TEXT("policy"), SavePolicy(PolicyPath, TEXT("plugin_dependency_policy"),
-        TEXT(R"(["OnlineSubsystem","Paper2D"])"), TEXT("[]")));
+        TEXT(R"(["OnlineSubsystem","NonExistentPluginForTest"])"), TEXT("[]")));
 
     UValidatePluginDependenciesCommandlet* Commandlet =
         NewObject<UValidatePluginDependenciesCommandlet>();
@@ -293,3 +293,6 @@ bool FValidatePluginDepsEditorOnlyNotForbiddenTest::RunTest(const FString& Param
     }
     return true;
 }
+
+void LinkValidatePluginDependenciesCommandletTest() {}
+
