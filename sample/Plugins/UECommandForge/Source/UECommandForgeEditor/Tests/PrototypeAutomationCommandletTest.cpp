@@ -42,6 +42,8 @@ bool FPrototypeAutomationCommandletTest::RunTest(const FString& Parameters)
     const FString DataSourcePath = FPaths::Combine(FixtureDir, TEXT("data.csv"));
     const FString ConfigRulesPath = FPaths::Combine(FixtureDir, TEXT("config_rules.json"));
     const FString ConfigPath = FPaths::Combine(FixtureDir, TEXT("config.ini"));
+    const FString PluginPolicyPath = FPaths::Combine(FixtureDir, TEXT("plugin_policy.json"));
+    const FString DiffAllowlistPath = FPaths::Combine(FixtureDir, TEXT("diff_allowlist.json"));
     const FString ReportPath = FPaths::Combine(FixtureDir, TEXT("prototype_report.json"));
     const FString MarkdownPath = FPaths::Combine(FixtureDir, TEXT("prototype_report.md"));
 
@@ -93,6 +95,17 @@ row_2,7
 bEnabled=true
 MaxCount=5
 )");
+    const FString PluginPolicyJson = TEXT(R"({
+        "version": "1",
+        "kind": "plugin_dependency_policy",
+        "required": [],
+        "forbiddenInShipping": [],
+        "optional": [],
+        "allowedEditorOnly": []
+    })");
+    const FString DiffAllowlistJson = TEXT(R"([
+        { "section": "/Script/Engine.RendererSettings", "key": "r.*" }
+    ])");
 
     TestTrue(TEXT("asset policy 저장"),
         FFileHelper::SaveStringToFile(AssetPolicyJson, *AssetPolicyPath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM));
@@ -106,12 +119,16 @@ MaxCount=5
         FFileHelper::SaveStringToFile(ConfigRulesJson, *ConfigRulesPath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM));
     TestTrue(TEXT("config ini 저장"),
         FFileHelper::SaveStringToFile(ConfigIni, *ConfigPath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM));
+    TestTrue(TEXT("plugin policy 저장"),
+        FFileHelper::SaveStringToFile(PluginPolicyJson, *PluginPolicyPath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM));
+    TestTrue(TEXT("diff allowlist 저장"),
+        FFileHelper::SaveStringToFile(DiffAllowlistJson, *DiffAllowlistPath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM));
 
     UPrototypeAutomationCommandlet* Commandlet = NewObject<UPrototypeAutomationCommandlet>();
     const int32 ExitCode = Commandlet->Main(FString::Printf(
-        TEXT("-AssetPolicy=\"%s\" -AssetRootPaths=\"/Game/Tests\" -BuildCsPolicy=\"%s\" -DataSchema=\"%s\" -DataSource=\"%s\" -ConfigRules=\"%s\" -Config=\"%s\" -Output=\"%s\" -Markdown=\"%s\""),
+        TEXT("-AssetPolicy=\"%s\" -AssetRootPaths=\"/Game/Tests\" -BuildCsPolicy=\"%s\" -DataSchema=\"%s\" -DataSource=\"%s\" -ConfigRules=\"%s\" -Config=\"%s\" -PluginPolicy=\"%s\" -DiffPlatforms=\"%s\" -DiffAllowlist=\"%s\" -Output=\"%s\" -Markdown=\"%s\""),
         *AssetPolicyPath, *BuildCsPolicyPath, *DataSchemaPath, *DataSourcePath,
-        *ConfigRulesPath, *ConfigPath, *ReportPath, *MarkdownPath));
+        *ConfigRulesPath, *ConfigPath, *PluginPolicyPath, TEXT("Mac"), *DiffAllowlistPath, *ReportPath, *MarkdownPath));
 
     TestEqual(TEXT("prototype automation exit code"), ExitCode, 0);
 
@@ -123,7 +140,7 @@ MaxCount=5
         TEXT("PrototypeAutomation"));
     TestEqual(TEXT("suite count"),
         RootObject->GetObjectField(TEXT("validation"))->GetStringField(TEXT("suite_count")),
-        TEXT("4"));
+        TEXT("6"));
     TestEqual(TEXT("failed suite count"),
         RootObject->GetObjectField(TEXT("validation"))->GetStringField(TEXT("failed_suite_count")),
         TEXT("0"));
@@ -134,6 +151,8 @@ MaxCount=5
         FFileHelper::LoadFileToString(Markdown, *MarkdownPath));
     TestTrue(TEXT("markdown title"), Markdown.Contains(TEXT("# PrototypeAutomation Report")));
     TestTrue(TEXT("markdown suite table"), Markdown.Contains(TEXT("ValidateDataSource")));
+    TestTrue(TEXT("markdown suite table plugin_deps"), Markdown.Contains(TEXT("ValidatePluginDependencies")));
+    TestTrue(TEXT("markdown suite table platform_config_diff"), Markdown.Contains(TEXT("DiffPlatformConfig")));
     return true;
 }
 
@@ -210,3 +229,8 @@ row_1,42
     TestTrue(TEXT("markdown failure status"), Markdown.Contains(TEXT("- Status: FAIL")));
     return true;
 }
+
+void LinkPrototypeAutomationCommandletTest()
+{
+}
+

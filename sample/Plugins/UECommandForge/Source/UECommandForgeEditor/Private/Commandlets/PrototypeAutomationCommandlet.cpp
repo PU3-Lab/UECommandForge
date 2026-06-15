@@ -5,6 +5,8 @@
 #include "Commandlets/ValidateBuildCsCommandlet.h"
 #include "Commandlets/ValidateConfigRulesCommandlet.h"
 #include "Commandlets/ValidateDataSourceCommandlet.h"
+#include "Commandlets/ValidatePluginDependenciesCommandlet.h"
+#include "Commandlets/DiffPlatformConfigCommandlet.h"
 #include "Dom/JsonObject.h"
 #include "Misc/FileHelper.h"
 #include "Reports/JsonReportWriter.h"
@@ -175,6 +177,14 @@ namespace UECommandForge::PrototypeAutomationPrivate
         {
             return NewObject<UValidateConfigRulesCommandlet>()->Main(Args);
         }
+        if (CommandletName == TEXT("ValidatePluginDependencies"))
+        {
+            return NewObject<UValidatePluginDependenciesCommandlet>()->Main(Args);
+        }
+        if (CommandletName == TEXT("DiffPlatformConfig"))
+        {
+            return NewObject<UDiffPlatformConfigCommandlet>()->Main(Args);
+        }
         return static_cast<int32>(ECommandForgeExitCode::EngineError);
     }
 }
@@ -265,6 +275,36 @@ int32 UPrototypeAutomationCommandlet::Main(const FString& Params)
         Suite.ReportPath = ChildReportPath(OutPath, Suite.Name);
         Suite.Args = QuoteArg(TEXT("Schema"), ConfigRulesPath) +
             QuoteArg(TEXT("Config"), ParamsMap.FindRef(TEXT("Config"))) +
+            QuoteArg(TEXT("Output"), Suite.ReportPath);
+        Suites.Add(Suite);
+    }
+
+    const FString PluginPolicyPath = ParamsMap.FindRef(TEXT("PluginPolicy"));
+    if (!PluginPolicyPath.IsEmpty())
+    {
+        FSuiteRun Suite;
+        Suite.Name = TEXT("plugin_deps");
+        Suite.Commandlet = TEXT("ValidatePluginDependencies");
+        Suite.ReportPath = ChildReportPath(OutPath, Suite.Name);
+        Suite.Args = QuoteArg(TEXT("Policy"), PluginPolicyPath) +
+            QuoteArg(TEXT("Project"), ParamsMap.FindRef(TEXT("Project"))) +
+            QuoteArg(TEXT("Configuration"), ParamsMap.FindRef(TEXT("Configuration"))) +
+            QuoteArg(TEXT("TargetPlatform"), ParamsMap.FindRef(TEXT("TargetPlatform"))) +
+            QuoteArg(TEXT("Output"), Suite.ReportPath);
+        Suites.Add(Suite);
+    }
+
+    const FString DiffPlatforms = ParamsMap.FindRef(TEXT("DiffPlatforms"));
+    if (!DiffPlatforms.IsEmpty())
+    {
+        FSuiteRun Suite;
+        Suite.Name = TEXT("platform_config_diff");
+        Suite.Commandlet = TEXT("DiffPlatformConfig");
+        Suite.ReportPath = ChildReportPath(OutPath, Suite.Name);
+        Suite.Args = QuoteArg(TEXT("Project"), ParamsMap.FindRef(TEXT("Project"))) +
+            QuoteArg(TEXT("Platforms"), DiffPlatforms) +
+            QuoteArg(TEXT("Allowlist"), ParamsMap.FindRef(TEXT("DiffAllowlist"))) +
+            QuoteArg(TEXT("Categories"), ParamsMap.FindRef(TEXT("DiffCategories"))) +
             QuoteArg(TEXT("Output"), Suite.ReportPath);
         Suites.Add(Suite);
     }
