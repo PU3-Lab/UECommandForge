@@ -236,9 +236,12 @@ Code: `CONFIG_PLATFORM_VALUE_DIFF`, `CONFIG_PLATFORM_KEY_MISSING`, `CONFIG_ALLOW
 
 ---
 
-## 6. 9D 통합 방향
+## 6. 9D 통합 방향 (구현 완료)
 
-초기에는 독립 실행. 추후 9D에서 `validate_project_rules` 통합 게이트에 플래그로 합류한다(예: `-CheckPluginDeps -CheckPlatformConfigDiff -Configuration=Shipping -Platforms=...`). 통합 후에도 각 커맨드렛은 독립 실행 가능해야 한다.
+9D 마일스톤에 따라 두 사전점검 검증 커맨드렛(`ValidatePluginDependencies`, `DiffPlatformConfig`)이 `PrototypeAutomation` 통합 게이트(`validate_project_rules` 래퍼)에 suite 형태로 합류했습니다.
+
+- **통합 실행 플래그:** `-PluginPolicy` 및 `-DiffPlatforms` 인자가 제공되는 경우에 각각 `plugin_deps`, `platform_config_diff` suite가 opt-in되어 통합 게이트 실행 시 병합됩니다.
+- **독립 실행 유지:** 통합 후에도 각 커맨드렛은 `validate_plugin_deps.sh` / `diff_platform_config.sh` 등의 개별 래퍼를 통해 독립적으로 실행 가능하게 유지됩니다.
 
 ---
 

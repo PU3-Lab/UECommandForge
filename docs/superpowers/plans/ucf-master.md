@@ -50,7 +50,7 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
 | 6 | 완료 | `PlaceActor` 리포트 `ok: true`, `actor_placed: ok` |
 | 7 | 완료 | `./tools/ue/build_plugin.sh` 통과, `./tools/test/automation/run.sh` PASS 15 / FAIL 0, `CreateAIFlow` 인수 조건 통과 |
 | 8 | 완료 — v0.9.0 GitHub Release 게시 (2026-06-14, Mac plugin + Tools + Source 에셋). 잔여: Windows `.bat` wrapper 실기 검증(Windows 호스트 필요) | `./tools/ue/build_plugin.sh`, `./tools/test/automation/run.sh` PASS 52 / FAIL 0 / SKIP 0, Phase 8 smoke/package/installer 게이트 PASS, Release: https://github.com/PU3-Lab/UECommandForge/releases/tag/v0.9.0 |
-| 9 | 완료 — 출시(릴리즈) 지향 Packaging/Cook/Build 파이프라인. **9A 사전점검 검증 계층 완료**: `ValidatePluginDependencies` M3 심화, Editor 모듈 경고, 스모크 테스트 작성, `DiffPlatformConfig` 구현 및 테스트/스모크 그린 검증 완료 | 완료 (실기 검증 완료). 계획: [2026-06-14-phase9a-plugin-dependency-validation.md](2026-06-14-phase9a-plugin-dependency-validation.md), 스펙: [2026-06-14-phase9a-pre-release-validation-design.md](../specs/2026-06-14-phase9a-pre-release-validation-design.md) |
+| 9 | 진행 중 — 출시(릴리즈) 지향 Packaging/Cook/Build 파이프라인. **9A 사전점검 검증 계층 + 9D 통합 게이트 완료**: ValidatePluginDependencies와 DiffPlatformConfig 구현 및 validate_project_rules 통합(suite: plugin_deps, platform_config_diff) 완료. 다음: 9B(Cook 로그) → 9C(패키징) | 9A + 9D 완료. 계획: [2026-06-14-phase9a-plugin-dependency-validation.md](2026-06-14-phase9a-plugin-dependency-validation.md)·[2026-06-15-phase9d-integration-gate.md](2026-06-15-phase9d-integration-gate.md), 스펙: [2026-06-14-phase9a-pre-release-validation-design.md](../specs/2026-06-14-phase9a-pre-release-validation-design.md) |
 
 
 ### 2026-05-27 Phase 3 마감 노트
@@ -158,4 +158,12 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
 - `tools/test/smoke/validate_plugin_deps.sh` 및 `tools/test/smoke/diff_platform_config.sh` 스모크 테스트 래퍼 작성을 완료했다.
 - macOS 에디터 환경에서 총 74개 자동화 테스트 전체 통과 및 2개 스모크 테스트 그린 성공을 확인했다.
 - macOS linker 최적화 배제(Dead Code Elimination) 방지를 위해 테스트 링킹 강제화(Link Test) 구현을 적용했다.
+
+### 2026-06-15 Phase 9D 마감 노트
+
+- `ValidatePluginDependencies`와 `DiffPlatformConfig` 두 사전점검 검증 커맨드렛을 `PrototypeAutomation` 통합 게이트에 suite 형태로 병합 완료했습니다.
+- `tools/ue/validate_project_rules.sh` 및 `.bat`에 신규 인자 패스스루 사용법을 추가했습니다.
+- `tools/test/smoke/prototype_automation.sh` 스모크 테스트에 신규 suite 검증을 추가하여 성공적으로 PASS함을 확인했습니다.
+- macOS 링커 데드 코드 배제 방지를 위해 `PrototypeAutomationCommandletTest`에도 링킹 강제화(Link Test)를 도입했습니다.
+
 
