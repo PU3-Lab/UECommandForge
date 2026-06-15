@@ -18,7 +18,7 @@ cat > "${POLICY_PATH}" <<JSON
   "version": "1",
   "kind": "plugin_dependency_policy",
   "required": ["EnhancedInput"],
-  "forbiddenInShipping": ["EditorScriptingUtilities"],
+  "forbiddenInShipping": ["EditorScriptingUtilities", "LevelSequenceEditor", "Cascade"],
   "optional": [],
   "allowedEditorOnly": []
 }

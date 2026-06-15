@@ -298,5 +298,82 @@ bool FValidatePluginDepsEditorOnlyNotForbiddenTest::RunTest(const FString& Param
     return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FValidatePluginDepsEngineEditorOnlyNotForbiddenTest,
+    "UECommandForge.Commandlets.ValidatePluginDeps.EngineEditorOnlyModuleNotForbiddenInShipping",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FValidatePluginDepsEngineEditorOnlyNotForbiddenTest::RunTest(const FString& Parameters)
+{
+    using namespace PluginDepsTestHelpers;
+    const FString ProjDir = FPaths::Combine(TempDir(), TEXT("EngineEdOnly"));
+    const FString ProjPath = FPaths::Combine(ProjDir, TEXT("T.uproject"));
+    const FString PolicyPath = FPaths::Combine(TempDir(), TEXT("eng_edonly.policy.json"));
+    const FString OutPath = FPaths::Combine(TempDir(), TEXT("eng_edonly.json"));
+    
+    TestTrue(TEXT("uproject"), SaveUProjectWithPlugin(ProjPath, TEXT("FakeEngineEditorPlugin")));
+    
+    const FString FakeEnginePluginsDir = FPaths::Combine(TempDir(), TEXT("FakeEnginePlugins"));
+    const FString PluginPath = FPaths::Combine(FakeEnginePluginsDir, TEXT("FakeEngineEditorPlugin"), TEXT("FakeEngineEditorPlugin.uplugin"));
+    const FString UPluginJson = TEXT(R"({
+  "FileVersion": 3,
+  "FriendlyName": "FakeEngineEditorPlugin",
+  "Modules": [ { "Name": "FakeEngineEditorPlugin", "Type": "Editor", "LoadingPhase": "Default" } ]
+})");
+    FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*FPaths::GetPath(PluginPath));
+    FFileHelper::SaveStringToFile(UPluginJson, *PluginPath, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
+
+    TestTrue(TEXT("policy"), SavePolicy(PolicyPath, TEXT("plugin_dependency_policy"),
+        TEXT("[]"), TEXT(R"(["FakeEngineEditorPlugin"])")));
+
+    UValidatePluginDependenciesCommandlet* C = NewObject<UValidatePluginDependenciesCommandlet>();
+    const int32 Exit = C->Main(FString::Printf(
+        TEXT("-Output=\"%s\" -Policy=\"%s\" -Project=\"%s\" -Configuration=Shipping -TestEnginePluginsDir=\"%s\""),
+        *OutPath, *PolicyPath, *ProjPath, *FakeEnginePluginsDir));
+
+    TestEqual(TEXT("ok exit 0"), Exit, 0);
+    TSharedPtr<FJsonObject> Report;
+    if (LoadReport(OutPath, Report) && Report.IsValid())
+    {
+        TestFalse(TEXT("forbidden NOT flagged for engine editor-only plugin"),
+            ReportHasIssueCode(Report, TEXT("PLUGIN_FORBIDDEN_IN_SHIPPING_ENABLED")));
+    }
+    return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(
+    FValidatePluginDepsExternalProjectIsolationTest,
+    "UECommandForge.Commandlets.ValidatePluginDeps.ExternalProjectIsolatesEnabledPlugins",
+    EAutomationTestFlags::EditorContext | EAutomationTestFlags::EngineFilter)
+
+bool FValidatePluginDepsExternalProjectIsolationTest::RunTest(const FString& Parameters)
+{
+    using namespace PluginDepsTestHelpers;
+    const FString ProjDirA = FPaths::Combine(TempDir(), TEXT("ProjA"));
+    const FString ProjPathA = FPaths::Combine(ProjDirA, TEXT("ProjA.uproject"));
+    TestTrue(TEXT("uproject A"), SaveUProjectWithPlugin(ProjPathA, TEXT("MyPluginA")));
+
+    const FString PolicyPath = FPaths::Combine(TempDir(), TEXT("isolation.policy.json"));
+    const FString OutPath = FPaths::Combine(TempDir(), TEXT("isolation.json"));
+    TestTrue(TEXT("policy"), SavePolicy(PolicyPath, TEXT("plugin_dependency_policy"),
+        TEXT(R"(["MyPluginB"])"), TEXT("[]")));
+
+    UValidatePluginDependenciesCommandlet* C = NewObject<UValidatePluginDependenciesCommandlet>();
+    const int32 Exit = C->Main(FString::Printf(
+        TEXT("-Output=\"%s\" -Policy=\"%s\" -Project=\"%s\""),
+        *OutPath, *PolicyPath, *ProjPathA));
+
+    TestEqual(TEXT("exit ValidationFailed"), Exit,
+        static_cast<int32>(ECommandForgeExitCode::ValidationFailed));
+    TSharedPtr<FJsonObject> Report;
+    if (LoadReport(OutPath, Report) && Report.IsValid())
+    {
+        TestFalse(TEXT("ok false"), Report->GetBoolField(TEXT("ok")));
+        TestTrue(TEXT("MyPluginB flagged as missing"),
+            ReportHasIssueCode(Report, TEXT("PLUGIN_REQUIRED_MISSING")));
+    }
+    return true;
+}
+
 void LinkValidatePluginDependenciesCommandletTest() {}
 
