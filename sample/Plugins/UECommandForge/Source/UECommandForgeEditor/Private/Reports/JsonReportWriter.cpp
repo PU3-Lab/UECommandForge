@@ -13,6 +13,7 @@ namespace UECommandForge
         TSharedRef<FJsonObject> Root = MakeShared<FJsonObject>();
         Root->SetBoolField(TEXT("ok"), Report.bOk);
         Root->SetStringField(TEXT("commandlet"), Report.Commandlet);
+        Root->SetStringField(TEXT("command"), Report.Commandlet);
         Root->SetStringField(TEXT("transaction_id"), Report.TransactionId);
         Root->SetBoolField(TEXT("dry_run"), Report.bDryRun);
         Root->SetBoolField(TEXT("applied"), Report.bApplied);

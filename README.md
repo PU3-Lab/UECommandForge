@@ -36,12 +36,14 @@ unreal-harness/
 | `tools/ue/generate_cpp_class.sh <spec.json>` | `tools\ue\generate_cpp_class.bat <spec.json>` | C++ 클래스 보일러플레이트 생성 |
 | `tools/ue/validate_cpp_reflection.sh <policy.json>` | `tools\ue\validate_cpp_reflection.bat <policy.json>` | UPROPERTY/UFUNCTION 정책 검증 |
 | `tools/ue/validate_buildcs.sh <policy.json>` | `tools\ue\validate_buildcs.bat <policy.json>` | Build.cs 의존성 검증 |
+| `tools/ue/validate_plugin_deps.sh <policy.json>` | `tools\ue\validate_plugin_deps.bat <policy.json>` | 플러그인 의존성 정책 검증 (출시 전 사전점검) |
+| `tools/ue/diff_platform_config.sh <allowlist.json>` | `tools\ue\diff_platform_config.bat <allowlist.json>` | 플랫폼 간 config 차이 검증 (출시 전 사전점검) |
 | `tools/ue/analyze_uht_log.sh <log>` | `tools\ue\analyze_uht_log.bat <log>` | UHT/build 로그 분석 |
 | `tools/ue/validate_data_source.sh <schema.json> <source.csv>` | `tools\ue\validate_data_source.bat <schema.json> <source.csv>` | CSV/JSON 데이터 소스 검증 |
 | `tools/ue/import_data_source.sh <schema.json> <source.csv>` | `tools\ue\import_data_source.bat <schema.json> <source.csv>` | 검증된 데이터 소스 import |
 | `tools/ue/validate_datatable.sh <schema.json> [asset-path]` | `tools\ue\validate_datatable.bat <schema.json> [asset-path]` | UE DataTable Row 구조 검증 |
 | `tools/ue/validate_config_rules.sh <schema.json> [config.ini]` | `tools\ue\validate_config_rules.bat <schema.json> [config.ini]` | Config 값 검증 |
-| `tools/ue/validate_project_rules.sh -AssetPolicy=<policy.json> [-BuildCsPolicy=<policy.json>] [-DataSchema=<schema.json> -DataSource=<source.csv>] [-ConfigRules=<schema.json> [-Config=<config.ini>]]` | `tools\ue\validate_project_rules.bat -AssetPolicy=<policy.json> [-BuildCsPolicy=<policy.json>] [-DataSchema=<schema.json> -DataSource=<source.csv>] [-ConfigRules=<schema.json> [-Config=<config.ini>]]` | Phase 8 통합 품질 게이트 실행 및 JSON/Markdown 리포트 생성 |
+| `tools/ue/validate_project_rules.sh -AssetPolicy=<policy.json> [-BuildCsPolicy=<policy.json>] [-DataSchema=<schema.json> -DataSource=<source.csv>] [-ConfigRules=<schema.json> [-Config=<config.ini>]] [-PluginPolicy=<policy.json>] [-DiffPlatforms=<csv> [-DiffAllowlist=<allowlist.json>] [-DiffCategories=<csv>]]` | `tools\ue\validate_project_rules.bat -AssetPolicy=<policy.json> [-BuildCsPolicy=<policy.json>] [-DataSchema=<schema.json> -DataSource=<source.csv>] [-ConfigRules=<schema.json> [-Config=<config.ini>]] [-PluginPolicy=<policy.json>] [-DiffPlatforms=<csv> [-DiffAllowlist=<allowlist.json>] [-DiffCategories=<csv>]]` | Phase 8/9 통합 품질 게이트 실행 및 JSON/Markdown 리포트 생성 (플러그인 의존성, 플랫폼 Config diff 검증 포함) |
 
 LLM은 이 표에 있는 명령만 호출해야 한다.
 

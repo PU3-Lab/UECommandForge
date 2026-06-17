@@ -2,7 +2,7 @@
 setlocal EnableExtensions DisableDelayedExpansion
 
 if "%~1"=="" (
-  echo Usage: %~nx0 -AssetPolicy=^<policy.json^> [-BuildCsPolicy=^<policy.json^>] [-DataSchema=^<schema.json^> -DataSource=^<source.csv^|json^>] [-ConfigRules=^<schema.json^> [-Config=^<config.ini^>]] [extra args...] 1>&2
+  echo Usage: %~nx0 -AssetPolicy=^<policy.json^> [-BuildCsPolicy=^<policy.json^>] [-DataSchema=^<schema.json^> -DataSource=^<source.csv^|json^>] [-ConfigRules=^<schema.json^> [-Config=^<config.ini^>]] [-PluginPolicy=^<policy.json^>] [-DiffPlatforms=^<csv^> [-DiffAllowlist=^<allowlist.json^>] [-DiffCategories=^<csv^>]] [extra args...] 1>&2
   exit /b 2
 )
 

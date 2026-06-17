@@ -1,0 +1,7 @@
+[
+  { "section": "/Script/Engine.RendererSettings", "key": "r.*" },
+  { "section": "/Script/Engine.RendererSettings", "key": "*ShaderFormat*" },
+  { "section": "*", "key": "*TextureFormat*" },
+  { "section": "/Script/AndroidRuntimeSettings.AndroidRuntimeSettings", "key": "*" },
+  { "section": "/Script/IOSRuntimeSettings.IOSRuntimeSettings", "key": "*" }
+]

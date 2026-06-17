@@ -32,6 +32,9 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
 | 6 | [ucf-phase6.md](ucf-phase6.md) | 맵 배치 | Phase 5 |
 | 7 | [ucf-phase7.md](ucf-phase7.md) | 워크플로우 Commandlet (원스톱) | Phase 6 |
 | 8 | [ucf-phase8-prototype-automation-plan.md](ucf-phase8-prototype-automation-plan.md) | prototype 기반 에셋 정책, C++ 생성, 데이터 검증 제품화 및 배포 | Phase 7 |
+| 9 | [references/10_packaging_cook_build_plan.md](references/10_packaging_cook_build_plan.md) | **출시(릴리즈) 지향** — Packaging / Cook / 플랫폼 Build 설정 자동 검증·리포트로 배포 가능한 빌드 산출 | Phase 8 |
+
+**현재 마일스톤:** 0.9.0 게시 완료. 다음 목표는 **출시 가능한 게임 빌드 자동화(1.0.0)** — Phase 9에서 Cook/Packaging/플랫폼 Build 파이프라인을 "읽기 전용 분석 → 리포트 → 제한적 생성 → 사람 승인 → 적용" 원칙으로 구축한다.
 
 ---
 
@@ -46,7 +49,9 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
 | 5 | 완료 | `./tools/test/automation/run.sh` PASS 10 / FAIL 0, `./tools/test/smoke/ai_flow_binding.sh specs/examples/guard_ai.json` PASS 8 / FAIL 0 |
 | 6 | 완료 | `PlaceActor` 리포트 `ok: true`, `actor_placed: ok` |
 | 7 | 완료 | `./tools/ue/build_plugin.sh` 통과, `./tools/test/automation/run.sh` PASS 15 / FAIL 0, `CreateAIFlow` 인수 조건 통과 |
-| 8 | 로컬 최종 검증 완료, Windows 실기 검증 및 GitHub Release 게시 전 | `./tools/ue/build_plugin.sh`, `./tools/test/automation/run.sh` PASS 52 / FAIL 0 / SKIP 0, Phase 8 smoke/package/installer 게이트 PASS |
+| 8 | 완료 — v0.9.0 GitHub Release 게시 (2026-06-14, Mac plugin + Tools + Source 에셋). 잔여: Windows `.bat` wrapper 실기 검증(Windows 호스트 필요) | `./tools/ue/build_plugin.sh`, `./tools/test/automation/run.sh` PASS 52 / FAIL 0 / SKIP 0, Phase 8 smoke/package/installer 게이트 PASS, Release: https://github.com/PU3-Lab/UECommandForge/releases/tag/v0.9.0 |
+| 9 | 진행 중 — 출시(릴리즈) 지향 Packaging/Cook/Build 파이프라인. **9A 사전점검 검증 계층 + 9D 통합 게이트 완료**: ValidatePluginDependencies와 DiffPlatformConfig 구현 및 validate_project_rules 통합(suite: plugin_deps, platform_config_diff) 완료. 다음: 9B(Cook 로그) → 9C(패키징) | 9A + 9D 완료. 계획: [2026-06-14-phase9a-plugin-dependency-validation.md](2026-06-14-phase9a-plugin-dependency-validation.md)·[2026-06-15-phase9d-integration-gate.md](2026-06-15-phase9d-integration-gate.md), 스펙: [2026-06-14-phase9a-pre-release-validation-design.md](../specs/2026-06-14-phase9a-pre-release-validation-design.md) |
+
 
 ### 2026-05-27 Phase 3 마감 노트
 
@@ -142,3 +147,23 @@ jq -e '.ok == true and (.steps | length == 5) and .validation.actor_placed == "o
 - Animation BP / Niagara 자동화.
 - LLM 자체 호출 — 이 계획은 LLM이 사용할 커맨드 표면만 제공.
 - CI 통합 (GitHub Actions / Jenkins).
+
+---
+
+### 2026-06-15 Phase 9A 마감 노트
+
+- `ValidatePluginDependenciesCommandlet` M3 심화 구현: `EnabledByDefault` 및 플랫폼/타깃 조건부 필터링 evaluation을 완수했다.
+- Editor 모듈 warning 및 suspect type 경고 구현을 완료했다.
+- `DiffPlatformConfigCommandlet` (H1 스파이크) 구현 및 Allowlist glob 매칭, config 비교 검증 로직을 구현했다.
+- `tools/test/smoke/validate_plugin_deps.sh` 및 `tools/test/smoke/diff_platform_config.sh` 스모크 테스트 래퍼 작성을 완료했다.
+- macOS 에디터 환경에서 총 74개 자동화 테스트 전체 통과 및 2개 스모크 테스트 그린 성공을 확인했다.
+- macOS linker 최적화 배제(Dead Code Elimination) 방지를 위해 테스트 링킹 강제화(Link Test) 구현을 적용했다.
+
+### 2026-06-15 Phase 9D 마감 노트
+
+- `ValidatePluginDependencies`와 `DiffPlatformConfig` 두 사전점검 검증 커맨드렛을 `PrototypeAutomation` 통합 게이트에 suite 형태로 병합 완료했습니다.
+- `tools/ue/validate_project_rules.sh` 및 `.bat`에 신규 인자 패스스루 사용법을 추가했습니다.
+- `tools/test/smoke/prototype_automation.sh` 스모크 테스트에 신규 suite 검증을 추가하여 성공적으로 PASS함을 확인했습니다.
+- macOS 링커 데드 코드 배제 방지를 위해 `PrototypeAutomationCommandletTest`에도 링킹 강제화(Link Test)를 도입했습니다.
+
+

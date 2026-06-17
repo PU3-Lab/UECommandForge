@@ -81,6 +81,26 @@ bEnabled=true
 MaxCount=5
 INI
 
+PLUGIN_POLICY="${FIXTURE_DIR}/plugin_policy.json"
+DIFF_ALLOWLIST="${FIXTURE_DIR}/diff_allowlist.json"
+
+cat >"${PLUGIN_POLICY}" <<'JSON'
+{
+  "version": "1",
+  "kind": "plugin_dependency_policy",
+  "required": [],
+  "forbiddenInShipping": [],
+  "optional": [],
+  "allowedEditorOnly": []
+}
+JSON
+
+cat >"${DIFF_ALLOWLIST}" <<'JSON'
+[
+  { "section": "/Script/Engine.RendererSettings", "key": "r.*" }
+]
+JSON
+
 RUN_LOG="${FIXTURE_DIR}/prototype_automation_run.log"
 
 "${UE_TOOLS}/validate_project_rules.sh" \
@@ -90,18 +110,23 @@ RUN_LOG="${FIXTURE_DIR}/prototype_automation_run.log"
   -DataSchema="${DATA_SCHEMA}" \
   -DataSource="${DATA_SOURCE}" \
   -ConfigRules="${CONFIG_RULES}" \
-  -Config="${CONFIG_INI}" >"${RUN_LOG}"
+  -Config="${CONFIG_INI}" \
+  -PluginPolicy="${PLUGIN_POLICY}" \
+  -DiffPlatforms="Mac" \
+  -DiffAllowlist="${DIFF_ALLOWLIST}" >"${RUN_LOG}"
 
 REPORT="$(tail -n 1 "${RUN_LOG}")"
 test -f "${REPORT}"
 MARKDOWN="$(jq -r '.validation.markdown_path' "${REPORT}")"
 
 jq -e '.ok == true' "${REPORT}" >/dev/null
-jq -e '.validation.suite_count == "4"' "${REPORT}" >/dev/null
+jq -e '.validation.suite_count == "6"' "${REPORT}" >/dev/null
 jq -e '.validation.failed_suite_count == "0"' "${REPORT}" >/dev/null
-jq -e '.steps | length == 4' "${REPORT}" >/dev/null
+jq -e '.steps | length == 6' "${REPORT}" >/dev/null
 test -f "${MARKDOWN}"
 grep -q 'PrototypeAutomation Report' "${MARKDOWN}"
 grep -q 'ValidateConfigRules' "${MARKDOWN}"
+grep -q 'ValidatePluginDependencies' "${MARKDOWN}"
+grep -q 'DiffPlatformConfig' "${MARKDOWN}"
 
 echo "prototype_automation smoke PASS"

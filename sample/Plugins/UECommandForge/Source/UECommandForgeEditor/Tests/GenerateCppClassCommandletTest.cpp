@@ -156,13 +156,13 @@ namespace
         return FFileHelper::SaveStringToFile(Serialized, *Path, FFileHelper::EEncodingOptions::ForceUTF8WithoutBOM);
     }
 
-    FString RuntimeModuleRoot()
+    FString GccRuntimeModuleRoot()
     {
         return FPaths::ConvertRelativePathToFull(FPaths::Combine(
             FPaths::ProjectPluginsDir(), TEXT("UECommandForge"), TEXT("Source"), TEXT("UECommandForgeRuntime")));
     }
 
-    FString PluginModuleRoot(const FString& ModuleName)
+    FString GccPluginModuleRoot(const FString& ModuleName)
     {
         return FPaths::ConvertRelativePathToFull(FPaths::Combine(
             FPaths::ProjectPluginsDir(), TEXT("UECommandForge"), TEXT("Source"), ModuleName));
@@ -175,25 +175,25 @@ namespace
 
     FString GeneratedCppHeaderPath(const FString& ClassName)
     {
-        return FPaths::Combine(RuntimeModuleRoot(), TEXT("Public"), GeneratedCppTestOutputPath(ClassName),
+        return FPaths::Combine(GccRuntimeModuleRoot(), TEXT("Public"), GeneratedCppTestOutputPath(ClassName),
             ClassName + TEXT(".h"));
     }
 
     FString GeneratedCppSourcePath(const FString& ClassName)
     {
-        return FPaths::Combine(RuntimeModuleRoot(), TEXT("Private"), GeneratedCppTestOutputPath(ClassName),
+        return FPaths::Combine(GccRuntimeModuleRoot(), TEXT("Private"), GeneratedCppTestOutputPath(ClassName),
             ClassName + TEXT(".cpp"));
     }
 
     FString GeneratedCppHeaderPathForModule(const FString& ModuleName, const FString& ClassName)
     {
-        return FPaths::Combine(PluginModuleRoot(ModuleName), TEXT("Public"), GeneratedCppTestOutputPath(ClassName),
+        return FPaths::Combine(GccPluginModuleRoot(ModuleName), TEXT("Public"), GeneratedCppTestOutputPath(ClassName),
             ClassName + TEXT(".h"));
     }
 
     FString GeneratedCppSourcePathForModule(const FString& ModuleName, const FString& ClassName)
     {
-        return FPaths::Combine(PluginModuleRoot(ModuleName), TEXT("Private"), GeneratedCppTestOutputPath(ClassName),
+        return FPaths::Combine(GccPluginModuleRoot(ModuleName), TEXT("Private"), GeneratedCppTestOutputPath(ClassName),
             ClassName + TEXT(".cpp"));
     }
 
@@ -206,25 +206,25 @@ namespace
         IFileManager::Get().DeleteDirectory(*FPaths::GetPath(PublicPath), false, true);
         IFileManager::Get().DeleteDirectory(*FPaths::GetPath(PrivatePath), false, true);
         IFileManager::Get().DeleteDirectory(
-            *FPaths::Combine(RuntimeModuleRoot(), TEXT("Public"), TEXT("GeneratedTests")), false, true);
+            *FPaths::Combine(GccRuntimeModuleRoot(), TEXT("Public"), TEXT("GeneratedTests")), false, true);
         IFileManager::Get().DeleteDirectory(
-            *FPaths::Combine(RuntimeModuleRoot(), TEXT("Private"), TEXT("GeneratedTests")), false, true);
+            *FPaths::Combine(GccRuntimeModuleRoot(), TEXT("Private"), TEXT("GeneratedTests")), false, true);
     }
 
-    FString BuildCsTestModuleRoot()
+    FString GccBuildCsTestModuleRoot()
     {
-        return PluginModuleRoot(TEXT("CodexBuildCsTestModule"));
+        return GccPluginModuleRoot(TEXT("CodexBuildCsTestModule"));
     }
 
-    void DeleteBuildCsTestModule()
+    void GccDeleteBuildCsTestModule()
     {
-        IFileManager::Get().DeleteDirectory(*BuildCsTestModuleRoot(), false, true);
+        IFileManager::Get().DeleteDirectory(*GccBuildCsTestModuleRoot(), false, true);
     }
 
-    bool CreateBuildCsTestModule()
+    bool GccCreateBuildCsTestModule()
     {
-        DeleteBuildCsTestModule();
-        const FString ModuleRoot = BuildCsTestModuleRoot();
+        GccDeleteBuildCsTestModule();
+        const FString ModuleRoot = GccBuildCsTestModuleRoot();
         FPlatformFileManager::Get().GetPlatformFile().CreateDirectoryTree(*ModuleRoot);
         const FString BuildCsPath = FPaths::Combine(ModuleRoot, TEXT("CodexBuildCsTestModule.Build.cs"));
         const FString BuildCs = TEXT(R"(using UnrealBuildTool;
@@ -442,12 +442,12 @@ bool FGenerateCppClassApplyBuildCsTest::RunTest(const FString& Parameters)
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
         TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_apply_buildcs_report.json"));
     const FString ClassName = TEXT("CodexBuildCsHealthComponent");
-    const FString BuildCsPath = FPaths::Combine(BuildCsTestModuleRoot(), TEXT("CodexBuildCsTestModule.Build.cs"));
+    const FString BuildCsPath = FPaths::Combine(GccBuildCsTestModuleRoot(), TEXT("CodexBuildCsTestModule.Build.cs"));
 
     IFileManager::Get().Delete(*SpecPath);
     IFileManager::Get().Delete(*ReportPath);
-    DeleteBuildCsTestModule();
-    TestTrue(TEXT("Build.cs test module 생성"), CreateBuildCsTestModule());
+    GccDeleteBuildCsTestModule();
+    TestTrue(TEXT("Build.cs test module 생성"), GccCreateBuildCsTestModule());
     TestTrue(TEXT("Build.cs apply spec 저장"), SaveGenerateCppClassSpec(SpecPath,
         TEXT("tx-cpp-class-buildcs"), ClassName, GeneratedCppTestOutputPath(ClassName),
         TEXT(""), TEXT("CodexBuildCsTestModule"), TEXT("AIModule"), TEXT("Slate")));
@@ -471,7 +471,7 @@ bool FGenerateCppClassApplyBuildCsTest::RunTest(const FString& Parameters)
     TestEqual(TEXT("Build.cs changed validation"),
         RootObject->GetObjectField(TEXT("validation"))->GetStringField(TEXT("buildcs_changed")), TEXT("true"));
 
-    DeleteBuildCsTestModule();
+    GccDeleteBuildCsTestModule();
     return true;
 }
 
@@ -514,7 +514,7 @@ bool FGenerateCppClassMissingBuildCsDoesNotWriteClassFilesTest::RunTest(const FS
     const FString ReportPath = FPaths::Combine(FPaths::ProjectSavedDir(),
         TEXT("UECommandForge"), TEXT("Reports"), TEXT("test_cpp_class_missing_buildcs_report.json"));
     const FString ClassName = TEXT("CodexMissingBuildCsHealthComponent");
-    const FString ModuleRoot = PluginModuleRoot(ModuleName);
+    const FString ModuleRoot = GccPluginModuleRoot(ModuleName);
     const FString HeaderPath = GeneratedCppHeaderPathForModule(ModuleName, ClassName);
     const FString SourcePath = GeneratedCppSourcePathForModule(ModuleName, ClassName);
 
