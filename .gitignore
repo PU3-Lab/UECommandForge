@@ -27,3 +27,7 @@ sample/Config/DefaultEngine.ini
 
 # Benchmark assets
 sample/Content/AI/Characters/BP_BenchCharacter*.uasset
+
+# Local Codex and Claude agent settings
+.codex/
+.claude/
